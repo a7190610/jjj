@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nail Art Budget | 美甲預算</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Phosphor Icons (Cute Icons) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <!-- Config for Korean Cream Colors -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cream: {
+                            50: '#FDFBF7', // Background
+                            100: '#F7F1E8', // Light Card
+                            200: '#E8D5C4', // Border/Accent Light
+                            300: '#D4B89F',
+                            400: '#C29F84', // Primary Text
+                            500: '#A6846B', // Darker Text
+                            600: '#8C6B53',
+                            700: '#5E503F', // Deepest Brown
+                        },
+                        highlight: '#D88C9A', // Soft Pink for CTA
+                    },
+                    fontFamily: {
+                        sans: ['"Noto Sans TC"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* --- 滿版關鍵修正 (Full Width Fixes) --- */
+        html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100%;
+            min-height: 100vh;
+            background-color: #FDFBF7; /* 確保背景色填滿整個 iframe */
+            overflow-x: hidden; /* 防止水平白邊捲軸 */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Hiding Scrollbar */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Bottom Sheet Animation */
+        .bottom-sheet {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(100%);
+        }
+        .bottom-sheet.active {
+            transform: translateY(0);
+        }
+        
+        /* Input Reset */
+        input:focus {
+            outline: none;
+            border-color: #C29F84;
+            background-color: #fff;
+        }
+
+        .btn-press:active {
+            transform: scale(0.95);
+        }
+
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #D88C9A;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #D88C9A;
+        }
+    </style>
+</head>
+<body class="pb-32 relative">
+
+    <!-- Top Navigation / Header -->
+    <nav class="sticky top-0 z-40 bg-cream-50/90 backdrop-blur-md px-5 py-4 flex justify-between items-center shadow-sm border-b border-cream-100">
+        <div>
+            <h1 class="text-xl font-bold tracking-wide text-cream-700">Nail Studio</h1>
+            <p class="text-xs text-cream-500">預算計算機</p>
+        </div>
+        <button onclick="toggleSettings()" class="text-cream-500 hover:text-cream-700 transition">
+            <i class="ph ph-gear text-2xl"></i>
+        </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-md mx-auto p-5 space-y-6">
+
+        <!-- 1. 基礎底價區 (Base Price) -->
+        <section class="bg-white rounded-3xl p-5 shadow-sm border border-cream-100">
+            <div class="flex items-center gap-2 mb-4">
+                <i class="ph-fill ph-hand-soap text-highlight text-lg"></i>
+                <h2 class="font-bold text-cream-600">基礎底價</h2>
+            </div>
+            <div id="basePriceContainer" class="grid grid-cols-2 gap-3">
+                <!-- Rendered by JS -->
+            </div>
+        </section>
+
+        <!-- 2. 延甲/補甲區 (Extension & Repair) -->
+        <section class="bg-white rounded-3xl p-5 shadow-sm border border-cream-100">
+            <div class="flex items-center gap-2 mb-4">
+                <i class="ph-fill ph-bandaids text-highlight text-lg"></i>
+                <h2 class="font-bold text-cream-600">延甲 / 補甲</h2>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- Extension Row -->
+                <div class="flex justify-between items-center bg-cream-50 p-3 rounded-xl border border-cream-100">
+                    <div class="flex flex-col">
+                        <span class="text-cream-700 font-medium">延甲</span>
+                        <span class="text-xs text-cream-400">$100 / 指</span>
+                    </div>
+                    <div class="flex items-center gap-3 bg-white rounded-lg p-1 border border-cream-200 shadow-sm">
+                        <button onclick="updateExtension(-1)" class="w-8 h-8 flex items-center justify-center text-cream-500 rounded-md hover:bg-cream-50 btn-press">-</button>
+                        <span id="extensionCount" class="w-6 text-center font-bold text-cream-700">0</span>
+                        <button onclick="updateExtension(1)" class="w-8 h-8 flex items-center justify-center text-cream-500 rounded-md hover:bg-cream-50 btn-press">+</button>
+                    </div>
+                </div>
+
+                <!-- Repair Row -->
+                <div class="flex justify-between items-center bg-cream-50 p-3 rounded-xl border border-cream-100">
+                    <div class="flex flex-col">
+                        <span class="text-cream-700 font-medium">補甲</span>
+                        <span class="text-xs text-cream-400">$50 / 指</span>
+                    </div>
+                    <div class="flex items-center gap-3 bg-white rounded-lg p-1 border border-cream-200 shadow-sm">
+                        <button onclick="updateRepair(-1)" class="w-8 h-8 flex items-center justify-center text-cream-500 rounded-md hover:bg-cream-50 btn-press">-</button>
+                        <span id="repairCount" class="w-6 text-center font-bold text-cream-700">0</span>
+                        <button onclick="updateRepair(1)" class="w-8 h-8 flex items-center justify-center text-cream-500 rounded-md hover:bg-cream-50 btn-press">+</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. 進階造型區 (Advanced Styling) -->
+        <section class="bg-white rounded-3xl p-5 shadow-sm border border-cream-100 ring-1 ring-cream-200">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex items-center gap-2">
+                    <i class="ph-fill ph-paint-brush-broad text-highlight text-lg"></i>
+                    <h2 class="font-bold text-cream-600">進階造型</h2>
+                </div>
+                <button onclick="addAdvancedRow()" class="text-xs bg-cream-100 text-cream-600 px-3 py-1 rounded-full font-medium border border-cream-200">+ 自訂</button>
+            </div>
+
+            <!-- Quick Toolbar -->
+            <div class="mb-5 -mx-2 px-2 overflow-x-auto hide-scrollbar flex gap-2" id="quickToolbar">
+                <!-- Rendered by JS from Backend Data -->
+            </div>
+
+            <!-- Dynamic Rows -->
+            <div id="advancedList" class="space-y-3">
+                <!-- Rows injected here by JS -->
+            </div>
+            
+            <div class="text-center text-cream-300 text-sm py-4 italic" id="emptyState" style="display:none;">
+                點擊上方按鈕新增造型
+            </div>
+        </section>
+
+        <!-- 4. 卸甲服務 (Removal) -->
+        <section class="bg-white rounded-3xl p-5 shadow-sm border border-cream-100">
+            <div class="flex items-center gap-2 mb-4">
+                <i class="ph-fill ph-eraser text-highlight text-lg"></i>
+                <h2 class="font-bold text-cream-600">卸甲服務</h2>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-2 bg-cream-50 p-1 rounded-xl mb-4">
+                <button onclick="setRemoval('none')" id="btn-rm-none" class="py-2 text-sm rounded-lg transition-all font-medium text-cream-400">無</button>
+                <button onclick="setRemoval('shop')" id="btn-rm-shop" class="py-2 text-sm rounded-lg transition-all font-medium text-cream-400">本店 $150</button>
+                <button onclick="setRemoval('other')" id="btn-rm-other" class="py-2 text-sm rounded-lg transition-all font-medium text-cream-400">他店 $200</button>
+            </div>
+        </section>
+
+        <!-- 5. 訂金 & 折扣 (Deposit & Discount) -->
+        <section class="bg-white rounded-3xl p-5 shadow-sm border border-cream-100 mb-10">
+            <!-- Deposit -->
+            <div class="flex items-center justify-between mb-4 pb-4 border-b border-cream-100">
+                <div class="flex items-center gap-2">
+                    <i class="ph-fill ph-coins text-highlight text-lg"></i>
+                    <h2 class="font-bold text-cream-600">已付訂金</h2>
+                </div>
+                <div class="relative w-32">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-cream-400">$</span>
+                    <input type="number" id="depositInput" oninput="updateDeposit(this.value)" onfocus="focusInput(this)" class="w-full bg-cream-50 border border-cream-200 rounded-xl py-2 pl-6 pr-3 text-right text-cream-700 font-bold focus:ring-2 focus:ring-cream-200" placeholder="0">
+                </div>
+            </div>
+
+            <!-- Birthday Discount -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <i class="ph-fill ph-cake text-highlight text-lg"></i>
+                    <h2 class="font-bold text-cream-600">生日折扣 (9折)</h2>
+                </div>
+                
+                <div class="relative inline-block w-12 h-6 align-middle select-none transition duration-200 ease-in">
+                    <input type="checkbox" name="toggle" id="birthdayToggle" onchange="calculateTotal()" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-cream-200 transition-all duration-300 left-0"/>
+                    <label for="birthdayToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-cream-200 cursor-pointer"></label>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 6. Sticky Footer -->
+    <footer class="fixed bottom-0 left-0 w-full bg-white border-t border-cream-100 shadow-[0_-5px_20px_rgba(0,0,0,0.03)] z-30 px-6 py-4 pb-8 md:pb-4">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <div>
+                <p class="text-xs text-cream-400 mb-1">預估應付金額</p>
+                <div class="text-3xl font-bold text-cream-700 font-sans tracking-tight flex items-baseline gap-1">
+                    <span class="text-lg">$</span>
+                    <span id="displayTotal">0</span>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                 <button onclick="copyBill()" class="w-12 h-12 flex items-center justify-center rounded-2xl bg-cream-50 text-cream-600 border border-cream-200 btn-press">
+                    <i class="ph ph-copy text-xl"></i>
+                </button>
+                <button onclick="toggleBillModal(true)" class="bg-cream-700 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-cream-200 btn-press flex items-center gap-2">
+                    查看明細 <i class="ph-bold ph-caret-up"></i>
+                </button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bottom Sheet Modal (Bill Details) -->
+    <div id="billModalBackdrop" onclick="toggleBillModal(false)" class="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 hidden transition-opacity opacity-0"></div>
+    <div id="billModal" class="bottom-sheet fixed bottom-0 left-0 w-full bg-white rounded-t-[2rem] z-50 p-6 max-h-[85vh] overflow-y-auto shadow-2xl">
+        <div class="w-12 h-1.5 bg-cream-200 rounded-full mx-auto mb-6"></div>
+        
+        <h3 class="text-xl font-bold text-cream-700 text-center mb-6">消費明細單</h3>
+        
+        <div id="billContent" class="space-y-4 text-sm text-cream-600 mb-8 bg-cream-50 p-5 rounded-2xl border border-cream-100 font-mono">
+            <!-- Dynamic Bill Content -->
+        </div>
+
+        <div class="flex gap-3">
+            <button onclick="toggleBillModal(false)" class="flex-1 py-3.5 rounded-2xl border border-cream-200 text-cream-500 font-bold">關閉</button>
+            <button onclick="copyBill(); toggleBillModal(false)" class="flex-1 py-3.5 rounded-2xl bg-cream-700 text-white font-bold shadow-lg shadow-cream-200">複製明細</button>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-cream-50 z-50 hidden overflow-y-auto">
+        <div class="max-w-md mx-auto p-5">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold text-cream-700">後台設定</h2>
+                <button onclick="toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm text-cream-600">
+                    <i class="ph-bold ph-x"></i>
+                </button>
+            </div>
+
+            <!-- Base Price Settings -->
+            <div class="mb-8">
+                <h3 class="font-bold text-cream-600 mb-3 border-l-4 border-highlight pl-3">底價選項管理</h3>
+                <div class="bg-orange-50 p-2 mb-2 rounded text-xs text-orange-700">
+                    <i class="ph-fill ph-pencil-simple"></i> 直接點擊輸入框即可修改名稱或價格
+                </div>
+                <ul id="settingsBaseList" class="space-y-2 mb-3"></ul>
+                <div class="flex gap-2 bg-white p-2 rounded-xl border border-cream-200 shadow-sm mt-4">
+                    <input type="text" id="newBaseName" placeholder="新增名稱" class="flex-1 p-2 rounded-lg bg-cream-50 text-sm outline-none">
+                    <input type="number" id="newBasePrice" placeholder="$" class="w-16 p-2 rounded-lg bg-cream-50 text-sm outline-none">
+                    <button onclick="addSetting('base')" class="bg-cream-600 text-white w-10 rounded-lg flex items-center justify-center"><i class="ph-bold ph-plus"></i></button>
+                </div>
+            </div>
+
+            <!-- Advanced Presets Settings -->
+            <div class="mb-8">
+                <h3 class="font-bold text-cream-600 mb-3 border-l-4 border-highlight pl-3">進階造型按鈕管理</h3>
+                <ul id="settingsAdvList" class="space-y-2 mb-3"></ul>
+                <div class="flex gap-2 bg-white p-2 rounded-xl border border-cream-200 shadow-sm mt-4">
+                    <input type="text" id="newAdvName" placeholder="新增名稱" class="flex-1 p-2 rounded-lg bg-cream-50 text-sm outline-none">
+                    <input type="number" id="newAdvPrice" placeholder="$" class="w-16 p-2 rounded-lg bg-cream-50 text-sm outline-none">
+                    <button onclick="addSetting('advanced')" class="bg-cream-600 text-white w-10 rounded-lg flex items-center justify-center"><i class="ph-bold ph-plus"></i></button>
+                </div>
+            </div>
+
+            <div class="bg-cream-100 p-4 rounded-xl border border-cream-200 text-cream-600 text-xs text-center">
+                 設定將自動儲存於此裝置中
+            </div>
+            
+             <button onclick="resetToDefaults()" class="mt-6 w-full py-3 text-red-400 text-sm font-medium hover:text-red-500">重置為預設值</button>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-6 left-1/2 -translate-x-1/2 bg-cream-700/90 text-white px-6 py-2 rounded-full shadow-xl z-50 opacity-0 pointer-events-none transition-opacity text-sm backdrop-blur-sm">
+        已複製到剪貼簿
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- Data & State ---
+        const defaultData = {
+            baseOptions: [
+                { name: '單色凝膠', price: 800 },
+                { name: '貓眼凝膠', price: 900 },
+                { name: '鏡面凝膠', price: 900 },
+                { name: '花磚設計款', price: 1300 },
+                { name: '旋旋驚喜設計款', price: 1250 },
+                { name: '花磚驚喜款', price: 1300 }
+            ],
+            advancedPresets: [
+                { name: '手繪', price: 150 },
+                { name: '暈染', price: 100 },
+                { name: '立體造型', price: 100 },
+                { name: '貼紙', price: 50 },
+                { name: '貼鑽', price: 50 }
+            ]
+        };
+
+        // Load Settings
+        let appData = JSON.parse(localStorage.getItem('nailCalcData'));
+        
+        // Migration Check
+        if (!appData) {
+            appData = JSON.parse(JSON.stringify(defaultData));
+        } else if (!appData.advancedPresets) {
+            appData.advancedPresets = JSON.parse(JSON.stringify(defaultData.advancedPresets));
+        }
+        
+        // Runtime State
+        let state = {
+            selectedBasePrice: 0,
+            selectedBaseName: '',
+            extensionQty: 0,
+            repairQty: 0,
+            advancedItems: [], 
+            removalType: 'none',
+            deposit: 0,
+            isBirthday: false
+        };
+
+        // --- Initialization ---
+        function init() {
+            renderBaseOptions();
+            renderQuickToolbar(); 
+            setRemoval('none');
+            calculateTotal();
+            renderSettingsLists();
+            checkEmptyState();
+        }
+
+        // --- Render Core Sections ---
+        function renderBaseOptions() {
+            const container = document.getElementById('basePriceContainer');
+            container.innerHTML = '';
+            
+            appData.baseOptions.forEach((opt, index) => {
+                const div = document.createElement('div');
+                div.className = 'relative';
+                div.innerHTML = `
+                    <input type="radio" name="basePrice" id="base_${index}" 
+                           class="peer hidden" value="${opt.price}">
+                    <label for="base_${index}" 
+                           class="block bg-cream-50 border border-cream-200 rounded-xl p-3 text-center cursor-pointer transition-all h-full flex flex-col justify-center
+                                  peer-checked:bg-cream-600 peer-checked:text-white peer-checked:border-cream-600 peer-checked:shadow-md">
+                        <div class="text-sm font-medium mb-1 leading-tight">${opt.name}</div>
+                        <div class="text-lg font-bold font-sans">$${opt.price}</div>
+                    </label>
+                `;
+                const radio = div.querySelector('input');
+                radio.onchange = () => updateBase(opt.name, opt.price);
+                container.appendChild(div);
+            });
+        }
+
+        function renderQuickToolbar() {
+            const container = document.getElementById('quickToolbar');
+            container.innerHTML = '';
+            
+            appData.advancedPresets.forEach(preset => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-press flex-shrink-0 bg-cream-50 text-cream-600 border border-cream-200 px-4 py-2 rounded-full text-sm whitespace-nowrap shadow-sm';
+                
+                let icon = '💅';
+                if(preset.name.includes('手繪')) icon = '✍️';
+                if(preset.name.includes('暈染')) icon = '🎨';
+                if(preset.name.includes('立體')) icon = '🧊';
+                if(preset.name.includes('貼紙')) icon = '📑';
+                if(preset.name.includes('鑽')) icon = '💎';
+                if(preset.name.includes('法式')) icon = '🇫🇷';
+                if(preset.name.includes('鏡面')) icon = '✨';
+                
+                btn.innerText = `${icon} ${preset.name}`;
+                btn.onclick = () => addAdvancedRow(preset.name, preset.price);
+                container.appendChild(btn);
+            });
+        }
+
+        // --- Logic: Base ---
+        function updateBase(name, price) {
+            state.selectedBaseName = name;
+            state.selectedBasePrice = price;
+            calculateTotal();
+        }
+
+        // --- Logic: Extension & Repair ---
+        function updateExtension(delta) {
+            const newValue = state.extensionQty + delta;
+            if (newValue >= 0) {
+                state.extensionQty = newValue;
+                document.getElementById('extensionCount').innerText = newValue;
+                calculateTotal();
+            }
+        }
+
+        function updateRepair(delta) {
+            const newValue = state.repairQty + delta;
+            if (newValue >= 0) {
+                state.repairQty = newValue;
+                document.getElementById('repairCount').innerText = newValue;
+                calculateTotal();
+            }
+        }
+
+        // --- Logic: Advanced Styling ---
+        function addAdvancedRow(name = '', price = 0) {
+            const id = 'adv_' + Date.now().toString() + '_' + Math.random().toString(36).substr(2, 5);
+            const item = { id, name, price, qty: 1 };
+            
+            state.advancedItems.push(item);
+            appendAdvancedRowToDOM(item);
+            
+            calculateTotal();
+            checkEmptyState();
+            
+            setTimeout(() => {
+                const list = document.getElementById('advancedList');
+                list.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 50);
+        }
+
+        function appendAdvancedRowToDOM(item) {
+            const container = document.getElementById('advancedList');
+            const row = document.createElement('div');
+            row.id = `row-${item.id}`; 
+            row.className = 'grid grid-cols-[1.5fr_1fr_1fr_auto] gap-2 items-center bg-cream-50 p-2 rounded-xl border border-cream-100 animate-fade-in mb-2';
+            
+            row.innerHTML = `
+                <input type="text" class="w-full bg-white border border-cream-200 rounded-lg px-2 py-2 text-sm text-cream-700 name-input" placeholder="項目名">
+                <div class="relative">
+                    <span class="absolute left-2 top-1/2 -translate-y-1/2 text-cream-400 text-xs">$</span>
+                    <input type="number" class="w-full bg-white border border-cream-200 rounded-lg pl-5 pr-1 py-2 text-sm text-cream-700 font-bold price-input" placeholder="0">
+                </div>
+                <div class="flex items-center justify-between bg-white border border-cream-200 rounded-lg px-1 h-full">
+                    <button class="text-cream-400 hover:text-highlight px-1 btn-minus">-</button>
+                    <span class="text-xs font-bold text-cream-700 w-4 text-center qty-display">${item.qty}</span>
+                    <button class="text-cream-400 hover:text-highlight px-1 btn-plus">+</button>
+                </div>
+                <button class="text-cream-300 hover:text-red-400 p-1 btn-delete">
+                    <i class="ph-bold ph-trash"></i>
+                </button>
+            `;
+
+            // Bind Events
+            const nameInput = row.querySelector('.name-input');
+            nameInput.value = item.name;
+            nameInput.oninput = (e) => {
+                const found = state.advancedItems.find(i => i.id === item.id);
+                if(found) found.name = e.target.value;
+            };
+            nameInput.onfocus = () => focusInput(nameInput);
+
+            const priceInput = row.querySelector('.price-input');
+            priceInput.value = item.price;
+            priceInput.oninput = (e) => {
+                const found = state.advancedItems.find(i => i.id === item.id);
+                if(found) {
+                    found.price = parseInt(e.target.value) || 0;
+                    calculateTotal();
+                }
+            };
+            priceInput.onfocus = () => focusInput(priceInput);
+
+            const qtyDisplay = row.querySelector('.qty-display');
+            row.querySelector('.btn-minus').onclick = () => {
+                const found = state.advancedItems.find(i => i.id === item.id);
+                if(found && found.qty > 1) {
+                    found.qty--;
+                    qtyDisplay.innerText = found.qty;
+                    calculateTotal();
+                }
+            };
+            row.querySelector('.btn-plus').onclick = () => {
+                const found = state.advancedItems.find(i => i.id === item.id);
+                if(found) {
+                    found.qty++;
+                    qtyDisplay.innerText = found.qty;
+                    calculateTotal();
+                }
+            };
+            row.querySelector('.btn-delete').onclick = () => {
+                removeAdvancedRow(item.id);
+            };
+
+            container.appendChild(row);
+        }
+
+        function removeAdvancedRow(id) {
+            state.advancedItems = state.advancedItems.filter(item => item.id !== id);
+            const domRow = document.getElementById(`row-${id}`);
+            if (domRow) domRow.remove();
+            calculateTotal();
+            checkEmptyState();
+        }
+
+        function checkEmptyState() {
+            const emptyState = document.getElementById('emptyState');
+            emptyState.style.display = state.advancedItems.length === 0 ? 'block' : 'none';
+        }
+
+        function focusInput(el) {
+            el.select();
+            setTimeout(() => {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 300);
+        }
+
+        function setRemoval(type) {
+            state.removalType = type;
+            ['none', 'shop', 'other'].forEach(t => {
+                const btn = document.getElementById(`btn-rm-${t}`);
+                if (t === type) {
+                    btn.className = 'py-2 text-sm rounded-lg transition-all font-bold bg-white text-cream-700 shadow-sm ring-1 ring-cream-200';
+                } else {
+                    btn.className = 'py-2 text-sm rounded-lg transition-all font-medium text-cream-400 hover:text-cream-600';
+                }
+            });
+            calculateTotal();
+        }
+
+        function updateDeposit(val) {
+            state.deposit = parseInt(val) || 0;
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            let subtotal = state.selectedBasePrice;
+            subtotal += (state.extensionQty * 100);
+            subtotal += (state.repairQty * 50);
+            state.advancedItems.forEach(i => subtotal += (i.price * i.qty));
+
+            let rmPrice = 0;
+            if (state.removalType === 'shop') rmPrice = 150;
+            if (state.removalType === 'other') rmPrice = 200;
+            subtotal += rmPrice;
+
+            const isBirthday = document.getElementById('birthdayToggle').checked;
+            state.isBirthday = isBirthday;
+            
+            let discountedTotal = subtotal;
+            if (isBirthday) {
+                discountedTotal = Math.round(subtotal * 0.9);
+            }
+
+            let finalTotal = discountedTotal - state.deposit;
+            animateValue("displayTotal", parseInt(document.getElementById("displayTotal").innerText.replace(/,/g, '')), finalTotal, 300);
+        }
+        
+        function animateValue(id, start, end, duration) {
+            if (isNaN(start)) start = 0;
+            if (start === end) return;
+            const obj = document.getElementById(id);
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const val = Math.floor(progress * (end - start) + start);
+                obj.innerHTML = val.toLocaleString();
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // --- Logic: Bill & Bottom Sheet ---
+        function toggleBillModal(show) {
+            const modal = document.getElementById('billModal');
+            const backdrop = document.getElementById('billModalBackdrop');
+            const content = document.getElementById('billContent');
+
+            if (show) {
+                backdrop.classList.remove('hidden');
+                void backdrop.offsetWidth; 
+                backdrop.classList.remove('opacity-0');
+                modal.classList.add('active');
+                generateBillHTML(content);
+            } else {
+                backdrop.classList.add('opacity-0');
+                modal.classList.remove('active');
+                setTimeout(() => {
+                    backdrop.classList.add('hidden');
+                }, 300);
+            }
+        }
+
+        function generateBillHTML(container) {
+            let html = `
+                <div class="flex justify-between border-b border-cream-200 pb-2 mb-2">
+                    <span>項目</span>
+                    <span>金額</span>
+                </div>
+            `;
+
+            if (state.selectedBaseName) {
+                html += rowHTML(state.selectedBaseName, state.selectedBasePrice);
+            }
+            if (state.extensionQty > 0) {
+                html += rowHTML(`延甲 x${state.extensionQty}`, state.extensionQty * 100);
+            }
+            if (state.repairQty > 0) {
+                html += rowHTML(`補甲 x${state.repairQty}`, state.repairQty * 50);
+            }
+            state.advancedItems.forEach(i => {
+                html += rowHTML(`${i.name} x${i.qty}`, i.price * i.qty);
+            });
+            if (state.removalType !== 'none') {
+                let text = state.removalType === 'shop' ? '本店卸甲' : '他店卸甲';
+                let price = state.removalType === 'shop' ? 150 : 200;
+                html += rowHTML(text, price);
+            }
+            if (state.isBirthday) {
+                html += `
+                <div class="flex justify-between py-1 text-highlight font-bold">
+                    <span>生日折扣 (9折)</span>
+                    <span>-10%</span>
+                </div>`;
+            }
+            if (state.deposit > 0) {
+                html += `
+                <div class="flex justify-between py-1 text-cream-500">
+                    <span>已付訂金</span>
+                    <span>-$${state.deposit}</span>
+                </div>`;
+            }
+            const total = parseInt(document.getElementById('displayTotal').innerText.replace(/,/g, ''));
+            html += `
+                <div class="flex justify-between border-t-2 border-dashed border-cream-200 pt-2 mt-2 text-base font-bold text-cream-700">
+                    <span>應付總額 Total</span>
+                    <span>$${total}</span>
+                </div>`;
+            container.innerHTML = html;
+        }
+
+        function rowHTML(name, price) {
+            return `
+                <div class="flex justify-between py-1">
+                    <span>${name}</span>
+                    <span>${price < 0 ? '-$' + Math.abs(price) : '$' + price}</span>
+                </div>`;
+        }
+
+        function copyBill() {
+            const container = document.createElement('div');
+            generateBillHTML(container);
+            let text = "【美甲消費明細】\n";
+            const lines = container.querySelectorAll('.flex');
+            lines.forEach(line => {
+                const spans = line.querySelectorAll('span');
+                if(spans.length >= 2) text += `${spans[0].innerText}: ${spans[1].innerText}\n`;
+            });
+            text += `\n謝謝光臨！ ✨`;
+            navigator.clipboard.writeText(text).then(showToast).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast();
+            });
+        }
+
+        function showToast() {
+            const toast = document.getElementById('toast');
+            toast.classList.remove('opacity-0');
+            setTimeout(() => { toast.classList.add('opacity-0'); }, 2000);
+        }
+
+        // --- Logic: Settings Management (Editable) ---
+        function toggleSettings() {
+            const modal = document.getElementById('settingsModal');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                renderSettingsLists();
+            } else {
+                modal.classList.add('hidden');
+                renderBaseOptions();
+                renderQuickToolbar(); // Also refresh quick toolbar
+            }
+        }
+
+        function renderSettingsLists() {
+            // Base List
+            const baseList = document.getElementById('settingsBaseList');
+            baseList.innerHTML = appData.baseOptions.map((opt, i) => `
+                <li class="flex gap-2 items-center bg-white p-2 rounded-xl border border-cream-100 shadow-sm">
+                    <input type="text" value="${opt.name}" 
+                           onchange="updateSetting('base', ${i}, 'name', this.value)"
+                           class="flex-1 bg-transparent text-sm text-cream-700 font-medium outline-none border-b border-transparent focus:border-cream-300 transition-colors" />
+                    <span class="text-cream-400 text-xs">$</span>
+                    <input type="number" value="${opt.price}" 
+                           onchange="updateSetting('base', ${i}, 'price', this.value)"
+                           class="w-16 bg-transparent text-sm text-cream-700 font-bold outline-none border-b border-transparent focus:border-cream-300 transition-colors text-right" />
+                    <button onclick="removeSetting('base', ${i})" class="text-cream-300 hover:text-red-400 p-1"><i class="ph-bold ph-trash"></i></button>
+                </li>
+            `).join('');
+
+            // Advanced List
+            const advList = document.getElementById('settingsAdvList');
+            advList.innerHTML = appData.advancedPresets.map((opt, i) => `
+                <li class="flex gap-2 items-center bg-white p-2 rounded-xl border border-cream-100 shadow-sm">
+                    <input type="text" value="${opt.name}" 
+                           onchange="updateSetting('advanced', ${i}, 'name', this.value)"
+                           class="flex-1 bg-transparent text-sm text-cream-700 font-medium outline-none border-b border-transparent focus:border-cream-300 transition-colors" />
+                    <span class="text-cream-400 text-xs">$</span>
+                    <input type="number" value="${opt.price}" 
+                           onchange="updateSetting('advanced', ${i}, 'price', this.value)"
+                           class="w-16 bg-transparent text-sm text-cream-700 font-bold outline-none border-b border-transparent focus:border-cream-300 transition-colors text-right" />
+                    <button onclick="removeSetting('advanced', ${i})" class="text-cream-300 hover:text-red-400 p-1"><i class="ph-bold ph-trash"></i></button>
+                </li>
+            `).join('');
+        }
+
+        // New Update Function
+        function updateSetting(type, index, field, value) {
+            if (type === 'base') {
+                if (field === 'price') value = parseInt(value) || 0;
+                appData.baseOptions[index][field] = value;
+                renderBaseOptions(); // Update Main View immediately
+            } else if (type === 'advanced') {
+                if (field === 'price') value = parseInt(value) || 0;
+                appData.advancedPresets[index][field] = value;
+                renderQuickToolbar(); // Update Main View immediately
+            }
+            saveData();
+        }
+
+        function addSetting(type) {
+            const nameId = type === 'base' ? 'newBaseName' : 'newAdvName';
+            const priceId = type === 'base' ? 'newBasePrice' : 'newAdvPrice';
+            
+            const name = document.getElementById(nameId).value;
+            const price = parseInt(document.getElementById(priceId).value);
+
+            if (name && !isNaN(price)) {
+                if (type === 'base') {
+                    appData.baseOptions.push({ name, price });
+                } else {
+                    appData.advancedPresets.push({ name, price });
+                }
+                saveData();
+                renderSettingsLists();
+                renderBaseOptions();
+                renderQuickToolbar();
+                document.getElementById(nameId).value = '';
+                document.getElementById(priceId).value = '';
+            }
+        }
+
+        function removeSetting(type, index) {
+            if (confirm('確定要刪除此選項嗎？')) {
+                if (type === 'base') {
+                    appData.baseOptions.splice(index, 1);
+                } else {
+                    appData.advancedPresets.splice(index, 1);
+                }
+                saveData();
+                renderSettingsLists();
+                renderBaseOptions();
+                renderQuickToolbar();
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('nailCalcData', JSON.stringify(appData));
+        }
+
+        function resetToDefaults() {
+            if(confirm('確定要重置所有設定為預設值嗎？')) {
+                appData = JSON.parse(JSON.stringify(defaultData));
+                saveData();
+                renderSettingsLists();
+                renderBaseOptions();
+                renderQuickToolbar();
+            }
+        }
+
+        // Run
+        init();
+
+    </script>
+</body>
+</html>
