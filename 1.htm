@@ -38,18 +38,14 @@
     </script>
 
     <style>
-        /* --- 滿版關鍵修正 (Full Width Fixes) --- */
-        html, body {
-            margin: 0 !important;
-            padding: 0 !important;
-            width: 100%;
-            min-height: 100vh;
-            background-color: #FDFBF7; /* 確保背景色填滿整個 iframe */
-            overflow-x: hidden; /* 防止水平白邊捲軸 */
+        /* Standard Mobile Styles */
+        body {
+            background-color: #FDFBF7;
+            color: #5E503F;
             -webkit-tap-highlight-color: transparent;
+            /* 移除之前的強制滿版 iframe hack */
         }
-
-        /* Hiding Scrollbar */
+        
         .hide-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -58,7 +54,6 @@
             scrollbar-width: none;
         }
 
-        /* Bottom Sheet Animation */
         .bottom-sheet {
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             transform: translateY(100%);
@@ -67,7 +62,6 @@
             transform: translateY(0);
         }
         
-        /* Input Reset */
         input:focus {
             outline: none;
             border-color: #C29F84;
@@ -87,7 +81,7 @@
         }
     </style>
 </head>
-<body class="pb-32 relative">
+<body class="min-h-screen relative">
 
     <!-- Top Navigation / Header -->
     <nav class="sticky top-0 z-40 bg-cream-50/90 backdrop-blur-md px-5 py-4 flex justify-between items-center shadow-sm border-b border-cream-100">
@@ -101,7 +95,8 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="max-w-md mx-auto p-5 space-y-6">
+    <!-- Reverted padding to standard pb-32 -->
+    <main class="max-w-md mx-auto p-5 space-y-6 pb-32">
 
         <!-- 1. 基礎底價區 (Base Price) -->
         <section class="bg-white rounded-3xl p-5 shadow-sm border border-cream-100">
