@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>RPG 冒險：Artale 記憶鎖定完全版</title>
+    <!-- 引入外部資料庫檔案 data.js -->
+    <script src="data.js"></script> 
+    <style>
+        body { margin: 0; background: #1a1a1a; color: white; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; align-items: center; overflow: hidden; touch-action: manipulation; height: 100vh; width: 100vw; }
+        .header { background: #2d2d2d; width: 100%; padding: 10px 0; text-align: center; border-bottom: 2px solid #444; position: relative; flex-shrink: 0; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 10; }
+        .currency { display: flex; justify-content: center; gap: 12px; font-size: 14px; margin-top: 5px; color: #ffd700; text-shadow: 1px 1px 2px black; }
+        .sp-text { color: #00e5ff; font-weight: bold; }
+        .dps-meter { color: #55ff55; font-size: 13px; margin-top: 4px; font-weight: bold; text-shadow: 0 0 5px rgba(85, 255, 85, 0.5); }
+        
+        #game-area { flex: 1; display: flex; justify-content: center; align-items: center; width: 100%; position: relative; background: #2c3e50; overflow: hidden; }
+        canvas { background: linear-gradient(to bottom, #2c3e50, #1a252f); display: block; width: 100%; height: 100%; cursor: crosshair; }
+        
+        #menu-container { width: 100%; max-width: 600px; background: #222; position: relative; display: flex; flex-direction: column; height: 45vh; border-top: 2px solid #555; box-shadow: 0 -5px 15px rgba(0,0,0,0.5); z-index: 500; }
+        .menu-header { display: flex; background: #333; }
+        .tab { flex: 1; padding: 15px 5px; text-align: center; cursor: pointer; font-size: 13px; font-weight: bold; border-right: 1px solid #444; color: #aaa; transition: 0.2s; }
+        .tab:last-child { border-right: none; }
+        .tab.active { background: #444; color: #ffcc00; border-bottom: 3px solid #ffcc00; }
+        .panel-content { flex: 1; overflow-y: auto; display: none; padding: 10px; box-sizing: border-box; -webkit-overflow-scrolling: touch; }
+        .panel-content.active { display: block; animation: fadeIn 0.2s; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #333; background: rgba(255,255,255,0.03); margin-bottom: 5px; border-radius: 6px; }
+        .info strong { font-size: 15px; display: block; color: #eee; }
+        .info b { color: #00e5ff; font-size: 12px; display: block; margin-top: 4px; font-weight: normal; opacity: 0.9; }
+        .info small { color: #bbb; font-size: 12px; }
+        
+        .btn-group { display: flex; gap: 5px; }
+        button { outline: none; transition: 0.1s active; }
+        button:active { transform: scale(0.95); }
+        .up-btn { background: linear-gradient(to bottom, #ffcc00, #ffaa00); border: 1px solid #cc8800; padding: 8px 15px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; color: #330000; min-width: 70px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .job-btn { background: linear-gradient(to bottom, #9c27b0, #7b1fa2); color: white; border: 1px solid #6a1b9a; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        .skill-btn { background: linear-gradient(to bottom, #00e5ff, #00b8d4); border: 1px solid #0097a7; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; color: #003344; font-size: 12px; min-width: 60px; box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
+        
+        button:disabled { background: #444 !important; color: #888 !important; cursor: not-allowed; border: 1px solid #333 !important; opacity: 0.6; box-shadow: none; transform: none; }
+        
+        /* Modal & Overlays */
+        #job-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2d2d2d; padding: 20px; border-radius: 12px; z-index: 1000; border: 2px solid #ffcc00; width: 85%; max-width: 320px; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        .job-opt { width: 100%; padding: 12px; margin: 6px 0; background: #444; border: 1px solid #666; color: white; cursor: pointer; border-radius: 6px; font-size: 14px; font-weight: bold; text-align: left; transition: 0.2s; }
+        .job-opt:hover { background: #555; border-color: #888; }
+        
+        #overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:900; backdrop-filter: blur(2px); }
+        
+        #drop-alert { position: fixed; top: 20%; left: 50%; transform: translateX(-50%); background: rgba(255, 215, 0, 0.9); color: #330000; padding: 10px 20px; border-radius: 20px; font-weight: bold; display: none; z-index: 3000; box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); pointer-events: none; animation: floatUp 1.5s ease-out forwards; }
+        
+        #error-msg { position: fixed; top: 10px; left: 10px; right: 10px; background: rgba(255, 0, 0, 0.8); color: white; padding: 10px; border-radius: 5px; z-index: 9999; display: none; font-size: 12px; }
+
+        @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -50px); } }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #222; }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<div id="error-msg"></div>
+
+<div id="overlay" onclick="closeJob()"></div>
+<div id="job-modal">
+    <h3 id="modal-title" style="margin:0 0 15px 0; text-align:center; color:#ffcc00; border-bottom:1px solid #555; padding-bottom:10px;">職業進化</h3>
+    <div id="job-options" style="max-height: 300px; overflow-y: auto;"></div>
+    <div style="text-align:center; margin-top:10px;"><button onclick="closeJob()" style="background:none; border:none; color:#999; text-decoration:underline; cursor:pointer;">關閉</button></div>
+</div>
+
+<div id="drop-alert"></div>
+
+<div class="header">
+    <div style="position:absolute; right:15px; top:15px; cursor:pointer; font-size:20px;" onclick="resetGame()">⚙️</div>
+    <div style="font-size: 18px; font-weight: bold; color: #fff;">第 <span id="stage-txt" style="color:#ffcc00;">1</span> 關</div>
+    <div class="currency">
+        <span>💰 <span id="coin-txt">0</span></span>
+        <span>💎 <span id="dia-txt">0</span></span>
+        <span class="sp-text">✨ SP: <span id="sp-txt">10</span>/<span id="sp-max-txt">10</span></span>
+    </div>
+    <div class="dps-meter">總 DPS: <span id="dps-txt">0</span></div>
+</div>
+
+<div id="game-area">
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<div id="menu-container">
+    <div class="menu-header">
+        <div class="tab active" onclick="showPanel(0)">主角與技能</div>
+        <div class="tab" onclick="showPanel(1)">英雄助手</div>
+        <div class="tab" onclick="showPanel(2)">聖物裝備</div>
+    </div>
+    
+    <div id="panel0" class="panel-content active">
+        <div class="item" style="border: 1px solid #ffcc00; background: rgba(255, 204, 0, 0.05);">
+            <div class="info">
+                <strong id="pAtk-title" style="color:#ffcc00">⚔️ 主角攻擊力 (Lv.1)</strong>
+                <small id="pAtk-val">基礎威力: 1 | 點擊傷害</small>
+            </div>
+            <button class="up-btn" id="pUpBtn" onclick="upgradePlayer()">升級</button>
+        </div>
+        <h4 style="margin: 10px 0 5px 0; border-bottom: 1px solid #444; padding-bottom: 5px; color:#00e5ff;">主動技能</h4>
+        <div id="skill-area"></div>
+    </div>
+    
+    <div id="panel1" class="panel-content">
+        <div style="text-align:center; padding:5px; color:#888; font-size:12px;">助手會自動攻擊。Lv.1 與轉職點必須完成選擇才能升級 (Max 150)。</div>
+        <div id="helper-list"></div>
+    </div>
+    
+    <div id="panel2" class="panel-content">
+        <div style="text-align:center; padding:5px; color:#888; font-size:12px;">擊殺 BOSS 機率掉落聖物。</div>
+        <div id="relic-area"></div>
+    </div>
+</div>
+
+<script>
+// Error handler
+window.onerror = function(msg, url, line) {
+    const errDiv = document.getElementById('error-msg');
+    if (errDiv) {
+        errDiv.style.display = 'block';
+        errDiv.innerText = "Error: " + msg + " (Check if data.js is loaded)";
+    }
+    return false;
+};
+
+// Version v18: Max Level 150
+let g = { coins: 1000000, diamonds: 0, stage: 1, playerLv: 1, sp: 10, sLvs: [0,0,0,0], rLvs: new Array(RELIC_DB.length).fill(0), helpers: [] };
+let mHp = 1, mMaxHp = 1, currentDps = 0, skillCds = [0,0,0,0], activeTimers = [0,0,0,0];
+
+let canvas, ctx, lastTime = 0, clickEffects = [], loopsStarted = false;
+
+function init() {
+    try {
+        canvas = document.getElementById('gameCanvas');
+        if (!canvas) return;
+        ctx = canvas.getContext('2d');
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        try {
+            const saved = localStorage.getItem('artale_final_lock_v18'); 
+            if (saved) { 
+                let loaded = JSON.parse(saved);
+                g = { ...g, ...loaded };
+                if (!g.rLvs || g.rLvs.length < RELIC_DB.length) g.rLvs = new Array(RELIC_DB.length).fill(0);
+                g.sLvs = g.sLvs.map(l => Math.min(100, l));
+            }
+        } catch(e) {}
+
+        if (g.coins < 1000000 && g.stage === 1) g.coins = 1000000;
+        
+        if (!g.helpers || !Array.isArray(g.helpers) || g.helpers.length === 0) {
+            g.helpers = [{ id: Date.now(), lv: 1, name: "初學者", camp: "", grp: "", job1: "", job2: "", job3: "", job4: "" }];
+        }
+        
+        if (typeof g.sp !== 'number') g.sp = 10;
+        
+        refreshMonster(); 
+        if (!loopsStarted) {
+            setInterval(tick, 1000); 
+            requestAnimationFrame(gameLoop);
+            loopsStarted = true;
+        }
+        updateUI();
+    } catch (e) { alert("Init Error: " + e.message); }
+}
+
+function resizeCanvas() {
+    if (!canvas) return;
+    const parent = canvas.parentElement;
+    if (parent) {
+        canvas.width = parent.clientWidth || window.innerWidth;
+        canvas.height = parent.clientHeight || (window.innerHeight * 0.5);
+    }
+}
+
+function calculateFinalDmg(base, mode = 'roll') {
+    let dmg = base || 0;
+    if (activeTimers[2] > 0) {
+        let rageMult = 2 + (Math.max(1, g.sLvs[2]) - 1) * 0.5;
+        dmg *= rageMult;
+    }
+    if (activeTimers[3] > 0) dmg *= 2;
+    
+    let relicSum = 0;
+    if (g.rLvs) g.rLvs.forEach(lv => { if(lv > 0) relicSum += (lv * 0.02); });
+    let rawDmg = dmg * (1 + relicSum);
+
+    let critChance = 0;
+    if (activeTimers[1] > 0) {
+        critChance = (Math.max(1, g.sLvs[1]) * 0.5) / 100;
+        critChance = Math.min(1.0, critChance); 
+    }
+
+    if (mode === 'avg') return rawDmg * (1 + critChance);
+    else {
+        let isCrit = Math.random() < critChance;
+        if (isCrit) return { val: rawDmg * 2, crit: true };
+        else return { val: rawDmg, crit: false };
+    }
+}
+
+function tick() {
+    try {
+        let pClickBase = getPlayerDmg(g.playerLv);
+        let helperTotalBase = 0;
+        if (g.helpers) {
+            g.helpers.forEach(h => { 
+                let mult = 1;
+                if (h.job4) mult = 50;
+                else if (h.job3) mult = 20;
+                else if (h.job2) mult = 5;
+                helperTotalBase += getHelperDmg(h.lv, mult);
+            });
+        }
+        
+        let playerIdleBase = pClickBase * 0.2; 
+        let totalIdleBase = playerIdleBase + helperTotalBase;
+        
+        let dmgObj = calculateFinalDmg(totalIdleBase, 'roll');
+        dealDmg(dmgObj.val, false, dmgObj.crit);
+        
+        let avgIdle = calculateFinalDmg(totalIdleBase, 'avg');
+        let avgClick = calculateFinalDmg(pClickBase, 'avg');
+        currentDps = avgIdle + (avgClick * 4);
+        
+        const maxSP = getMaxSP(g.playerLv);
+        if(g.sp < maxSP) g.sp = Math.min(maxSP, g.sp + 1);
+        
+        skillCds = skillCds.map(t => Math.max(0, t - 1));
+        activeTimers = activeTimers.map(t => Math.max(0, t - 1));
+        
+        updateUI();
+        save();
+    } catch(e) {}
+}
+
+function dealDmg(amt, isClick = false, isCrit = false) {
+    let final = amt;
+    if (isClick || isCrit) addDamageText(final, isCrit); 
+    mHp -= final;
+    if(mHp <= 0) killMonster();
+}
+
+function addDamageText(dmg, isCrit) {}
+
+function killMonster() {
+    mHp = 0;
+    let isBoss = g.stage % 10 === 0;
+    let baseCoin = getMonsterCoin(g.stage);
+    let coinGain = baseCoin * (isBoss ? 5 : 1);
+    let relicGold = (g.rLvs[2] * 0.05) + (g.rLvs[8] * 0.04);
+    coinGain = coinGain * (1 + relicGold);
+    g.coins += Math.floor(coinGain);
+    if (isBoss) checkBossDrop();
+    g.stage++; 
+    refreshMonster(); 
+}
+
+function showDropAlert(msg) {
+    const el = document.getElementById('drop-alert');
+    if(el) {
+        el.innerText = msg;
+        el.style.display = 'block';
+        el.style.animation = 'none';
+        el.offsetHeight; 
+        el.style.animation = 'floatUp 1.5s ease-out forwards';
+        setTimeout(() => { el.style.display = 'none'; }, 1500);
+    }
+}
+
+function checkBossDrop() {
+    if (Math.random() < 0.4) { 
+        let un = []; g.rLvs.forEach((v,i)=>{if(v===0)un.push(i)});
+        if(un.length > 0) { 
+            let rIdx = un[Math.floor(Math.random() * un.length)];
+            g.rLvs[rIdx] = 1; 
+            showDropAlert(`✨ 獲得聖物: ${RELIC_DB[rIdx].n}!`); 
+        } else {
+            g.diamonds += 10; 
+            showDropAlert("💎 已全收集! 獲得鑽石 x10");
+        }
+    } else { 
+        g.diamonds += 5; 
+        showDropAlert("💎 獲得鑽石 x5"); 
+    }
+}
+
+function updateUI() {
+    try {
+        const maxSP = getMaxSP(g.playerLv);
+        document.getElementById('coin-txt').innerText=f(g.coins);
+        document.getElementById('dia-txt').innerText=f(g.diamonds);
+        document.getElementById('sp-txt').innerText=g.sp;
+        document.getElementById('sp-max-txt').innerText = maxSP;
+        document.getElementById('stage-txt').innerText=g.stage;
+        
+        let pBase = getPlayerDmg(g.playerLv);
+        let avgClick = calculateFinalDmg(pBase, 'avg');
+        document.getElementById('pAtk-title').innerText=`⚔️ 主角攻擊力 (Lv.${g.playerLv})`;
+        document.getElementById('pAtk-val').innerText=`單次點擊: ${f(avgClick)}`;
+        document.getElementById('dps-txt').innerText=f(currentDps);
+
+        let pC = Math.floor(getPlayerCost(g.playerLv));
+        const btn = document.getElementById('pUpBtn');
+        if (btn) {
+            btn.innerText = `升級 💰${f(pC)}`;
+            btn.disabled = g.coins < pC;
+        }
+
+        renderHelpers(); 
+        renderRelics(); 
+        renderSkills();
+    } catch(e) { }
+}
+
+function renderHelpers() {
+    const area = document.getElementById('helper-list'); 
+    if (!area) return;
+    area.innerHTML = '';
+    
+    g.helpers.forEach((h, i) => {
+        let tier = h.lv >= 120 ? 4 : (h.lv >= 60 ? 3 : (h.lv >= 30 ? 2 : 1));
+        
+        let needsJob = false;
+        
+        if (!h.camp) needsJob = true;
+        else if (!h.grp) needsJob = true;
+        else if (!h.job1) needsJob = true; 
+        
+        else if (h.lv >= 30 && !h.job2) needsJob = true;
+        else if (h.lv >= 60 && !h.job3) needsJob = true;
+        else if (h.lv >= 120 && !h.job4) needsJob = true;
+
+        let dispName = h.job4||h.job3||h.job2||h.job1||h.name;
+        
+        let cost = Math.floor(getHelperCost(h.lv));
+        let mult = h.job4?50:h.job3?20:h.job2?5:1;
+        let baseH = getHelperDmg(h.lv, mult);
+        let hDps = calculateFinalDmg(baseH, 'avg');
+        
+        let isMax = h.lv >= MAX_HELPER_LV;
+        let upgDisabled = needsJob || g.coins < cost || isMax;
+        let upgText = isMax ? "MAX" : (needsJob ? "需轉職" : `💰${f(cost)}`);
+
+        area.innerHTML += `<div class="item">
+            <div class="info">
+                <strong>${dispName} <span style="color:#ffcc00">Lv.${h.lv}</span></strong>
+                <small>DPS: ${f(hDps)}</small>
+            </div>
+            <div class="btn-group">
+                ${needsJob ? `<button class="job-btn" onclick="openJobSelection(${i})">轉職!</button>` : ''}
+                <button class="up-btn" onclick="upgradeH(${i})" ${upgDisabled ? 'disabled' : ''}>${upgText}</button>
+            </div>
+        </div>`;
+    });
+}
+
+function renderRelics() {
+    const area = document.getElementById('relic-area'); 
+    if(!area) return;
+    area.innerHTML = '';
+    RELIC_DB.forEach((r, i) => {
+        let lv = g.rLvs[i] || 0;
+        let isOwned = lv > 0;
+        let cost = (lv === 0) ? 10 : lv * 5;
+        
+        if (!isOwned) {
+             area.innerHTML += `<div class="item" style="opacity:0.5; filter:grayscale(1);">
+                <div class="info"><strong>???</strong><small>擊敗BOSS解鎖</small></div>
+            </div>`;
+        } else {
+            area.innerHTML += `<div class="item">
+                <div class="info">
+                    <strong>${r.n} <span style="color:#00e5ff">(Lv.${lv})</span></strong>
+                    <b>${r.d}</b>
+                </div>
+                <button class="up-btn" onclick="upR(${i})" ${g.diamonds<cost?'disabled':''}>💎${cost}</button>
+            </div>`;
+        }
+    });
+}
+
+function renderSkills() {
+    const area = document.getElementById('skill-area'); 
+    if(!area) return;
+    area.innerHTML = '';
+    SKILL_DB.forEach((s, i) => {
+        let isL = skillCds[i] > 0;
+        let isActive = activeTimers[i] > 0;
+        let currentLvl = g.sLvs[i];
+        let coinCost = (currentLvl + 1) * 500;
+        
+        let spCost = getSkillCost(i, Math.max(1, currentLvl));
+
+        let btnText = isL ? `${skillCds[i]}s` : (isActive ? '作用中' : '施放');
+        let btnColor = isActive ? 'background:#55ff55; color:black;' : '';
+        let desc = s.d;
+        
+        if (i === 0) desc = `傷害 ${100 + (currentLvl>0?currentLvl-1:0)} 倍`;
+        if (i === 1) desc = `爆擊率 ${(currentLvl*0.5).toFixed(1)}% (持續30s)`;
+        if (i === 2) desc = `傷害 ${(2 + (currentLvl>0?currentLvl-1:0)*0.5).toFixed(1)}倍 (持續${30 + (currentLvl>0?currentLvl-1:0)}s)`;
+        if (i === 3) desc = `傷害翻倍 (持續${30 + (currentLvl>0?currentLvl-1:0)}s)`;
+
+        let isMax = currentLvl >= 100;
+
+        area.innerHTML += `<div class="item">
+            <div class="info">
+                <strong>${s.n} (Lv.${currentLvl}${isMax?' MAX':''})</strong>
+                <small>${desc}</small>
+                <b style="color:#ff5555; font-size:11px;">消耗: ${spCost} SP</b>
+            </div>
+            <div class="btn-group">
+                <button class="skill-btn" style="${btnColor}" onclick="useS(${i})" ${currentLvl==0 || isL || g.sp<spCost?'disabled':''}>
+                    ${g.sp<spCost && !isL ? 'SP不足' : btnText}
+                </button>
+                <button class="up-btn" onclick="upS(${i})" ${isMax || g.coins<coinCost?'disabled':''}>${isMax?'已滿':'升級 💰'+f(coinCost)}</button>
+            </div>
+        </div>`;
+    });
+}
+
+function openJobSelection(idx) {
+    const h = g.helpers[idx]; 
+    const opts = document.getElementById('job-options'); 
+    opts.innerHTML = '';
+    
+    // Step 1: Select Camp
+    if(!h.camp) {
+        Object.keys(JOB_DB).forEach(c => createBtn(c, ()=>{ h.camp=c; openJobSelection(idx); }));
+    } 
+    // Step 2: Select Group (and auto-assign Job 1)
+    else if(!h.grp) {
+        let campData = JOB_DB[h.camp];
+        Object.keys(campData).forEach(groupKey => {
+             createBtn(groupKey, ()=>{ 
+                 h.grp = groupKey; 
+                 h.job1 = campData[groupKey][1];
+                 finishJob(idx); 
+             });
+        });
+    } 
+    // Step 3+: Tier Upgrades
+    else {
+        let tier = h.lv >= 120 ? 4 : (h.lv >= 60 ? 3 : 2);
+        let currentGroup = JOB_DB[h.camp][h.grp];
+        
+        if (currentGroup && currentGroup[tier]) {
+            let choices = currentGroup[tier];
+            if (Array.isArray(choices)) {
+                choices.forEach(j => createBtn(j, ()=>{ h['job'+tier]=j; finishJob(idx); }));
+            } else {
+                h['job'+tier] = choices;
+                finishJob(idx);
+                return; 
+            }
+        } else {
+            opts.innerHTML = '<div style="padding:10px; color:white;">無可用轉職 (請檢查等級)</div>';
+        }
+    }
+    document.getElementById('job-modal').style.display='block'; 
+    document.getElementById('overlay').style.display='block';
+}
+
+function finishJob(idx) {
+    closeJob();
+    updateUI();
+    save();
+    createClickEffect(canvas.width/2, canvas.height/2, "✨ 轉職成功!", "#ffcc00");
+}
+
+function upgradeH(i) { 
+    const h = g.helpers[i];
+    
+    // Check Job requirements
+    if ( (!h.camp) || (!h.grp) || (!h.job1) || 
+         (h.lv >= 30 && !h.job2) || 
+         (h.lv >= 60 && !h.job3) || 
+         (h.lv >= 120 && !h.job4) ) {
+        alert("請先完成轉職才能升級！");
+        return;
+    }
+
+    // Check Max Level
+    if (h.lv >= MAX_HELPER_LV) return;
+
+    let cost = Math.floor(getHelperCost(h.lv));
+    if(g.coins >= cost){
+        g.coins -= cost; 
+        h.lv++; 
+        if(h.lv === 120 && g.helpers.length < 10) {
+            g.helpers.push({id:Date.now(),lv:1,name:"初學者",camp:"",grp:"",job1:"",job2:"",job3:"",job4:""}); 
+        }
+        save(); 
+        updateUI();
+    }
+}
+
+function upgradePlayer() { 
+    let c = Math.floor(getPlayerCost(g.playerLv)); 
+    if(g.coins>=c){
+        g.coins-=c; 
+        g.playerLv++; 
+        save(); 
+        updateUI();
+    }
+}
+
+function upS(i) { 
+    if (g.sLvs[i] >= 100) return; 
+    let c=(g.sLvs[i]+1)*500; 
+    if(g.coins>=c){
+        g.coins-=c; 
+        g.sLvs[i]++; 
+        save(); 
+        updateUI();
+    }
+}
+
+function upR(i) { 
+    let lv = g.rLvs[i];
+    let cost = (lv === 0) ? 10 : lv * 5;
+    if(g.diamonds>=cost){
+        g.diamonds-=cost; 
+        g.rLvs[i]++; 
+        save(); 
+        updateUI();
+    }
+}
+
+function useS(i) { 
+    let spCost = getSkillCost(i, Math.max(1, g.sLvs[i]));
+    
+    if(g.sp >= spCost && skillCds[i]==0){ 
+        g.sp -= spCost; 
+        let currentLvl = Math.max(1, g.sLvs[i]);
+        
+        if(i==0) {
+            let mult = 100 + (currentLvl - 1);
+            let pBase = getPlayerDmg(g.playerLv);
+            let dmgObj = calculateFinalDmg(pBase, 'roll'); 
+            let totalDmg = dmgObj.val * mult;
+            dealDmg(totalDmg, false, dmgObj.crit); 
+            createClickEffect(canvas.width/2, canvas.height/2 - 50, "💥", "#ff0000");
+        } else {
+            let duration = SKILL_DB[i].dur;
+            if (i === 2 || i === 3) {
+                duration = 30 + (currentLvl - 1);
+            }
+            activeTimers[i] = duration; 
+        }
+        skillCds[i]=SKILL_DB[i].cd; 
+        updateUI(); 
+    }
+}
+
+function createBtn(t, cb) { 
+    const b = document.createElement('button'); 
+    b.className='job-opt'; 
+    b.innerText=t; 
+    b.onclick=cb; 
+    document.getElementById('job-options').appendChild(b); 
+}
+
+function closeJob() { 
+    document.getElementById('job-modal').style.display='none'; 
+    document.getElementById('overlay').style.display='none'; 
+}
+
+function refreshMonster() { 
+    mMaxHp = getMonsterHp(g.stage);
+    mHp = mMaxHp; 
+}
+
+function showPanel(i) { 
+    document.querySelectorAll('.panel-content').forEach((p, idx) => p.classList.toggle('active', idx === i)); 
+    document.querySelectorAll('.tab').forEach((t, idx) => t.classList.toggle('active', idx === i)); 
+}
+
+function save() { 
+    try {
+        localStorage.setItem('artale_final_lock_v18', JSON.stringify(g)); 
+    } catch(e) {}
+}
+
+function resetGame() { 
+    if(confirm("確定要刪除所有進度重新開始嗎？")){ 
+        try { localStorage.removeItem('artale_final_lock_v18'); } catch(e){}
+        location.reload(); 
+    } 
+}
+
+function gameLoop(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    const dt = timestamp - lastTime;
+    lastTime = timestamp;
+    
+    if (ctx && canvas) {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        
+        let cx = canvas.width / 2;
+        let cy = canvas.height / 2;
+        let size = 100;
+        
+        let isBoss = g.stage % 10 === 0;
+        if (isBoss) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, size/1.2, 0, Math.PI*2);
+            ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
+            ctx.fill();
+        }
+        
+        ctx.fillStyle = isBoss ? "#ff4444" : "#ffaa00";
+        ctx.fillRect(cx - size/2, cy - size/2, size, size);
+        
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(cx - 25, cy - 10, 15, 15);
+        ctx.fillRect(cx + 10, cy - 10, 15, 15);
+        ctx.fillStyle = "#000";
+        ctx.fillRect(cx - 20, cy - 5, 5, 5);
+        ctx.fillRect(cx + 15, cy - 5, 5, 5);
+
+        let hpPct = Math.max(0, mHp / mMaxHp);
+        let barW = 120;
+        ctx.fillStyle = "#333";
+        ctx.fillRect(cx - barW/2, cy - size/2 - 20, barW, 10);
+        ctx.fillStyle = "#00ff00";
+        ctx.fillRect(cx - barW/2, cy - size/2 - 20, barW * hpPct, 10);
+        ctx.strokeStyle = "#fff";
+        ctx.strokeRect(cx - barW/2, cy - size/2 - 20, barW, 10);
+        
+        ctx.fillStyle = "#fff";
+        ctx.font = "12px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(f(Math.ceil(mHp)) + "/" + f(mMaxHp), cx, cy - size/2 - 25);
+        
+        let t = Date.now() / 1000;
+        if (g.helpers) {
+            g.helpers.forEach((h, i) => {
+                let radius = 80 + (i % 5) * 20;
+                let speed = 1 + (i * 0.1);
+                let angle = t * speed + i;
+                let hx = cx + Math.cos(angle) * radius;
+                let hy = cy + Math.sin(angle) * radius;
+                
+                ctx.fillStyle = "#00e5ff";
+                ctx.beginPath();
+                ctx.arc(hx, hy, 5, 0, Math.PI*2);
+                ctx.fill();
+            });
+        }
+
+        for (let i = clickEffects.length - 1; i >= 0; i--) {
+            let fx = clickEffects[i];
+            fx.y -= 1; 
+            fx.life -= 0.02;
+            ctx.globalAlpha = Math.max(0, fx.life);
+            ctx.font = "bold 20px Arial";
+            ctx.fillStyle = fx.color;
+            ctx.fillText(fx.text, fx.x, fx.y);
+            ctx.globalAlpha = 1;
+            if (fx.life <= 0) clickEffects.splice(i, 1);
+        }
+    }
+    requestAnimationFrame(gameLoop);
+}
+
+function createClickEffect(x, y, text, color) {
+    clickEffects.push({
+        x: x + (Math.random()*40 - 20),
+        y: y,
+        text: text,
+        life: 1.0,
+        color: color || "#fff"
+    });
+}
+
+function handleInput(e) {
+    if (!canvas) return;
+    let rect = canvas.getBoundingClientRect();
+    let x = e.clientX - rect.left;
+    let y = e.clientY - rect.top;
+    
+    let pBase = getPlayerDmg(g.playerLv);
+    let dmgObj = calculateFinalDmg(pBase, 'roll');
+    dealDmg(dmgObj.val, true, dmgObj.crit);
+    
+    let txt = f(dmgObj.val);
+    let col = "#fff";
+    if (dmgObj.crit) {
+        txt = "CRIT! " + txt;
+        col = "#ffcc00";
+    }
+    createClickEffect(x, y, txt, col);
+}
+
+if (document.readyState === 'complete') init();
+else window.addEventListener('load', init);
+
+if (canvas) {
+    canvas.addEventListener('mousedown', handleInput);
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault(); 
+        for (let i = 0; i < e.touches.length; i++) {
+            let t = e.touches[i];
+            handleInput({ clientX: t.clientX, clientY: t.clientY });
+        }
+    }, {passive: false});
+} else {
+    setTimeout(() => {
+        let c = document.getElementById('gameCanvas');
+        if (c) {
+            c.addEventListener('mousedown', handleInput);
+            c.addEventListener('touchstart', (e) => {
+                e.preventDefault(); 
+                for (let i = 0; i < e.touches.length; i++) {
+                    let t = e.touches[i];
+                    handleInput({ clientX: t.clientX, clientY: t.clientY });
+                }
+            }, {passive: false});
+        }
+    }, 1000);
+}
+</script>
+</body>
+</html>
+
+
