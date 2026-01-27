@@ -1,6 +1,6 @@
 /**
- * RPG Artale - 核心邏輯 (v20)
- * 負責：State 管理, 傷害計算, 存檔 I/O
+ * RPG Artale - 核心邏輯 (v21)
+ * 負責：State 管理, 傷害計算, 存檔 I/O (含 Base64 匯入匯出)
  */
 
 // 遊戲全域狀態
@@ -21,7 +21,10 @@ let mMaxHp = 1;
 let currentDps = 0;
 let skillCds = [0, 0, 0, 0];
 let activeTimers = [0, 0, 0, 0];
-let lastTime = 0; // 用於 Delta Time 計算 (雖然此版本主要用 tick)
+let lastTime = 0; 
+
+// 存檔鍵值 (更新版本號以重置舊存檔結構)
+const SAVE_KEY = 'artale_final_lock_v21';
 
 // === 傷害計算核心 ===
 
@@ -149,7 +152,7 @@ function killMonster() {
     let baseCoin = getMonsterCoin(g.stage);
     let coinGain = baseCoin * (isBoss ? 5 : 1);
 
-    // 聖物金幣加成 (Index 2: 黃金羅盤, Index 8: 守望者盾 - 假設)
+    // 聖物金幣加成 (Index 2: 黃金羅盤, Index 8: 守望者盾)
     let relicGoldBonus = (g.rLvs[2] * 0.05) + (g.rLvs[8] * 0.04);
     coinGain = coinGain * (1 + relicGoldBonus);
 
@@ -192,8 +195,6 @@ function checkBossDrop() {
 }
 
 // === 存檔系統 (Save/Load/Import/Export) ===
-
-const SAVE_KEY = 'artale_final_lock_v20';
 
 function save() {
     try {
