@@ -1,6 +1,6 @@
 /**
- * RPG Artale - 核心邏輯 (v25 - Fix Skill/Monster State)
- * 負責：State 管理, 傷害計算, 存檔 I/O, DPS 公式
+ * RPG Artale - 核心邏輯 (v26 - Stable & Persistent)
+ * 負責：State 管理, 傷害計算, 自動存檔, DPS 公式
  */
 
 // 遊戲全域狀態
@@ -23,22 +23,22 @@ let mMaxHp = 1;
 let currentDps = 0;
 let lastPlayerAtkTime = 0; // 主角自動攻擊計時
 
-// 存檔鍵值 (版本更新)
-const SAVE_KEY = 'artale_final_lock_v25';
+// 存檔鍵值 (更換名稱以強制重置舊的損壞存檔)
+const SAVE_KEY = 'artale_stable_v1';
 
 // === 傷害計算核心 ===
 
 function calculateFinalDmg(base, mode = 'roll') {
     let dmg = base || 0;
 
-    // Skill 2: 奮力狂擊 (Rage)
-    if (g.activeTimers[2] > 0) {
+    // Skill 2: 奮力狂擊
+    if (g.activeTimers && g.activeTimers[2] > 0) {
         let rageMult = 2 + (Math.max(1, g.sLvs[2]) - 1) * 0.5;
         dmg *= rageMult;
     }
 
     // Skill 3: 影分身
-    if (g.activeTimers[3] > 0) {
+    if (g.activeTimers && g.activeTimers[3] > 0) {
         dmg *= 2;
     }
 
@@ -53,7 +53,7 @@ function calculateFinalDmg(base, mode = 'roll') {
 
     // Skill 1: 致命爆擊
     let critChance = 0;
-    if (g.activeTimers[1] > 0) {
+    if (g.activeTimers && g.activeTimers[1] > 0) {
         critChance = (Math.max(1, g.sLvs[1]) * 0.5) / 100; 
         critChance = Math.min(1.0, critChance);
     }
@@ -148,14 +148,14 @@ function tick() {
         const maxSP = getMaxSP(g.playerLv);
         if (g.sp < maxSP) g.sp = Math.min(maxSP, g.sp + 1);
 
-        // 使用 g.skillCds 而非區域變數
+        // 確保變數存在
         if (!g.skillCds) g.skillCds = [0,0,0,0];
         if (!g.activeTimers) g.activeTimers = [0,0,0,0];
 
         g.skillCds = g.skillCds.map(t => Math.max(0, t - 1));
         g.activeTimers = g.activeTimers.map(t => Math.max(0, t - 1));
 
-        // 5. 更新介面與存檔
+        // 5. 更新介面與自動存檔
         if (typeof updateUI === 'function') updateUI();
         save();
 
@@ -216,7 +216,9 @@ function checkBossDrop() {
 function save() {
     try {
         localStorage.setItem(SAVE_KEY, JSON.stringify(g));
-    } catch (e) {}
+    } catch (e) {
+        console.warn("Save failed");
+    }
 }
 
 function load() {
@@ -226,67 +228,16 @@ function load() {
             let loaded = JSON.parse(saved);
             g = { ...g, ...loaded };
             
-            // 防呆與結構修復
-            if (!g.rLvs || g.rLvs.length < RELIC_DB.length) {
-                g.rLvs = new Array(RELIC_DB.length).fill(0);
-            }
-            g.sLvs = g.sLvs.map(l => Math.min(100, l));
-            
-            // 確保技能計時器存在
+            // 防呆：修復可能缺失的欄位
+            if (!g.rLvs || g.rLvs.length < RELIC_DB.length) g.rLvs = new Array(RELIC_DB.length).fill(0);
             if (!g.skillCds) g.skillCds = [0,0,0,0];
             if (!g.activeTimers) g.activeTimers = [0,0,0,0];
+            
+            g.sLvs = g.sLvs.map(l => Math.min(100, l));
         }
     } catch (e) {
         console.error("Load failed:", e);
     }
 }
 
-function exportSave() {
-    try {
-        let json = JSON.stringify(g);
-        let b64 = btoa(encodeURIComponent(json));
-        let ioBox = document.getElementById('save-data-io');
-        if (ioBox) {
-            ioBox.value = b64;
-            ioBox.select();
-            try { document.execCommand('copy'); alert("存檔代碼已複製！"); } 
-            catch(e) { alert("請手動複製代碼"); }
-        }
-    } catch (e) { alert("匯出失敗"); }
-}
 
-function importSave() {
-    try {
-        let ioBox = document.getElementById('save-data-io');
-        let b64 = ioBox ? ioBox.value.trim() : "";
-        if (!b64) return alert("請輸入代碼");
-
-        let json = decodeURIComponent(atob(b64));
-        let data = JSON.parse(json);
-
-        if (typeof data.coins !== 'number' || !Array.isArray(data.helpers)) {
-            throw new Error("無效的存檔格式");
-        }
-
-        if (confirm("確定要覆蓋當前進度嗎？")) {
-            g = data;
-            // 確保技能陣列存在
-            if (!g.skillCds) g.skillCds = [0,0,0,0];
-            if (!g.activeTimers) g.activeTimers = [0,0,0,0];
-            
-            save();
-            refreshMonster(); // 關鍵修復：匯入後立即刷新怪物數值
-            updateUI(); // 立即刷新介面
-            
-            // 提示成功但不強制重整，避免 Canvas 初始化問題
-            alert("匯入成功！");
-        }
-    } catch (e) { alert("匯入失敗: 代碼錯誤"); }
-}
-
-function resetGame() {
-    if (confirm("確定要刪除所有進度重新開始嗎？")) {
-        localStorage.removeItem(SAVE_KEY);
-        location.reload();
-    }
-}
