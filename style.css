@@ -33,17 +33,6 @@ body {
     z-index: 10;
 }
 
-.settings-icon {
-    position: absolute;
-    right: 15px;
-    top: 15px;
-    cursor: pointer;
-    font-size: 20px;
-    opacity: 0.7;
-    transition: 0.2s;
-}
-.settings-icon:active { opacity: 1; transform: scale(0.9); }
-
 .stage-info {
     font-size: 18px;
     font-weight: bold;
@@ -73,7 +62,7 @@ body {
 
 /* 技能倒數計時區 */
 #skill-timers {
-    min-height: 16px; /* 預留高度避免跳動 */
+    min-height: 16px;
     margin-top: 4px;
     font-size: 11px;
     color: #00ffaa;
@@ -323,39 +312,6 @@ button:disabled {
 .job-opt:hover { background: #555; border-color: #888; }
 .job-opt:after { content: '➜'; position: absolute; right: 15px; color: #777; }
 
-/* === 設定 === */
-#save-data-io {
-    width: 100%;
-    box-sizing: border-box;
-    background: #111;
-    color: #0f0;
-    border: 1px solid #444;
-    border-radius: 4px;
-    padding: 8px;
-    font-family: monospace;
-    resize: none;
-    font-size: 11px;
-}
-
-.setting-actions {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-.action-btn {
-    flex: 1;
-    padding: 10px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-    color: white;
-    text-align: center;
-}
-.action-btn.export { background: #2196F3; border: 1px solid #1976D2; }
-.action-btn.import { background: #4CAF50; border: 1px solid #388E3C; }
-.action-btn.danger { background: #f44336; border: 1px solid #d32f2f; width: 100%; margin-top: 5px; }
-
 /* === 飄字 === */
 #drop-alert {
     position: fixed;
@@ -387,3 +343,5 @@ button:disabled {
     font-size: 13px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.5);
 }
+
+
