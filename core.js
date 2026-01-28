@@ -1,5 +1,5 @@
 /**
- * RPG Artale - 核心邏輯 (v22 - Final Logic)
+ * RPG Artale - 核心邏輯 (v23 - Final Logic)
  * 負責：State 管理, 傷害計算, 存檔 I/O, DPS 公式
  */
 
@@ -24,7 +24,7 @@ let activeTimers = [0, 0, 0, 0]; // 技能持續時間
 let lastPlayerAtkTime = 0; // 主角自動攻擊計時
 
 // 存檔鍵值
-const SAVE_KEY = 'artale_final_lock_v22';
+const SAVE_KEY = 'artale_final_lock_v23';
 
 // === 傷害計算核心 ===
 
@@ -81,10 +81,8 @@ function calculateFinalDmg(base, mode = 'roll') {
 
 /**
  * 檢查是否達成全分支收集 (Grand Slam)
- * 條件：楓葉系列與仙境系列的所有 Tier 4 (最終轉職) 職業都至少有一隻
  */
 function checkGrandSlam() {
-    // 1. 計算總共需要多少種 Tier 4
     let requiredJobs = new Set();
     
     [JOB_MAPLE, JOB_RO].forEach(db => {
@@ -99,19 +97,15 @@ function checkGrandSlam() {
         }
     });
 
-    // 2. 檢查當前擁有的 Tier 4
     let ownedJobs = new Set();
     g.helpers.forEach(h => {
         if (h.job4) ownedJobs.add(h.job4);
     });
 
-    // 3. 比對數量
-    // 注意：這裡假設使用者必須練滿該職業到4轉才算收集
-    return ownedJobs.size === requiredJobs.size;
+    return ownedJobs.size > 0 && ownedJobs.size === requiredJobs.size;
 }
 
 // === 遊戲主迴圈 (Tick) ===
-// 邏輯每秒運算一次 (除了主角攻擊有獨立計時)
 function tick() {
     try {
         let now = Date.now();
@@ -120,25 +114,22 @@ function tick() {
         let pBaseRaw = getPlayerDmg(g.playerLv);
         let helperTotalRaw = 0;
         
-        // 終局獎勵判定
         let isGrandSlam = checkGrandSlam();
         let grandSlamMult = isGrandSlam ? 100 : 1;
 
         if (g.helpers) {
             g.helpers.forEach(h => {
-                // 轉職倍率 (Tier Multiplier)
                 let tierMult = 1;
-                if (h.job4) tierMult = 50;      // 4轉/三轉
-                else if (h.job3) tierMult = 20; // 3轉/進階二轉
-                else if (h.job2) tierMult = 10; // 2轉
-                else if (h.job1) tierMult = 5;  // 1轉
+                if (h.job4) tierMult = 50;
+                else if (h.job3) tierMult = 20;
+                else if (h.job2) tierMult = 10;
+                else if (h.job1) tierMult = 5;
                 
                 let hDmg = getHelperDmg(h.lv, tierMult);
                 helperTotalRaw += hDmg;
             });
         }
         
-        // 應用終局獎勵於助手總傷
         helperTotalRaw *= grandSlamMult;
 
         // 2. 實戰傷害處理 (Real Damage)
@@ -150,12 +141,10 @@ function tick() {
         }
 
         // 2b. 助手自動攻擊 (每秒一次)
-        // 這裡假設 tick 是 1秒 執行一次，直接造成助手總傷
         let hDmgObj = calculateFinalDmg(helperTotalRaw, 'roll');
         dealDmg(hDmgObj.val, false, hDmgObj.crit);
 
         // 3. DPS 面板計算 (Theoretical DPS)
-        // 公式：(主角面板/3) + (助手總面板) + (主角面板 * 5)
         let avgPlayerShot = calculateFinalDmg(pBaseRaw, 'avg');
         let avgHelperTick = calculateFinalDmg(helperTotalRaw, 'avg');
         
@@ -182,7 +171,6 @@ function tick() {
 
 // 造成傷害與怪物死亡判定
 function dealDmg(amt, isClick = false, isCrit = false) {
-    // 呼叫 UI 顯示飄字
     if (typeof addDamageText === 'function' && (isClick || isCrit)) {
         addDamageText(amt, isCrit);
     }
@@ -198,11 +186,9 @@ function killMonster() {
     mHp = 0;
     let isBoss = g.stage % 10 === 0;
 
-    // 計算掉落金幣
     let baseCoin = getMonsterCoin(g.stage);
     let coinGain = baseCoin * (isBoss ? 5 : 1);
 
-    // 聖物金幣加成
     let relicGoldBonus = (g.rLvs[2] * 0.05) + (g.rLvs[8] * 0.04);
     coinGain = coinGain * (1 + relicGoldBonus);
 
@@ -245,7 +231,9 @@ function checkBossDrop() {
 function save() {
     try {
         localStorage.setItem(SAVE_KEY, JSON.stringify(g));
-    } catch (e) {}
+    } catch (e) {
+        console.warn("Save failed");
+    }
 }
 
 function load() {
@@ -255,9 +243,10 @@ function load() {
             let loaded = JSON.parse(saved);
             g = { ...g, ...loaded };
             
-            // 防呆與修復
             if (!g.rLvs || g.rLvs.length < RELIC_DB.length) {
+                let old = g.rLvs || [];
                 g.rLvs = new Array(RELIC_DB.length).fill(0);
+                old.forEach((v, i) => { if(i < g.rLvs.length) g.rLvs[i] = v; });
             }
             g.sLvs = g.sLvs.map(l => Math.min(100, l));
         }
@@ -289,7 +278,11 @@ function importSave() {
         let json = decodeURIComponent(atob(b64));
         let data = JSON.parse(json);
 
-        if (confirm("確定要覆蓋進度嗎？")) {
+        if (typeof data.coins !== 'number' || !Array.isArray(data.helpers)) {
+            throw new Error("無效的存檔格式");
+        }
+
+        if (confirm("確定要覆蓋當前進度嗎？")) {
             g = data;
             save();
             location.reload();
@@ -298,7 +291,7 @@ function importSave() {
 }
 
 function resetGame() {
-    if (confirm("確定要刪除進度嗎？")) {
+    if (confirm("確定要刪除所有進度重新開始嗎？")) {
         localStorage.removeItem(SAVE_KEY);
         location.reload();
     }
