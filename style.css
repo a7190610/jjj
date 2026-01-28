@@ -1,4 +1,4 @@
-/* 全局設定 */
+/* === 全局設定 === */
 body {
     margin: 0;
     background: #1a1a1a;
@@ -12,6 +12,7 @@ body {
     height: 100vh;
     width: 100vw;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* 捲軸美化 */
@@ -19,7 +20,7 @@ body {
 ::-webkit-scrollbar-track { background: #222; }
 ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 
-/* 頂部資訊欄 */
+/* === 頂部資訊欄 === */
 .header {
     background: #2d2d2d;
     width: 100%;
@@ -41,12 +42,13 @@ body {
     opacity: 0.7;
     transition: 0.2s;
 }
-.settings-icon:active { opacity: 1; transform: rotate(45deg); }
+.settings-icon:active { opacity: 1; transform: scale(0.9); }
 
 .stage-info {
     font-size: 18px;
     font-weight: bold;
     color: #fff;
+    margin-bottom: 5px;
 }
 .stage-info span { color: #ffcc00; }
 
@@ -69,7 +71,7 @@ body {
     text-shadow: 0 0 5px rgba(85, 255, 85, 0.5);
 }
 
-/* 遊戲畫布區域 */
+/* === 遊戲畫布區域 === */
 #game-area {
     flex: 1;
     display: flex;
@@ -89,7 +91,7 @@ canvas {
     cursor: crosshair;
 }
 
-/* 底部選單容器 */
+/* === 底部選單容器 === */
 #menu-container {
     width: 100%;
     max-width: 600px;
@@ -97,7 +99,7 @@ canvas {
     position: relative;
     display: flex;
     flex-direction: column;
-    height: 45vh; /* 佔據下半部 45% 高度 */
+    height: 45vh; /* 佔據螢幕下半部 45% */
     border-top: 2px solid #555;
     box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
     z-index: 500;
@@ -135,15 +137,7 @@ canvas {
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-.panel-desc {
-    text-align: center;
-    padding: 5px;
-    color: #888;
-    font-size: 12px;
-    margin-bottom: 5px;
-}
-
-/* 列表項目樣式 */
+/* === 列表項目樣式 === */
 .item {
     display: flex;
     justify-content: space-between;
@@ -168,9 +162,9 @@ canvas {
     font-size: 14px;
 }
 
-/* 按鈕樣式 */
-.btn-group { display: flex; gap: 6px; }
-button { outline: none; transition: 0.1s active; border: none; font-family: inherit; }
+/* === 按鈕樣式 === */
+.btn-group { display: flex; gap: 6px; align-items: center; }
+button { outline: none; transition: 0.1s active; border: none; font-family: inherit; user-select: none; }
 button:active { transform: scale(0.96); }
 
 .up-btn {
@@ -196,6 +190,13 @@ button:active { transform: scale(0.96); }
     cursor: pointer;
     font-size: 12px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(156, 39, 176, 0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(156, 39, 176, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(156, 39, 176, 0); }
 }
 
 .skill-btn {
@@ -207,7 +208,7 @@ button:active { transform: scale(0.96); }
     cursor: pointer;
     color: #003344;
     font-size: 12px;
-    min-width: 60px;
+    min-width: 70px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }
 
@@ -219,9 +220,10 @@ button:disabled {
     opacity: 0.6;
     box-shadow: none;
     transform: none;
+    animation: none;
 }
 
-/* Modal 視窗 (置中/彈出) */
+/* === Modal 視窗 (置中/彈出) === */
 #overlay {
     display: none;
     position: fixed;
@@ -240,16 +242,13 @@ button:disabled {
     background: #2d2d2d;
     border-radius: 12px;
     z-index: 1000;
-    border: 2px solid #555;
+    border: 2px solid #ffcc00;
     width: 85%;
     max-width: 340px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.8);
     max-height: 80vh;
-    display: flex; /* 改用 Flex 佈局 */
     flex-direction: column;
 }
-/* 隱藏預設狀態 */
-div.modal { display: none; } 
 
 .modal-header {
     padding: 15px;
@@ -257,12 +256,13 @@ div.modal { display: none; }
     text-align: center;
     background: #333;
     border-radius: 10px 10px 0 0;
+    flex-shrink: 0;
 }
 .modal-header h3 { margin: 0; color: #ffcc00; font-size: 16px; }
 
 .modal-body {
     padding: 15px;
-    overflow-y: auto; /* 內容過長可捲動 */
+    overflow-y: auto;
     flex: 1;
 }
 
@@ -272,6 +272,7 @@ div.modal { display: none; }
     border-top: 1px solid #444;
     background: #333;
     border-radius: 0 0 10px 10px;
+    flex-shrink: 0;
 }
 
 .close-text-btn {
@@ -298,6 +299,7 @@ div.modal { display: none; }
     text-align: left;
     transition: 0.2s;
     position: relative;
+    box-sizing: border-box;
 }
 .job-opt:hover { background: #555; border-color: #888; }
 .job-opt:after {
@@ -307,7 +309,7 @@ div.modal { display: none; }
     color: #777;
 }
 
-/* 設定相關 */
+/* === 設定相關 === */
 #save-data-io {
     width: 100%;
     box-sizing: border-box;
@@ -334,12 +336,13 @@ div.modal { display: none; }
     cursor: pointer;
     font-weight: bold;
     color: white;
+    text-align: center;
 }
 .action-btn.export { background: #2196F3; border: 1px solid #1976D2; }
 .action-btn.import { background: #4CAF50; border: 1px solid #388E3C; }
 .action-btn.danger { background: #f44336; border: 1px solid #d32f2f; width: 100%; margin-top: 5px; }
 
-/* 飄字動畫 */
+/* === 飄字動畫 === */
 #drop-alert {
     position: fixed;
     top: 20%;
@@ -347,7 +350,7 @@ div.modal { display: none; }
     transform: translateX(-50%);
     background: rgba(255, 215, 0, 0.95);
     color: #330000;
-    padding: 10px 25px;
+    padding: 8px 20px;
     border-radius: 30px;
     font-weight: bold;
     display: none;
@@ -355,12 +358,7 @@ div.modal { display: none; }
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
     pointer-events: none;
     white-space: nowrap;
-}
-
-@keyframes floatUp {
-    0% { opacity: 1; transform: translate(-50%, 0) scale(0.8); }
-    50% { transform: translate(-50%, -20px) scale(1.1); }
-    100% { opacity: 0; transform: translate(-50%, -60px) scale(1); }
+    font-size: 14px;
 }
 
 #error-msg {

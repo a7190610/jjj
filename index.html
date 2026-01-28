@@ -45,9 +45,10 @@
             <button class="action-btn import" onclick="importSave()">匯入 (讀取)</button>
         </div>
         
-        <hr style="border:0; border-top:1px solid #444; margin: 15px 0;">
-        
-        <button class="action-btn danger" onclick="resetGame()">刪除存檔重置</button>
+        <div style="margin-top: 20px; border-top: 1px solid #444; padding-top: 10px;">
+            <p style="color:#f55; font-size:12px; margin-bottom:5px;">危險區域：</p>
+            <button class="action-btn danger" onclick="resetGame()">刪除存檔重置</button>
+        </div>
     </div>
     <div class="modal-footer">
         <button onclick="closeAllModals()" class="close-text-btn">關閉</button>
@@ -81,7 +82,7 @@
     
     <!-- 分頁 1: 主角 -->
     <div id="panel0" class="panel-content active">
-        <div class="item player-stats-box">
+        <div class="item" style="border: 1px solid #ffcc00; background: rgba(255, 204, 0, 0.05);">
             <div class="info">
                 <strong id="pAtk-title">⚔️ 主角攻擊力 (Lv.1)</strong>
                 <small id="pAtk-val">基礎威力: 1</small>
@@ -94,7 +95,11 @@
     
     <!-- 分頁 2: 助手 -->
     <div id="panel1" class="panel-content">
-        <div class="panel-desc">助手會自動攻擊。需先完成轉職才能升級。</div>
+        <div class="panel-desc">
+            助手會自動攻擊。<br>
+            楓葉系需 Lv.1 選陣營；仙境系 Lv.10 轉職。<br>
+            全系列分支收集完畢後不再新增。
+        </div>
         <div id="helper-list"></div>
     </div>
     
@@ -105,10 +110,12 @@
     </div>
 </div>
 
-<!-- 依序引入 JS 檔案 -->
-<script src="data.js"></script> <!-- 資料庫 -->
-<script src="core.js"></script> <!-- 核心邏輯 -->
-<script src="ui.js"></script>   <!-- 介面控制 -->
+<!-- 依序引入 JS 檔案 (順序很重要) -->
+<script src="data.js"></script> <!-- 1. 資料庫 -->
+<script src="core.js"></script> <!-- 2. 核心邏輯 -->
+<script src="ui.js"></script>   <!-- 3. 介面控制 -->
 
 </body>
 </html>
+
+
