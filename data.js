@@ -1,5 +1,5 @@
 /**
- * RPG Artale - 資料庫與數值平衡檔 (v25 - Fixed 90s CD)
+ * RPG Artale - 資料庫與數值平衡檔 (v26 - Stable Release)
  * 包含：靜態資料 (DB) 與 成長公式 (Math)
  */
 
@@ -142,7 +142,7 @@ const RELIC_DB = [
 
 const SKILL_DB = [
     { n: "慧心一擊", d: "造成超高額傷害", cost: 10, cd: 8, val: 100 }, 
-    // Buff 類技能 CD 統一改為 90s
+    // Buff 類技能 CD 固定 90s
     { n: "致命爆擊", d: "提升爆擊機率，爆擊2倍傷", cost: 10, cd: 90, val: 0.005, dur: 30 },
     { n: "奮力狂擊", d: "提升總攻擊倍率", cost: 10, cd: 90, val: 2, dur: 30 },
     { n: "影分身",   d: "持續時間內總傷害雙倍", cost: 15, cd: 90, val: 2, dur: 30 }
@@ -204,3 +204,5 @@ function f(n) {
     while(d>=1000 && i<u.length-1){ d/=1000; i++; } 
     return d.toFixed(2)+u[i]; 
 }
+
+
