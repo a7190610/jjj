@@ -1,5 +1,5 @@
 /**
- * RPG Artale - UI 介面與事件處理 (v21 - Fixed)
+ * RPG Artale - UI 介面與事件處理 (v22 - Final UI)
  * 負責：DOM 操作, Canvas 繪圖, Modal 邏輯, 事件綁定
  */
 
@@ -34,22 +34,21 @@ function initGame() {
     // 2. 讀取資料
     if (typeof load === 'function') load();
 
-    // 3. 初始檢查 (新邏輯：雙系列開局)
-    // 如果 helpers 為空，初始化兩隻不同系列的初學者
+    // 3. 初始檢查 (雙系列開局)
     if (!g.helpers || g.helpers.length === 0) {
         g.helpers = [
             { 
                 id: Date.now(), 
                 lv: 1, 
                 name: "初學者", 
-                series: "MAPLE", // 楓葉系列
+                series: "MAPLE", 
                 camp: "", grp: "", job1: "" 
             },
             { 
                 id: Date.now() + 100, 
                 lv: 1, 
                 name: "初學者", 
-                series: "RO",    // 仙境系列
+                series: "RO",    
                 camp: "", grp: "", job1: "" 
             }
         ];
@@ -59,8 +58,8 @@ function initGame() {
 
     // 4. 啟動迴圈
     if (!loopsStarted) {
-        setInterval(tick, 1000); // Core Tick
-        requestAnimationFrame(gameLoop); // Animation Loop
+        setInterval(tick, 1000); // Core Tick (每一秒)
+        requestAnimationFrame(gameLoop); // Animation Loop (60FPS)
         loopsStarted = true;
     }
 
@@ -123,36 +122,58 @@ function renderHelpers() {
         // 判斷是否需要操作 (轉職)
         let actionNeeded = false;
         
-        // 檢查順序：系列 -> 陣營 -> 職業群/一轉 -> 二轉 -> 三轉 -> 四轉
-        if (!h.series) actionNeeded = true;
-        else if (!h.camp) actionNeeded = true;
-        else if (!h.grp || !h.job1) actionNeeded = true;
-        else if (h.lv >= 30 && !h.job2) actionNeeded = true;
-        else if (h.lv >= 60 && !h.job3) actionNeeded = true;
+        // --- 楓葉系列規則 ---
+        if (h.series === 'MAPLE') {
+            if (!h.camp) actionNeeded = true; // Lv.1 必須選陣營
+            else if (h.lv >= 10 && (!h.grp || !h.job1)) actionNeeded = true; // Lv.10 必須一轉
+        }
+        // --- 仙境系列規則 ---
+        else if (h.series === 'RO') {
+            if (h.lv >= 10 && (!h.camp || !h.grp || !h.job1)) actionNeeded = true; // Lv.10 必須一轉 (含選系)
+        }
+
+        // --- 共通高階轉職規則 ---
+        if (h.lv >= 30 && !h.job2) actionNeeded = true;
+        else if (h.lv >= 70 && !h.job3) actionNeeded = true;
         else if (h.lv >= 120 && !h.job4) actionNeeded = true;
 
-        // 顯示名稱邏輯 (優先顯示最高階職業)
-        let dispName = h.job4 || h.job3 || h.job2 || h.job1 || h.grp || h.camp || h.name;
+        // 顯示名稱邏輯
+        let dispName = h.name; // 預設初學者
+        if (h.series === 'MAPLE' && h.camp) dispName = `[${h.camp}] 初學者`; // 楓葉已選陣營
+        // 職業覆蓋
+        dispName = h.job4 || h.job3 || h.job2 || h.job1 || dispName;
         
         // 系列標籤顏色
         let tagHtml = "";
         if (h.series === 'MAPLE') tagHtml = '<span style="color:#ffaacc">[楓]</span>';
         else if (h.series === 'RO') tagHtml = '<span style="color:#ccffff">[仙]</span>';
-        else tagHtml = '<span style="color:#888">[?]</span>';
         
-        let cost = Math.floor(getHelperCost(h.lv));
+        // 計算花費與倍率
+        let tierMult = 1;
+        if (h.job4) tierMult = 50;
+        else if (h.job3) tierMult = 20;
+        else if (h.job2) tierMult = 10;
+        else if (h.job1) tierMult = 5;
+
+        let cost = Math.floor(getHelperCost(h.lv, tierMult));
+        let baseH = getHelperDmg(h.lv, tierMult);
         
-        // 計算該助手傷害 (DPS)
-        let mult = h.job4?50 : h.job3?20 : h.job2?5 : 1;
-        let baseH = getHelperDmg(h.lv, mult);
-        let hDps = calculateFinalDmg(baseH, 'avg');
+        // 這裡如果是全收集達成，DPS顯示也要乘上去，但因為 calculateFinalDmg 內部會呼叫 checkGrandSlam
+        // 而 calculateFinalDmg 的 base 參數不應包含全局倍率，所以這裡傳入 baseH 即可
+        // 不過為了顯示正確，我們手動乘上 grandSlam (如果有的話) 
+        // 更好的做法是 calculateFinalDmg 內部處理，這裡只傳基礎值
+        // 但因為 checkGrandSlam 是動態的，我們直接用 calculateFinalDmg 計算
+        // 注意：core.js 的 tick() 裡有做全域加成，這裡的 DPS 顯示也要一致
+        // 我們簡單判斷一下
+        let isGrandSlam = (typeof checkGrandSlam === 'function') ? checkGrandSlam() : false;
+        let finalBaseH = baseH * (isGrandSlam ? 100 : 1);
+        let hDps = calculateFinalDmg(finalBaseH, 'avg');
 
         // 按鈕狀態
         let isMax = h.lv >= MAX_HELPER_LV;
         let btnDisabled = actionNeeded || g.coins < cost || isMax;
         let btnText = isMax ? "MAX" : (actionNeeded ? "需轉職" : `💰${f(cost)}`);
         
-        // 轉職按鈕 HTML (如果需要操作，顯示 "進化!")
         let jobBtnHtml = actionNeeded 
             ? `<button class="job-btn" onclick="openJobSelection(${i})">進化!</button>` 
             : '';
@@ -161,7 +182,7 @@ function renderHelpers() {
         <div class="item">
             <div class="info">
                 <strong>${tagHtml} ${dispName} <span style="color:#ffcc00">Lv.${h.lv}</span></strong>
-                <small>DPS: ${f(hDps)}</small>
+                <small>DPS: ${f(hDps)} ${tierMult > 1 ? `(x${tierMult})` : ''}</small>
             </div>
             <div class="btn-group">
                 ${jobBtnHtml}
@@ -210,8 +231,12 @@ function renderSkills() {
         let coinCost = (currentLvl + 1) * 500;
         let spCost = getSkillCost(i, Math.max(1, currentLvl));
 
-        let btnText = isL ? `${skillCds[i]}s` : (isActive ? '作用中' : '施放');
-        let btnStyle = isActive ? 'background:#55ff55; color:black; border-color:#00aa00;' : '';
+        // 技能按鈕文字 (倒數計時)
+        let btnText = "施放";
+        if (isActive) btnText = `剩餘 ${activeTimers[i]}s`;
+        else if (isL) btnText = `冷卻 ${skillCds[i]}s`;
+
+        let btnStyle = isActive ? 'background:#55ff55; color:black; border-color:#00aa00; min-width:80px;' : '';
         
         let desc = s.d; 
         if (i === 0) desc = `傷害 ${100 + (currentLvl>0?currentLvl-1:0)} 倍`;
@@ -228,8 +253,8 @@ function renderSkills() {
                 <b style="color:#ff5555; font-size:11px;">消耗: ${spCost} SP</b>
             </div>
             <div class="btn-group">
-                <button class="skill-btn" style="${btnStyle}" onclick="useS(${i})" ${currentLvl==0 || isL || g.sp<spCost?'disabled':''}>
-                    ${g.sp<spCost && !isL ? 'SP不足' : btnText}
+                <button class="skill-btn" style="${btnStyle}" onclick="useS(${i})" ${currentLvl==0 || isL || (g.sp < spCost && !isActive) ? 'disabled' : ''}>
+                    ${g.sp < spCost && !isActive && !isL ? 'SP不足' : btnText}
                 </button>
                 <button class="up-btn" onclick="upS(${i})" ${isMax || g.coins<coinCost?'disabled':''}>${isMax?'已滿':'升級 💰'+f(coinCost)}</button>
             </div>
@@ -252,18 +277,15 @@ function upgradePlayer() {
 // 計算某系列的最大分支數 (Tier 4 職業總數)
 function getSeriesMaxBranches(series) {
     const db = (series === 'MAPLE') ? JOB_MAPLE : JOB_RO;
-    if (!db) return 0; // 防呆
+    if (!db) return 0;
     
     let count = 0;
-    // 遍歷該系列所有陣營 (Camp)
     for (const campKey in db) {
         const camp = db[campKey];
-        // 遍歷該陣營所有職業群 (Group)
         for (const grpKey in camp) {
             const grp = camp[grpKey];
-            // 檢查 Tier 4 的定義
+            // 檢查 Tier 4
             if (grp[4]) {
-                // 如果是陣列，長度即為分支數；如果是字串，則為 1
                 count += Array.isArray(grp[4]) ? grp[4].length : 1;
             }
         }
@@ -274,45 +296,36 @@ function getSeriesMaxBranches(series) {
 function upgradeH(i) {
     const h = g.helpers[i];
     
-    // 檢查轉職狀態
-    if (!h.series || !h.camp || !h.grp || !h.job1 ||
-        (h.lv >= 30 && !h.job2) ||
-        (h.lv >= 60 && !h.job3) ||
-        (h.lv >= 120 && !h.job4)) {
-        return openJobSelection(i); 
+    // === 轉職卡點檢查 ===
+    let needJob = false;
+    if (h.series === 'MAPLE') {
+        if (!h.camp) needJob = true; // Lv.1 選陣營
+        else if (h.lv >= 10 && (!h.grp || !h.job1)) needJob = true; // Lv.10 一轉
+    } else if (h.series === 'RO') {
+        if (h.lv >= 10 && (!h.camp || !h.grp || !h.job1)) needJob = true; // Lv.10 一轉
     }
     
+    if (h.lv >= 30 && !h.job2) needJob = true;
+    if (h.lv >= 70 && !h.job3) needJob = true;
+    if (h.lv >= 120 && !h.job4) needJob = true;
+
+    if (needJob) return openJobSelection(i);
+    
+    // === 升級邏輯 ===
     if (h.lv >= MAX_HELPER_LV) return;
 
-    let cost = Math.floor(getHelperCost(h.lv));
+    // 計算當前倍率以決定升級花費
+    let tierMult = 1;
+    if (h.job4) tierMult = 50;
+    else if (h.job3) tierMult = 20;
+    else if (h.job2) tierMult = 10;
+    else if (h.job1) tierMult = 5;
+
+    let cost = Math.floor(getHelperCost(h.lv, tierMult));
+    
     if (g.coins >= cost) {
         g.coins -= cost;
         h.lv++;
-        
-        // === 新增角色邏輯 (Lv.120) ===
-        // 規則：如果該助手升到 120 級，且該系列還有分支未選，則新增一隻同系列的初學者
-        if (h.lv === 120) {
-            // 1. 計算目前場上該系列的角色數量
-            const currentSeriesCount = g.helpers.filter(helper => helper.series === h.series).length;
-            // 2. 計算該系列總共可用的分支數量
-            const maxSeriesCount = getSeriesMaxBranches(h.series);
-            
-            // 3. 還有空位才新增
-            if (currentSeriesCount < maxSeriesCount) {
-                // 決定名字 (雖然顯示會被 series 蓋過，但保持資料完整)
-                const newName = "初學者";
-                g.helpers.push({ 
-                    id: Date.now(), 
-                    lv: 1, 
-                    name: newName, 
-                    series: h.series, // 繼承系列
-                    camp: "", 
-                    grp: "", 
-                    job1: "" 
-                });
-            }
-        }
-        
         updateUI();
         save();
     }
@@ -343,19 +356,18 @@ function upR(i) {
 function useS(i) {
     let spCost = getSkillCost(i, Math.max(1, g.sLvs[i]));
     
-    // 需有足夠SP 且 無冷卻 且 技能已學習
     if (g.sp >= spCost && skillCds[i] == 0 && g.sLvs[i] > 0) {
         g.sp -= spCost;
         let currentLvl = Math.max(1, g.sLvs[i]);
 
-        if (i === 0) { // 慧心一擊
+        if (i === 0) { 
             let mult = 100 + (currentLvl - 1);
             let pBase = getPlayerDmg(g.playerLv);
             let dmgObj = calculateFinalDmg(pBase, 'roll');
             let totalDmg = dmgObj.val * mult;
             dealDmg(totalDmg, false, dmgObj.crit);
             createClickEffect(canvas.width/2, canvas.height/2 - 50, "💥", "#ff0000");
-        } else { // Buff 類
+        } else { 
             let duration = SKILL_DB[i].dur;
             if (i === 2 || i === 3) duration = 30 + (currentLvl - 1);
             activeTimers[i] = duration;
@@ -377,74 +389,85 @@ function openJobSelection(idx) {
     modal.style.display = 'flex';
     document.getElementById('overlay').style.display = 'block';
 
-    // 1. 選擇系列 (如果資料缺失，理論上 initGame 會補，但為了舊存檔防呆)
-    if (!h.series) {
-        title.innerText = "選擇宇宙系列";
-        Object.keys(SERIES_DB).forEach(key => {
-            createBtn(container, SERIES_DB[key], () => {
-                h.series = key;
-                openJobSelection(idx); // 下一步
-            });
-        });
-        return;
-    }
-
-    // 取得對應的職業資料庫
     const TARGET_DB = (h.series === 'MAPLE') ? JOB_MAPLE : JOB_RO;
 
-    // 2. 選擇陣營 (Camp)
-    if (!h.camp) {
-        title.innerText = "選擇職業陣營";
+    // --- 楓葉專屬：Lv.1 選陣營 ---
+    if (h.series === 'MAPLE' && !h.camp) {
+        title.innerText = "選擇職業陣營 (Lv.1)";
         Object.keys(TARGET_DB).forEach(camp => {
             createBtn(container, camp, () => {
                 h.camp = camp;
-                openJobSelection(idx);
+                closeAllModals(); // 楓葉選完陣營先關閉，等 Lv.10 再選職業
+                updateUI();
+                save();
             });
         });
         return;
     }
 
-    // 3. 選擇職業群 (Group) -> 同時綁定 Job1
+    // --- 仙境與楓葉共通：Lv.10 一轉 ---
+    // 仙境: 選系(Camp) -> 選職(Grp/Job1) 同步完成
+    // 楓葉: 已有 Camp -> 選職(Grp/Job1)
     if (!h.grp || !h.job1) {
-        title.innerText = "選擇職業分支";
-        let campData = TARGET_DB[h.camp];
-        Object.keys(campData).forEach(grp => {
-            // campData[grp][1] 是該群的一轉職業名
-            let job1Name = campData[grp][1];
-            createBtn(container, `${grp} (${job1Name})`, () => {
-                h.grp = grp;
-                h.job1 = job1Name;
-                finishJob();
-            });
-        });
-        return;
-    }
-
-    // 4. 進階轉職 (Tier 2, 3, 4)
-    let tier = h.lv >= 120 ? 4 : (h.lv >= 60 ? 3 : 2);
-    title.innerText = `第 ${tier} 次轉職`;
-    
-    // 安全性檢查
-    if (TARGET_DB[h.camp] && TARGET_DB[h.camp][h.grp] && TARGET_DB[h.camp][h.grp][tier]) {
-        let choices = TARGET_DB[h.camp][h.grp][tier];
+        title.innerText = "一轉選擇 (Lv.10)";
         
-        if (Array.isArray(choices)) {
-            // 多重分支
-            choices.forEach(job => {
-                createBtn(container, job, () => {
-                    h['job'+tier] = job;
-                    finishJob();
+        if (h.series === 'RO') {
+            // RO 需要先列出所有系 (Camp)
+            Object.keys(TARGET_DB).forEach(camp => {
+                // 每個系底下通常只有一個 group (如劍士系->劍士)
+                let campData = TARGET_DB[camp];
+                Object.keys(campData).forEach(grp => {
+                    let job1Name = campData[grp][1];
+                    createBtn(container, `${camp} - ${job1Name}`, () => {
+                        h.camp = camp;
+                        h.grp = grp;
+                        h.job1 = job1Name;
+                        finishJob(idx);
+                    });
                 });
             });
         } else {
-            // 單一分支 (直接點擊確認)
-            createBtn(container, `${choices} (確認轉職)`, () => {
-                h['job'+tier] = choices;
-                finishJob();
+            // MAPLE 已有 Camp，直接列出 Grp
+            let campData = TARGET_DB[h.camp];
+            Object.keys(campData).forEach(grp => {
+                let job1Name = campData[grp][1];
+                createBtn(container, `${grp} (${job1Name})`, () => {
+                    h.grp = grp;
+                    h.job1 = job1Name;
+                    finishJob(idx);
+                });
             });
         }
+        return;
+    }
+
+    // --- 進階轉職 ---
+    let tier = 0;
+    if (h.lv >= 120 && !h.job4) tier = 4;
+    else if (h.lv >= 70 && !h.job3) tier = 3;
+    else if (h.lv >= 30 && !h.job2) tier = 2;
+
+    if (tier > 0) {
+        title.innerText = `第 ${tier} 次轉職 (Lv.${h.lv})`;
+        if (TARGET_DB[h.camp] && TARGET_DB[h.camp][h.grp] && TARGET_DB[h.camp][h.grp][tier]) {
+            let choices = TARGET_DB[h.camp][h.grp][tier];
+            
+            if (Array.isArray(choices)) {
+                choices.forEach(job => {
+                    createBtn(container, job, () => {
+                        h['job'+tier] = job;
+                        finishJob(idx);
+                    });
+                });
+            } else {
+                createBtn(container, `${choices} (確認)`, () => {
+                    h['job'+tier] = choices;
+                    finishJob(idx);
+                });
+            }
+        }
     } else {
-        container.innerHTML = '<div style="padding:10px; color:#aaa;">暫無可用轉職或等級不足</div>';
+        container.innerHTML = '<div style="padding:10px; color:#aaa;">暫無可用轉職</div>';
     }
 }
 
@@ -456,8 +479,32 @@ function createBtn(parent, text, onClick) {
     parent.appendChild(btn);
 }
 
-function finishJob() {
+function finishJob(idx) {
     closeAllModals();
+    
+    // === 轉職完成後的檢查：是否新增下一隻助手 ===
+    const h = g.helpers[idx];
+    
+    // 只有在完成最終轉職 (Lv.120 的 Job4) 時才觸發
+    if (h.job4) {
+        const currentSeriesCount = g.helpers.filter(helper => helper.series === h.series).length;
+        const maxSeriesCount = getSeriesMaxBranches(h.series);
+        
+        // 還有空位才新增
+        if (currentSeriesCount < maxSeriesCount) {
+            g.helpers.push({ 
+                id: Date.now(), 
+                lv: 1, 
+                name: "初學者", 
+                series: h.series, 
+                camp: "", 
+                grp: "", 
+                job1: "" 
+            });
+            setTimeout(() => alert(`新的 ${h.series === 'MAPLE' ? '楓葉' : '仙境'} 初學者加入了隊伍！`), 200);
+        }
+    }
+
     updateUI();
     save();
     createClickEffect(canvas.width/2, canvas.height/2, "✨ 轉職成功!", "#ffcc00");
