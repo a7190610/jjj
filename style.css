@@ -8,8 +8,9 @@ body {
     flex-direction: column;
     align-items: center;
     overflow: hidden;
-    touch-action: manipulation; /* 禁止雙擊縮放 */
-    height: 100vh;
+    touch-action: manipulation;
+    height: 100vh; /* Fallback */
+    height: 100dvh; /* Dynamic Viewport Height for mobile */
     width: 100vw;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
@@ -81,6 +82,7 @@ body {
     position: relative;
     background: #2c3e50;
     overflow: hidden;
+    min-height: 250px; /* 防止鍵盤彈出時畫布消失 */
 }
 
 canvas {
@@ -99,13 +101,13 @@ canvas {
     position: relative;
     display: flex;
     flex-direction: column;
-    height: 45vh; /* 佔據螢幕下半部 45% */
+    height: 50vh; /* 增加高度佔比 */
     border-top: 2px solid #555;
     box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
     z-index: 500;
 }
 
-.menu-header { display: flex; background: #333; }
+.menu-header { display: flex; background: #333; flex-shrink: 0; }
 .tab {
     flex: 1;
     padding: 12px 5px;
@@ -130,6 +132,7 @@ canvas {
     overflow-y: auto;
     display: none;
     padding: 10px;
+    padding-bottom: 80px; /* 關鍵修正：增加底部留白，避免技能被切掉 */
     box-sizing: border-box;
     -webkit-overflow-scrolling: touch;
 }
@@ -223,7 +226,7 @@ button:disabled {
     animation: none;
 }
 
-/* === Modal 視窗 (置中/彈出) === */
+/* === Modal 視窗 === */
 #overlay {
     display: none;
     position: fixed;
