@@ -9,14 +9,13 @@ body {
     align-items: center;
     overflow: hidden;
     touch-action: manipulation;
-    height: 100vh; /* Fallback */
-    height: 100dvh; /* Dynamic Viewport Height for mobile */
+    height: 100vh;
+    height: 100dvh;
     width: 100vw;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
 }
 
-/* 捲軸美化 */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #222; }
 ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
@@ -72,6 +71,16 @@ body {
     text-shadow: 0 0 5px rgba(85, 255, 85, 0.5);
 }
 
+/* 技能倒數計時區 */
+#skill-timers {
+    min-height: 16px; /* 預留高度避免跳動 */
+    margin-top: 4px;
+    font-size: 11px;
+    color: #00ffaa;
+    text-shadow: 0 0 3px rgba(0, 255, 170, 0.5);
+    line-height: 1.4;
+}
+
 /* === 遊戲畫布區域 === */
 #game-area {
     flex: 1;
@@ -82,7 +91,7 @@ body {
     position: relative;
     background: #2c3e50;
     overflow: hidden;
-    min-height: 250px; /* 防止鍵盤彈出時畫布消失 */
+    min-height: 250px;
 }
 
 canvas {
@@ -101,7 +110,7 @@ canvas {
     position: relative;
     display: flex;
     flex-direction: column;
-    height: 50vh; /* 增加高度佔比 */
+    height: 50vh;
     border-top: 2px solid #555;
     box-shadow: 0 -5px 15px rgba(0,0,0,0.5);
     z-index: 500;
@@ -132,7 +141,7 @@ canvas {
     overflow-y: auto;
     display: none;
     padding: 10px;
-    padding-bottom: 80px; /* 關鍵修正：增加底部留白，避免技能被切掉 */
+    padding-bottom: 80px;
     box-sizing: border-box;
     -webkit-overflow-scrolling: touch;
 }
@@ -140,7 +149,15 @@ canvas {
 
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* === 列表項目樣式 === */
+.panel-desc {
+    text-align: center;
+    padding: 5px;
+    color: #888;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+
+/* === 列表項目 === */
 .item {
     display: flex;
     justify-content: space-between;
@@ -226,7 +243,7 @@ button:disabled {
     animation: none;
 }
 
-/* === Modal 視窗 === */
+/* === Modal === */
 #overlay {
     display: none;
     position: fixed;
@@ -287,7 +304,6 @@ button:disabled {
     font-size: 13px;
 }
 
-/* 職業選項按鈕 */
 .job-opt {
     width: 100%;
     padding: 12px;
@@ -305,14 +321,9 @@ button:disabled {
     box-sizing: border-box;
 }
 .job-opt:hover { background: #555; border-color: #888; }
-.job-opt:after {
-    content: '➜';
-    position: absolute;
-    right: 15px;
-    color: #777;
-}
+.job-opt:after { content: '➜'; position: absolute; right: 15px; color: #777; }
 
-/* === 設定相關 === */
+/* === 設定 === */
 #save-data-io {
     width: 100%;
     box-sizing: border-box;
@@ -345,7 +356,7 @@ button:disabled {
 .action-btn.import { background: #4CAF50; border: 1px solid #388E3C; }
 .action-btn.danger { background: #f44336; border: 1px solid #d32f2f; width: 100%; margin-top: 5px; }
 
-/* === 飄字動畫 === */
+/* === 飄字 === */
 #drop-alert {
     position: fixed;
     top: 20%;
