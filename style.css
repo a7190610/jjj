@@ -134,7 +134,7 @@ canvas {
     overflow-y: auto;
     display: none;
     padding: 10px;
-    padding-bottom: 80px;
+    padding-bottom: 80px; /* 防止底部按鈕被切掉 */
     box-sizing: border-box;
     -webkit-overflow-scrolling: touch;
 }
