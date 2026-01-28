@@ -1,6 +1,6 @@
 /**
- * RPG Artale - 核心邏輯 (v21)
- * 負責：State 管理, 傷害計算, 存檔 I/O (含 Base64 匯入匯出)
+ * RPG Artale - 核心邏輯 (v22 - Final Logic)
+ * 負責：State 管理, 傷害計算, 存檔 I/O, DPS 公式
  */
 
 // 遊戲全域狀態
@@ -20,11 +20,11 @@ let mHp = 1;
 let mMaxHp = 1;
 let currentDps = 0;
 let skillCds = [0, 0, 0, 0];
-let activeTimers = [0, 0, 0, 0];
-let lastTime = 0; 
+let activeTimers = [0, 0, 0, 0]; // 技能持續時間
+let lastPlayerAtkTime = 0; // 主角自動攻擊計時
 
-// 存檔鍵值 (更新版本號以重置舊存檔結構)
-const SAVE_KEY = 'artale_final_lock_v21';
+// 存檔鍵值
+const SAVE_KEY = 'artale_final_lock_v22';
 
 // === 傷害計算核心 ===
 
@@ -79,42 +79,92 @@ function calculateFinalDmg(base, mode = 'roll') {
     }
 }
 
+/**
+ * 檢查是否達成全分支收集 (Grand Slam)
+ * 條件：楓葉系列與仙境系列的所有 Tier 4 (最終轉職) 職業都至少有一隻
+ */
+function checkGrandSlam() {
+    // 1. 計算總共需要多少種 Tier 4
+    let requiredJobs = new Set();
+    
+    [JOB_MAPLE, JOB_RO].forEach(db => {
+        for (let camp in db) {
+            for (let grp in db[camp]) {
+                let t4 = db[camp][grp][4];
+                if (t4) {
+                    if (Array.isArray(t4)) t4.forEach(j => requiredJobs.add(j));
+                    else requiredJobs.add(t4);
+                }
+            }
+        }
+    });
+
+    // 2. 檢查當前擁有的 Tier 4
+    let ownedJobs = new Set();
+    g.helpers.forEach(h => {
+        if (h.job4) ownedJobs.add(h.job4);
+    });
+
+    // 3. 比對數量
+    // 注意：這裡假設使用者必須練滿該職業到4轉才算收集
+    return ownedJobs.size === requiredJobs.size;
+}
+
 // === 遊戲主迴圈 (Tick) ===
-// 每秒執行一次，處理自動攻擊、冷卻、SP回復
+// 邏輯每秒運算一次 (除了主角攻擊有獨立計時)
 function tick() {
     try {
-        // 1. 計算基礎數值
-        let pClickBase = getPlayerDmg(g.playerLv);
-        let helperTotalBase = 0;
+        let now = Date.now();
+
+        // 1. 計算基礎數值 (Base Stats)
+        let pBaseRaw = getPlayerDmg(g.playerLv);
+        let helperTotalRaw = 0;
+        
+        // 終局獎勵判定
+        let isGrandSlam = checkGrandSlam();
+        let grandSlamMult = isGrandSlam ? 100 : 1;
 
         if (g.helpers) {
             g.helpers.forEach(h => {
-                // 根據職業階級給予倍率
-                let mult = 1;
-                if (h.job4) mult = 50;
-                else if (h.job3) mult = 20;
-                else if (h.job2) mult = 5;
+                // 轉職倍率 (Tier Multiplier)
+                let tierMult = 1;
+                if (h.job4) tierMult = 50;      // 4轉/三轉
+                else if (h.job3) tierMult = 20; // 3轉/進階二轉
+                else if (h.job2) tierMult = 10; // 2轉
+                else if (h.job1) tierMult = 5;  // 1轉
                 
-                helperTotalBase += getHelperDmg(h.lv, mult);
+                let hDmg = getHelperDmg(h.lv, tierMult);
+                helperTotalRaw += hDmg;
             });
         }
+        
+        // 應用終局獎勵於助手總傷
+        helperTotalRaw *= grandSlamMult;
 
-        // 2. 自動攻擊 (Idle Logic)
-        // 主角自動攻擊 = 點擊傷害的 20% (放置收益)
-        let playerIdleBase = pClickBase * 0.2;
-        let totalIdleBase = playerIdleBase + helperTotalBase;
+        // 2. 實戰傷害處理 (Real Damage)
+        // 2a. 主角自動攻擊 (每 3 秒一次)
+        if (now - lastPlayerAtkTime >= PLAYER_ATK_INTERVAL) {
+            let dmgObj = calculateFinalDmg(pBaseRaw, 'roll');
+            dealDmg(dmgObj.val, false, dmgObj.crit);
+            lastPlayerAtkTime = now;
+        }
 
-        // 執行傷害 (Roll)
-        let dmgObj = calculateFinalDmg(totalIdleBase, 'roll');
-        dealDmg(dmgObj.val, false, dmgObj.crit);
+        // 2b. 助手自動攻擊 (每秒一次)
+        // 這裡假設 tick 是 1秒 執行一次，直接造成助手總傷
+        let hDmgObj = calculateFinalDmg(helperTotalRaw, 'roll');
+        dealDmg(hDmgObj.val, false, hDmgObj.crit);
 
-        // 3. 更新 DPS 顯示 (Expectation)
-        // 顯示 DPS = 自動傷害期望值 + (點擊期望值 * 4次/秒)
-        let avgIdle = calculateFinalDmg(totalIdleBase, 'avg');
-        let avgClick = calculateFinalDmg(pClickBase, 'avg');
-        currentDps = avgIdle + (avgClick * 4);
+        // 3. DPS 面板計算 (Theoretical DPS)
+        // 公式：(主角面板/3) + (助手總面板) + (主角面板 * 5)
+        let avgPlayerShot = calculateFinalDmg(pBaseRaw, 'avg');
+        let avgHelperTick = calculateFinalDmg(helperTotalRaw, 'avg');
+        
+        let playerAutoDps = avgPlayerShot / (PLAYER_ATK_INTERVAL / 1000); // 除以 3
+        let clickDps = avgPlayerShot * CLICK_CPS_RATIO; // 乘以 5
+        
+        currentDps = playerAutoDps + avgHelperTick + clickDps;
 
-        // 4. SP 回復與冷卻
+        // 4. SP 回復與技能冷卻
         const maxSP = getMaxSP(g.playerLv);
         if (g.sp < maxSP) g.sp = Math.min(maxSP, g.sp + 1);
 
@@ -132,7 +182,7 @@ function tick() {
 
 // 造成傷害與怪物死亡判定
 function dealDmg(amt, isClick = false, isCrit = false) {
-    // 呼叫 UI 顯示飄字 (若存在)
+    // 呼叫 UI 顯示飄字
     if (typeof addDamageText === 'function' && (isClick || isCrit)) {
         addDamageText(amt, isCrit);
     }
@@ -152,30 +202,26 @@ function killMonster() {
     let baseCoin = getMonsterCoin(g.stage);
     let coinGain = baseCoin * (isBoss ? 5 : 1);
 
-    // 聖物金幣加成 (Index 2: 黃金羅盤, Index 8: 守望者盾)
+    // 聖物金幣加成
     let relicGoldBonus = (g.rLvs[2] * 0.05) + (g.rLvs[8] * 0.04);
     coinGain = coinGain * (1 + relicGoldBonus);
 
     g.coins += Math.floor(coinGain);
 
-    // Boss 獎勵
     if (isBoss) {
         checkBossDrop();
     }
 
-    // 進下一關
     g.stage++;
     refreshMonster();
 }
 
-// 刷新怪物數值
 function refreshMonster() {
     mMaxHp = getMonsterHp(g.stage);
     mHp = mMaxHp;
 }
 
 function checkBossDrop() {
-    // 40% 機率掉落聖物
     if (Math.random() < 0.4) {
         let unowned = [];
         g.rLvs.forEach((v, i) => { if (v === 0) unowned.push(i); });
@@ -194,14 +240,12 @@ function checkBossDrop() {
     }
 }
 
-// === 存檔系統 (Save/Load/Import/Export) ===
+// === 存檔系統 ===
 
 function save() {
     try {
         localStorage.setItem(SAVE_KEY, JSON.stringify(g));
-    } catch (e) {
-        console.warn("Save failed (Storage full or disabled)");
-    }
+    } catch (e) {}
 }
 
 function load() {
@@ -209,16 +253,12 @@ function load() {
         const saved = localStorage.getItem(SAVE_KEY);
         if (saved) {
             let loaded = JSON.parse(saved);
-            // 合併物件以確保新欄位存在
             g = { ...g, ...loaded };
             
-            // 修正陣列長度 (防呆)
+            // 防呆與修復
             if (!g.rLvs || g.rLvs.length < RELIC_DB.length) {
-                let old = g.rLvs || [];
                 g.rLvs = new Array(RELIC_DB.length).fill(0);
-                old.forEach((v, i) => { if(i < g.rLvs.length) g.rLvs[i] = v; });
             }
-            // 技能等級上限修正
             g.sLvs = g.sLvs.map(l => Math.min(100, l));
         }
     } catch (e) {
@@ -226,51 +266,39 @@ function load() {
     }
 }
 
-// 匯出存檔 (Base64)
 function exportSave() {
     try {
         let json = JSON.stringify(g);
-        let b64 = btoa(encodeURIComponent(json)); // utf-8 safe base64
+        let b64 = btoa(encodeURIComponent(json));
         let ioBox = document.getElementById('save-data-io');
         if (ioBox) {
             ioBox.value = b64;
             ioBox.select();
-            // 嘗試複製到剪貼簿
             try { document.execCommand('copy'); alert("存檔代碼已複製！"); } 
             catch(e) { alert("請手動複製代碼"); }
         }
-    } catch (e) {
-        alert("匯出失敗: " + e.message);
-    }
+    } catch (e) { alert("匯出失敗"); }
 }
 
-// 匯入存檔
 function importSave() {
     try {
         let ioBox = document.getElementById('save-data-io');
         let b64 = ioBox ? ioBox.value.trim() : "";
-        if (!b64) return alert("請先輸入存檔代碼");
+        if (!b64) return alert("請輸入代碼");
 
         let json = decodeURIComponent(atob(b64));
         let data = JSON.parse(json);
 
-        // 簡單驗證
-        if (typeof data.coins !== 'number' || !Array.isArray(data.helpers)) {
-            throw new Error("無效的存檔格式");
-        }
-
-        if (confirm("確定要覆蓋當前進度嗎？")) {
+        if (confirm("確定要覆蓋進度嗎？")) {
             g = data;
             save();
             location.reload();
         }
-    } catch (e) {
-        alert("匯入失敗: 代碼錯誤或毀損\n" + e.message);
-    }
+    } catch (e) { alert("代碼錯誤"); }
 }
 
 function resetGame() {
-    if (confirm("確定要刪除所有進度重新開始嗎？(此動作無法復原)")) {
+    if (confirm("確定要刪除進度嗎？")) {
         localStorage.removeItem(SAVE_KEY);
         location.reload();
     }
