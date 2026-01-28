@@ -1,14 +1,12 @@
 /**
- * RPG Artale - UI 介面與事件處理 (v25 - Final Polish)
+ * RPG Artale - UI 介面與事件處理 (v26 - Clean UI & Timers)
  * 負責：DOM 操作, Canvas 繪圖, Modal 邏輯, 事件綁定
  */
 
-// Canvas 全域變數
 let canvas, ctx;
 let clickEffects = [];
 let loopsStarted = false;
 
-// 初始化
 window.onload = function() {
     initGame();
 };
@@ -93,8 +91,7 @@ function updateUI() {
         pBtn.disabled = g.coins < pCost;
     }
 
-    // 更新技能倒數顯示區
-    updateSkillTimersDisplay();
+    updateSkillTimersDisplay(); // 更新倒數計時文字
 
     renderHelpers();
     renderRelics();
@@ -106,7 +103,7 @@ function setText(id, val) {
     if (el) el.innerText = val;
 }
 
-// 顯示技能剩餘時間 (DPS 下方)
+// 在 DPS 下方顯示技能倒數
 function updateSkillTimersDisplay() {
     const container = document.getElementById('skill-timers');
     if (!container) return;
@@ -115,14 +112,14 @@ function updateSkillTimersDisplay() {
     if (g.activeTimers) {
         SKILL_DB.forEach((s, i) => {
             if (g.activeTimers[i] > 0) {
-                html += `<span style="margin-right:10px;">${s.n}: ${g.activeTimers[i]}s</span>`;
+                html += `<span style="margin-right:12px;">${s.n}: ${g.activeTimers[i]}s</span>`;
             }
         });
     }
     container.innerHTML = html;
 }
 
-// === 渲染助手 ===
+// === 渲染助手列表 ===
 function renderHelpers() {
     const area = document.getElementById('helper-list');
     if (!area) return;
@@ -218,9 +215,8 @@ function renderSkills() {
     area.innerHTML = '';
     
     SKILL_DB.forEach((s, i) => {
-        // 使用 g.skillCds 和 g.activeTimers
-        let isL = g.skillCds[i] > 0;
-        let isActive = g.activeTimers[i] > 0;
+        let isL = g.skillCds && g.skillCds[i] > 0;
+        let isActive = g.activeTimers && g.activeTimers[i] > 0;
         let currentLvl = g.sLvs[i];
         let coinCost = (currentLvl + 1) * 500;
         let spCost = getSkillCost(i, Math.max(1, currentLvl));
@@ -380,6 +376,7 @@ function openJobSelection(idx) {
 
     const TARGET_DB = (h.series === 'MAPLE') ? JOB_MAPLE : JOB_RO;
 
+    // 楓葉 Lv.1
     if (h.series === 'MAPLE' && !h.camp) {
         title.innerText = "選擇職業陣營 (Lv.1)";
         Object.keys(TARGET_DB).forEach(camp => {
@@ -393,6 +390,7 @@ function openJobSelection(idx) {
         return;
     }
 
+    // Lv.10 一轉
     if (!h.grp || !h.job1) {
         title.innerText = "一轉選擇 (Lv.10)";
         if (h.series === 'RO') {
@@ -409,6 +407,7 @@ function openJobSelection(idx) {
                 });
             });
         } else {
+            // MAPLE
             let campData = TARGET_DB[h.camp];
             Object.keys(campData).forEach(grp => {
                 let job1Name = campData[grp][1];
@@ -422,6 +421,7 @@ function openJobSelection(idx) {
         return;
     }
 
+    // 進階轉職
     let tier = 0;
     if (h.lv >= 120 && !h.job4) tier = 4;
     else if (h.lv >= 70 && !h.job3) tier = 3;
@@ -461,6 +461,7 @@ function createBtn(parent, text, onClick) {
 function finishJob(idx) {
     closeAllModals();
     
+    // 轉職後檢查是否新增角色
     const h = g.helpers[idx];
     if (h.job4) {
         const currentSeriesCount = g.helpers.filter(helper => helper.series === h.series).length;
@@ -485,14 +486,6 @@ function finishJob(idx) {
     createClickEffect(canvas.width/2, canvas.height/2, "✨ 轉職成功!", "#ffcc00");
 }
 
-// === Modal 與 設定 ===
-
-function openSettings() {
-    document.getElementById('settings-modal').style.display = 'flex';
-    document.getElementById('overlay').style.display = 'block';
-    document.getElementById('save-data-io').value = '';
-}
-
 function closeAllModals() {
     document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
     document.getElementById('overlay').style.display = 'none';
@@ -511,8 +504,6 @@ function switchTab(tabIndex) {
         p.classList.toggle('active', i === tabIndex);
     });
 }
-
-// === Canvas 動畫與輸入 ===
 
 function handleInput(e) {
     if (!canvas) return;
@@ -632,3 +623,5 @@ function gameLoop(timestamp) {
 
     requestAnimationFrame(gameLoop);
 }
+
+
