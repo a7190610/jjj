@@ -1,5 +1,5 @@
 /**
- * RPG Artale - 核心邏輯 (v26 - Stable & Persistent)
+ * RPG Artale - 核心邏輯 (v27 - Index Alignment Logic)
  * 負責：State 管理, 傷害計算, 自動存檔, DPS 公式
  */
 
@@ -13,8 +13,8 @@ let g = {
     sLvs: [0, 0, 0, 0], // 技能等級
     rLvs: new Array(RELIC_DB.length).fill(0), // 聖物等級
     helpers: [], // 助手列表
-    skillCds: [0, 0, 0, 0], // 技能冷卻 (存入檔案)
-    activeTimers: [0, 0, 0, 0] // 技能持續時間 (存入檔案)
+    skillCds: [0, 0, 0, 0], // 技能冷卻
+    activeTimers: [0, 0, 0, 0] // 技能持續時間
 };
 
 // 戰鬥暫存變數 (不存檔)
@@ -23,8 +23,8 @@ let mMaxHp = 1;
 let currentDps = 0;
 let lastPlayerAtkTime = 0; // 主角自動攻擊計時
 
-// 存檔鍵值 (更換名稱以強制重置舊的損壞存檔)
-const SAVE_KEY = 'artale_stable_v1';
+// 存檔鍵值 (更新版本號以強制重置舊存檔，解決崩潰問題)
+const SAVE_KEY = 'artale_final_v27';
 
 // === 傷害計算核心 ===
 
@@ -59,6 +59,7 @@ function calculateFinalDmg(base, mode = 'roll') {
     }
 
     if (mode === 'avg') {
+        // 平均傷害 (假設爆擊2倍)
         return rawDmg * (1 + critChance);
     } else {
         let isCrit = Math.random() < critChance;
@@ -72,10 +73,12 @@ function calculateFinalDmg(base, mode = 'roll') {
 
 /**
  * 檢查是否達成全分支收集 (Grand Slam)
+ * 若達成，全體助手傷害 x100
  */
 function checkGrandSlam() {
     let requiredJobs = new Set();
     
+    // 遍歷所有資料庫找出所有 Tier 4 職業
     [JOB_MAPLE, JOB_RO].forEach(db => {
         for (let camp in db) {
             for (let grp in db[camp]) {
@@ -88,6 +91,7 @@ function checkGrandSlam() {
         }
     });
 
+    // 檢查玩家當前擁有的 Tier 4
     let ownedJobs = new Set();
     g.helpers.forEach(h => {
         if (h.job4) ownedJobs.add(h.job4);
@@ -110,6 +114,7 @@ function tick() {
 
         if (g.helpers) {
             g.helpers.forEach(h => {
+                // 計算當前倍率
                 let tierMult = 1;
                 if (h.job4) tierMult = 50;
                 else if (h.job3) tierMult = 20;
@@ -121,10 +126,11 @@ function tick() {
             });
         }
         
+        // 應用全收集加成
         helperTotalRaw *= grandSlamMult;
 
-        // 2. 實戰傷害
-        // 2a. 主角 (3秒一次)
+        // 2. 實戰傷害處理
+        // 2a. 主角 (每 3 秒一次)
         if (now - lastPlayerAtkTime >= PLAYER_ATK_INTERVAL) {
             let dmgObj = calculateFinalDmg(pBaseRaw, 'roll');
             dealDmg(dmgObj.val, false, dmgObj.crit);
@@ -132,10 +138,12 @@ function tick() {
         }
 
         // 2b. 助手 (每秒一次)
+        // 假設 tick 約 1 秒執行一次
         let hDmgObj = calculateFinalDmg(helperTotalRaw, 'roll');
         dealDmg(hDmgObj.val, false, hDmgObj.crit);
 
-        // 3. DPS 計算
+        // 3. DPS 計算 (面板顯示用)
+        // 公式：(主角面板 / 3) + (助手總面板) + (主角面板 * 5)
         let avgPlayerShot = calculateFinalDmg(pBaseRaw, 'avg');
         let avgHelperTick = calculateFinalDmg(helperTotalRaw, 'avg');
         
@@ -148,7 +156,7 @@ function tick() {
         const maxSP = getMaxSP(g.playerLv);
         if (g.sp < maxSP) g.sp = Math.min(maxSP, g.sp + 1);
 
-        // 確保變數存在
+        // 更新技能計時器
         if (!g.skillCds) g.skillCds = [0,0,0,0];
         if (!g.activeTimers) g.activeTimers = [0,0,0,0];
 
@@ -211,7 +219,7 @@ function checkBossDrop() {
     }
 }
 
-// === 存檔系統 ===
+// === 存檔系統 (僅自動存檔) ===
 
 function save() {
     try {
@@ -228,7 +236,7 @@ function load() {
             let loaded = JSON.parse(saved);
             g = { ...g, ...loaded };
             
-            // 防呆：修復可能缺失的欄位
+            // 防呆與修復
             if (!g.rLvs || g.rLvs.length < RELIC_DB.length) g.rLvs = new Array(RELIC_DB.length).fill(0);
             if (!g.skillCds) g.skillCds = [0,0,0,0];
             if (!g.activeTimers) g.activeTimers = [0,0,0,0];
@@ -239,5 +247,3 @@ function load() {
         console.error("Load failed:", e);
     }
 }
-
-
