@@ -65,6 +65,8 @@
         <span class="sp-text">✨ SP: <span id="sp-txt">10</span>/<span id="sp-max-txt">10</span></span>
     </div>
     <div class="dps-meter">總 DPS: <span id="dps-txt">0</span></div>
+    <!-- 新增：技能剩餘時間顯示區 -->
+    <div id="skill-timers"></div>
 </div>
 
 <!-- 遊戲主畫面 (Canvas) -->
@@ -93,13 +95,8 @@
         <div id="skill-area"></div>
     </div>
     
-    <!-- 分頁 2: 助手 -->
+    <!-- 分頁 2: 助手 (移除說明文字) -->
     <div id="panel1" class="panel-content">
-        <div class="panel-desc">
-            助手會自動攻擊。<br>
-            楓葉系需 Lv.1 選陣營；仙境系 Lv.10 轉職。<br>
-            全系列分支收集完畢後不再新增。
-        </div>
         <div id="helper-list"></div>
     </div>
     
@@ -110,10 +107,10 @@
     </div>
 </div>
 
-<!-- 依序引入 JS 檔案 (順序很重要) -->
-<script src="data.js"></script> <!-- 1. 資料庫 -->
-<script src="core.js"></script> <!-- 2. 核心邏輯 -->
-<script src="ui.js"></script>   <!-- 3. 介面控制 -->
+<!-- 依序引入 JS 檔案 -->
+<script src="data.js"></script> 
+<script src="core.js"></script> 
+<script src="ui.js"></script>   
 
 </body>
 </html>
