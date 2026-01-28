@@ -1,5 +1,5 @@
 /**
- * RPG Artale - UI 介面與事件處理 (v22 - Final UI)
+ * RPG Artale - UI 介面與事件處理 (v23 - Layout Fixes)
  * 負責：DOM 操作, Canvas 繪圖, Modal 邏輯, 事件綁定
  */
 
@@ -41,14 +41,14 @@ function initGame() {
                 id: Date.now(), 
                 lv: 1, 
                 name: "初學者", 
-                series: "MAPLE", 
+                series: "MAPLE", // 楓葉系列
                 camp: "", grp: "", job1: "" 
             },
             { 
                 id: Date.now() + 100, 
                 lv: 1, 
                 name: "初學者", 
-                series: "RO",    
+                series: "RO",    // 仙境系列
                 camp: "", grp: "", job1: "" 
             }
         ];
@@ -58,8 +58,8 @@ function initGame() {
 
     // 4. 啟動迴圈
     if (!loopsStarted) {
-        setInterval(tick, 1000); // Core Tick (每一秒)
-        requestAnimationFrame(gameLoop); // Animation Loop (60FPS)
+        setInterval(tick, 1000); // Core Tick
+        requestAnimationFrame(gameLoop); // Animation Loop
         loopsStarted = true;
     }
 
@@ -119,36 +119,27 @@ function renderHelpers() {
     area.innerHTML = '';
 
     g.helpers.forEach((h, i) => {
-        // 判斷是否需要操作 (轉職)
         let actionNeeded = false;
         
-        // --- 楓葉系列規則 ---
+        // 轉職檢查
         if (h.series === 'MAPLE') {
-            if (!h.camp) actionNeeded = true; // Lv.1 必須選陣營
-            else if (h.lv >= 10 && (!h.grp || !h.job1)) actionNeeded = true; // Lv.10 必須一轉
-        }
-        // --- 仙境系列規則 ---
-        else if (h.series === 'RO') {
-            if (h.lv >= 10 && (!h.camp || !h.grp || !h.job1)) actionNeeded = true; // Lv.10 必須一轉 (含選系)
+            if (!h.camp) actionNeeded = true;
+            else if (h.lv >= 10 && (!h.grp || !h.job1)) actionNeeded = true;
+        } else if (h.series === 'RO') {
+            if (h.lv >= 10 && (!h.camp || !h.grp || !h.job1)) actionNeeded = true;
         }
 
-        // --- 共通高階轉職規則 ---
         if (h.lv >= 30 && !h.job2) actionNeeded = true;
         else if (h.lv >= 70 && !h.job3) actionNeeded = true;
         else if (h.lv >= 120 && !h.job4) actionNeeded = true;
 
-        // 顯示名稱邏輯
-        let dispName = h.name; // 預設初學者
-        if (h.series === 'MAPLE' && h.camp) dispName = `[${h.camp}] 初學者`; // 楓葉已選陣營
-        // 職業覆蓋
-        dispName = h.job4 || h.job3 || h.job2 || h.job1 || dispName;
-        
-        // 系列標籤顏色
+        let dispName = h.job4 || h.job3 || h.job2 || h.job1 || h.grp || h.camp || h.name;
+        if (h.series === 'MAPLE' && h.camp && !h.job1) dispName = `[${h.camp}] 初學者`;
+
         let tagHtml = "";
         if (h.series === 'MAPLE') tagHtml = '<span style="color:#ffaacc">[楓]</span>';
         else if (h.series === 'RO') tagHtml = '<span style="color:#ccffff">[仙]</span>';
         
-        // 計算花費與倍率
         let tierMult = 1;
         if (h.job4) tierMult = 50;
         else if (h.job3) tierMult = 20;
@@ -158,18 +149,10 @@ function renderHelpers() {
         let cost = Math.floor(getHelperCost(h.lv, tierMult));
         let baseH = getHelperDmg(h.lv, tierMult);
         
-        // 這裡如果是全收集達成，DPS顯示也要乘上去，但因為 calculateFinalDmg 內部會呼叫 checkGrandSlam
-        // 而 calculateFinalDmg 的 base 參數不應包含全局倍率，所以這裡傳入 baseH 即可
-        // 不過為了顯示正確，我們手動乘上 grandSlam (如果有的話) 
-        // 更好的做法是 calculateFinalDmg 內部處理，這裡只傳基礎值
-        // 但因為 checkGrandSlam 是動態的，我們直接用 calculateFinalDmg 計算
-        // 注意：core.js 的 tick() 裡有做全域加成，這裡的 DPS 顯示也要一致
-        // 我們簡單判斷一下
         let isGrandSlam = (typeof checkGrandSlam === 'function') ? checkGrandSlam() : false;
         let finalBaseH = baseH * (isGrandSlam ? 100 : 1);
         let hDps = calculateFinalDmg(finalBaseH, 'avg');
 
-        // 按鈕狀態
         let isMax = h.lv >= MAX_HELPER_LV;
         let btnDisabled = actionNeeded || g.coins < cost || isMax;
         let btnText = isMax ? "MAX" : (actionNeeded ? "需轉職" : `💰${f(cost)}`);
@@ -231,11 +214,9 @@ function renderSkills() {
         let coinCost = (currentLvl + 1) * 500;
         let spCost = getSkillCost(i, Math.max(1, currentLvl));
 
-        // 技能按鈕文字 (倒數計時)
-        let btnText = "施放";
+        let btnText = isL ? `${skillCds[i]}s` : (isActive ? '作用中' : '施放');
         if (isActive) btnText = `剩餘 ${activeTimers[i]}s`;
-        else if (isL) btnText = `冷卻 ${skillCds[i]}s`;
-
+        
         let btnStyle = isActive ? 'background:#55ff55; color:black; border-color:#00aa00; min-width:80px;' : '';
         
         let desc = s.d; 
@@ -284,7 +265,6 @@ function getSeriesMaxBranches(series) {
         const camp = db[campKey];
         for (const grpKey in camp) {
             const grp = camp[grpKey];
-            // 檢查 Tier 4
             if (grp[4]) {
                 count += Array.isArray(grp[4]) ? grp[4].length : 1;
             }
@@ -296,13 +276,13 @@ function getSeriesMaxBranches(series) {
 function upgradeH(i) {
     const h = g.helpers[i];
     
-    // === 轉職卡點檢查 ===
+    // 轉職卡點檢查
     let needJob = false;
     if (h.series === 'MAPLE') {
-        if (!h.camp) needJob = true; // Lv.1 選陣營
-        else if (h.lv >= 10 && (!h.grp || !h.job1)) needJob = true; // Lv.10 一轉
+        if (!h.camp) needJob = true;
+        else if (h.lv >= 10 && (!h.grp || !h.job1)) needJob = true;
     } else if (h.series === 'RO') {
-        if (h.lv >= 10 && (!h.camp || !h.grp || !h.job1)) needJob = true; // Lv.10 一轉
+        if (h.lv >= 10 && (!h.camp || !h.grp || !h.job1)) needJob = true;
     }
     
     if (h.lv >= 30 && !h.job2) needJob = true;
@@ -311,10 +291,8 @@ function upgradeH(i) {
 
     if (needJob) return openJobSelection(i);
     
-    // === 升級邏輯 ===
     if (h.lv >= MAX_HELPER_LV) return;
 
-    // 計算當前倍率以決定升級花費
     let tierMult = 1;
     if (h.job4) tierMult = 50;
     else if (h.job3) tierMult = 20;
@@ -397,7 +375,7 @@ function openJobSelection(idx) {
         Object.keys(TARGET_DB).forEach(camp => {
             createBtn(container, camp, () => {
                 h.camp = camp;
-                closeAllModals(); // 楓葉選完陣營先關閉，等 Lv.10 再選職業
+                closeAllModals();
                 updateUI();
                 save();
             });
@@ -406,15 +384,11 @@ function openJobSelection(idx) {
     }
 
     // --- 仙境與楓葉共通：Lv.10 一轉 ---
-    // 仙境: 選系(Camp) -> 選職(Grp/Job1) 同步完成
-    // 楓葉: 已有 Camp -> 選職(Grp/Job1)
     if (!h.grp || !h.job1) {
         title.innerText = "一轉選擇 (Lv.10)";
         
         if (h.series === 'RO') {
-            // RO 需要先列出所有系 (Camp)
             Object.keys(TARGET_DB).forEach(camp => {
-                // 每個系底下通常只有一個 group (如劍士系->劍士)
                 let campData = TARGET_DB[camp];
                 Object.keys(campData).forEach(grp => {
                     let job1Name = campData[grp][1];
@@ -427,7 +401,6 @@ function openJobSelection(idx) {
                 });
             });
         } else {
-            // MAPLE 已有 Camp，直接列出 Grp
             let campData = TARGET_DB[h.camp];
             Object.keys(campData).forEach(grp => {
                 let job1Name = campData[grp][1];
@@ -451,7 +424,6 @@ function openJobSelection(idx) {
         title.innerText = `第 ${tier} 次轉職 (Lv.${h.lv})`;
         if (TARGET_DB[h.camp] && TARGET_DB[h.camp][h.grp] && TARGET_DB[h.camp][h.grp][tier]) {
             let choices = TARGET_DB[h.camp][h.grp][tier];
-            
             if (Array.isArray(choices)) {
                 choices.forEach(job => {
                     createBtn(container, job, () => {
@@ -490,7 +462,6 @@ function finishJob(idx) {
         const currentSeriesCount = g.helpers.filter(helper => helper.series === h.series).length;
         const maxSeriesCount = getSeriesMaxBranches(h.series);
         
-        // 還有空位才新增
         if (currentSeriesCount < maxSeriesCount) {
             g.helpers.push({ 
                 id: Date.now(), 
@@ -521,6 +492,11 @@ function openSettings() {
 function closeAllModals() {
     document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
     document.getElementById('overlay').style.display = 'none';
+    
+    // 關鍵修正：關閉視窗時，強制重繪畫布，解決手機鍵盤導致的變形
+    setTimeout(() => {
+        resizeCanvas();
+    }, 300);
 }
 
 function switchTab(tabIndex) {
@@ -573,6 +549,11 @@ function gameLoop(timestamp) {
 
     if (ctx && canvas) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 安全檢查：若怪物血量異常，強制刷新 (防止怪物消失)
+        if (isNaN(mHp) || mHp <= 0) {
+            refreshMonster();
+        }
 
         let cx = canvas.width / 2;
         let cy = canvas.height / 2;
