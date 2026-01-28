@@ -31,33 +31,8 @@
     </div>
 </div>
 
-<!-- [視窗] 設定 (匯入/匯出/重置) -->
-<div id="settings-modal" class="modal">
-    <div class="modal-header">
-        <h3>遊戲設定</h3>
-    </div>
-    <div class="modal-body">
-        <p style="color:#aaa; font-size:12px; margin-bottom:5px;">存檔代碼 (Base64)：</p>
-        <textarea id="save-data-io" rows="5" placeholder="在此貼上存檔代碼，或點擊匯出產生代碼..."></textarea>
-        
-        <div class="setting-actions">
-            <button class="action-btn export" onclick="exportSave()">匯出 (複製)</button>
-            <button class="action-btn import" onclick="importSave()">匯入 (讀取)</button>
-        </div>
-        
-        <div style="margin-top: 20px; border-top: 1px solid #444; padding-top: 10px;">
-            <p style="color:#f55; font-size:12px; margin-bottom:5px;">危險區域：</p>
-            <button class="action-btn danger" onclick="resetGame()">刪除存檔重置</button>
-        </div>
-    </div>
-    <div class="modal-footer">
-        <button onclick="closeAllModals()" class="close-text-btn">關閉</button>
-    </div>
-</div>
-
 <!-- 頂部資訊欄 -->
 <div class="header">
-    <div class="settings-icon" onclick="openSettings()">⚙️</div>
     <div class="stage-info">第 <span id="stage-txt">1</span> 關</div>
     <div class="currency">
         <span>💰 <span id="coin-txt">0</span></span>
@@ -65,7 +40,7 @@
         <span class="sp-text">✨ SP: <span id="sp-txt">10</span>/<span id="sp-max-txt">10</span></span>
     </div>
     <div class="dps-meter">總 DPS: <span id="dps-txt">0</span></div>
-    <!-- 新增：技能剩餘時間顯示區 -->
+    <!-- 技能剩餘時間顯示區 -->
     <div id="skill-timers"></div>
 </div>
 
