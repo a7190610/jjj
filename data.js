@@ -1,23 +1,25 @@
 /**
- * RPG Artale - 資料庫與數值平衡檔 (v27 - Index Alignment)
+ * RPG Adventure - 資料庫與數值平衡檔 (v1.0)
  * 包含：靜態資料 (DB) 與 成長公式 (Math)
- * 核心概念：Tier 2 的 index 決定該角色的終身路線
  */
 
 // === 遊戲常數 ===
 const MAX_HELPER_LV = 150;        // 助手等級上限
-const PLAYER_ATK_INTERVAL = 3000; // 主角自動攻擊間隔 (ms)
+const PLAYER_ATK_INTERVAL = 3000; // 主角自動攻擊間隔 (ms) - 3秒一次
 const CLICK_CPS_RATIO = 5;        // DPS計算用的模擬點擊頻率 (次/秒)
+const BG_IMAGE_URL = "https://upload.wikimedia.org/wikipedia/commons/e/e0/Creek_and_old-growth_forest-Larch_Mountain.jpg"; // 背景圖
 
 // === [區塊 1] 靜態資料庫 ===
 
+// 系列定義
 const SERIES_DB = {
     "MAPLE": "楓葉系列",
     "RO": "仙境系列"
 };
 
-// 楓葉系列職業樹 (依照圖片順序與名稱修正)
+// 楓葉系列職業樹
 // 結構: Camp -> Group -> Tier: [Branch A, Branch B, Branch C...]
+// 注意：陣列索引 (Index) 對應是非常重要的，二轉選了 Index 0，三四轉就會鎖定在 Index 0
 const JOB_MAPLE = {
     "冒險家": {
         "劍士": { 
@@ -55,7 +57,6 @@ const JOB_MAPLE = {
         "核心": { 
             1: "騎士", 
             2: ["聖魂騎士", "烈焰巫師", "破風使者", "暗夜行者", "閃雷悍將"], 
-            // 簡化處理：皇家騎士團通常直接繼承，這裡假設單線或對應
             3: ["聖魂騎士(三轉)", "烈焰巫師(三轉)", "破風使者(三轉)", "暗夜行者(三轉)", "閃雷悍將(三轉)"],
             4: ["聖魂劍士", "烈焰巫師(四轉)", "破風使者(四轉)", "暗夜行者(四轉)", "閃雷悍將(四轉)"] 
         } 
@@ -73,7 +74,6 @@ const JOB_MAPLE = {
 };
 
 // 仙境系列職業樹 (RO)
-// 為了配合二轉鎖定邏輯，將分支整合在同一個陣列
 const JOB_RO = {
     "劍士系": {
         "劍士": { 
@@ -94,7 +94,7 @@ const JOB_RO = {
     "弓箭手系": {
         "弓箭手": { 
             1: "弓箭手", 
-            2: ["獵人", "詩人", "舞孃"], // 整合為三個分支
+            2: ["獵人", "詩人", "舞孃"], // 整合在同一層以利於「唯一性鎖定」
             3: ["神射手", "搞笑藝人", "冷豔舞姬"], 
             4: ["遊俠", "宮廷樂師", "浪跡舞者"] 
         }
@@ -145,48 +145,57 @@ const RELIC_DB = [
 
 const SKILL_DB = [
     { n: "慧心一擊", d: "造成超高額傷害", cost: 10, cd: 8, val: 100 }, 
-    // Buff 類技能 CD 固定 90s
+    // Buff 類技能 CD 固定 90s，持續時間會隨等級成長
     { n: "致命爆擊", d: "提升爆擊機率，爆擊2倍傷", cost: 10, cd: 90, val: 0.005, dur: 30 },
     { n: "奮力狂擊", d: "提升總攻擊倍率", cost: 10, cd: 90, val: 2, dur: 30 },
     { n: "影分身",   d: "持續時間內總傷害雙倍", cost: 15, cd: 90, val: 2, dur: 30 }
 ];
 
 
-// === [區塊 2] 數值成長公式 (Math) ===
+// === [區塊 2] 數值成長公式 (Math - 防呆處理) ===
 
 // 怪物血量：每關成長 1.16 倍
 function getMonsterHp(stage) { 
+    stage = Math.max(1, stage || 1); // 防呆
     return 50 * Math.pow(1.16, stage - 1); 
 }
 
 // 怪物金幣：每關成長 1.16 倍
 function getMonsterCoin(stage) { 
+    stage = Math.max(1, stage || 1);
     return 10 * Math.pow(1.16, stage - 1); 
 }
 
 // 主角升級費用：每級成長 1.15 倍
 function getPlayerCost(lv) { 
+    lv = Math.max(1, lv || 1);
     return 10 * Math.pow(1.15, lv - 1); 
 }
 
 // 主角傷害：每級成長 1.16 倍
 function getPlayerDmg(lv) { 
+    lv = Math.max(1, lv || 1);
     return 5 * Math.pow(1.16, lv - 1); 
 }
 
 // 助手升級費用：每級成長 1.15 倍，受轉職階級倍率影響
 // Tier Mult: 1轉(5), 2轉(10), 3轉(20), 4轉(50)
-function getHelperCost(lv, tierMult = 1) { 
+function getHelperCost(lv, tierMult) { 
+    lv = Math.max(1, lv || 1);
+    tierMult = tierMult || 1;
     return 10 * tierMult * Math.pow(1.15, lv - 1); 
 }
 
 // 助手傷害：每級成長 1.16 倍
-function getHelperDmg(lv, tierMult = 1) { 
+function getHelperDmg(lv, tierMult) { 
+    lv = Math.max(1, lv || 1);
+    tierMult = tierMult || 1;
     return 2 * tierMult * Math.pow(1.16, lv - 1); 
 }
 
 // 技能 SP 消耗：線性成長，Lv1為基礎，Lv100為100
 function getSkillCost(i, lv) {
+    lv = Math.max(1, lv || 1);
     if (lv <= 1) return SKILL_DB[i].cost;
     let base = SKILL_DB[i].cost;
     let max = 100;
@@ -196,12 +205,13 @@ function getSkillCost(i, lv) {
 
 // 最大 SP：基礎10，每級+2，上限400
 function getMaxSP(lv) { 
+    lv = Math.max(1, lv || 1);
     return Math.min(400, 10 + (lv - 1) * 2); 
 }
 
 // 數字格式化 (K, M, B, T)
 function f(n) { 
-    if(!n) n = 0;
+    if (!n || isNaN(n)) return "0";
     if (n < 10000) return Math.floor(n).toLocaleString(); 
     const u=["K","M","B","T","q","Q","s","S","O","N"]; 
     let i=-1, d=n; 
