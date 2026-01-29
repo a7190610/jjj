@@ -1,5 +1,5 @@
 /**
- * RPG Adventure - 核心邏輯 (v28 - Robust Core)
+ * RPG Adventure - 核心邏輯 (v29 - Force Reset & Stabilization)
  * 負責：State 管理, 傷害計算, 自動存檔, DPS 公式
  */
 
@@ -27,7 +27,7 @@ let currentDps = 0;
 let lastPlayerAtkTime = 0; // 主角自動攻擊計時
 
 // 存檔鍵值 (更新版本號以強制重置，解決舊存檔導致的白畫面)
-const SAVE_KEY = 'rpg_adventure_save_v28';
+const SAVE_KEY = 'artale_final_lock_v29';
 
 // === 傷害計算核心 ===
 
@@ -152,6 +152,7 @@ function tick() {
         let avgPlayerShot = calculateFinalDmg(pBaseRaw, 'avg');
         let avgHelperTick = calculateFinalDmg(helperTotalRaw, 'avg');
         
+        // PLAYER_ATK_INTERVAL 是毫秒，轉為秒需除以 1000
         let playerAutoDps = avgPlayerShot / (PLAYER_ATK_INTERVAL / 1000); 
         let clickDps = avgPlayerShot * CLICK_CPS_RATIO;
         
@@ -247,18 +248,25 @@ function load() {
         if (saved) {
             let loadedData = JSON.parse(saved);
             
-            // 深度合併：使用預設值填充缺失的欄位
+            // === 深度合併 (Deep Merge) ===
+            // 使用預設值填充缺失的欄位，防止舊存檔缺少新變數導致崩潰
             g = Object.assign({}, DEFAULT_STATE, loadedData);
             
-            // 針對陣列做額外檢查
+            // 針對陣列做額外檢查，確保長度正確且非 null
             if (!Array.isArray(g.helpers)) g.helpers = [];
-            if (!Array.isArray(g.skillCds) || g.skillCds.length !== 4) g.skillCds = [0, 0, 0, 0];
-            if (!Array.isArray(g.activeTimers) || g.activeTimers.length !== 4) g.activeTimers = [0, 0, 0, 0];
             
-            if (Array.isArray(g.sLvs)) {
-                g.sLvs = g.sLvs.map(l => Math.min(100, l));
-            } else {
+            if (!Array.isArray(g.skillCds) || g.skillCds.length !== 4) {
+                g.skillCds = [0, 0, 0, 0];
+            }
+            
+            if (!Array.isArray(g.activeTimers) || g.activeTimers.length !== 4) {
+                g.activeTimers = [0, 0, 0, 0];
+            }
+            
+            if (!Array.isArray(g.sLvs) || g.sLvs.length !== 4) {
                 g.sLvs = [0, 0, 0, 0];
+            } else {
+                g.sLvs = g.sLvs.map(l => Math.min(100, l));
             }
 
             if (!Array.isArray(g.rLvs) || g.rLvs.length < RELIC_DB.length) {
@@ -271,7 +279,7 @@ function load() {
             g = JSON.parse(JSON.stringify(DEFAULT_STATE));
         }
     } catch (e) {
-        console.error("Load failed, resetting:", e);
+        console.error("Load failed, resetting to default:", e);
         g = JSON.parse(JSON.stringify(DEFAULT_STATE));
     }
 }
