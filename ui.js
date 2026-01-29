@@ -1,6 +1,6 @@
 /**
- * RPG Adventure - UI 介面與事件處理 (v28 - Visual Fixes & Auto Evolve)
- * 負責：DOM 操作, Canvas 繪圖 (背景/主角/怪物/助手), Modal 邏輯
+ * RPG Adventure - UI 介面與事件處理 (v29 - Visual & Logic Fixes)
+ * 負責：DOM 操作, Canvas 繪圖, Modal 邏輯(含鎖定/自動導航), 事件綁定
  */
 
 // Canvas 全域變數
@@ -38,7 +38,7 @@ function initGame() {
     // 2. 載入背景圖
     bgImage.src = BG_IMAGE_URL;
     bgImage.onload = () => { bgLoaded = true; };
-    bgImage.onerror = () => { console.log("背景圖載入失敗，使用預設背景"); };
+    bgImage.onerror = () => { console.log("背景圖載入失敗，將使用預設背景"); };
 
     // 3. 讀取存檔
     if (typeof load === 'function') load();
@@ -64,7 +64,7 @@ function initGame() {
         if (typeof save === 'function') save();
     }
     
-    // 強制初始化怪物血量，防止 NaN
+    // 強制初始化怪物血量，防止 NaN 導致黑屏
     if (typeof refreshMonster === 'function') refreshMonster();
 
     // 5. 啟動迴圈
@@ -90,7 +90,6 @@ function resizeCanvas() {
 // === UI 更新 ===
 
 function updateUI() {
-    // 貨幣與關卡
     setText('coin-txt', f(g.coins));
     setText('dia-txt', f(g.diamonds));
     setText('sp-txt', g.sp);
@@ -98,13 +97,11 @@ function updateUI() {
     setText('stage-txt', g.stage);
     setText('dps-txt', f(currentDps));
 
-    // 主角狀態
     let pBase = getPlayerDmg(g.playerLv);
     let avgClick = calculateFinalDmg(pBase, 'avg');
     setText('pAtk-title', `⚔️ 主角攻擊力 (Lv.${g.playerLv})`);
     setText('pAtk-val', `單次點擊: ${f(avgClick)}`);
 
-    // 升級按鈕狀態
     let pCost = Math.floor(getPlayerCost(g.playerLv));
     let pBtn = document.getElementById('pUpBtn');
     if (pBtn) {
@@ -112,10 +109,7 @@ function updateUI() {
         pBtn.disabled = g.coins < pCost;
     }
 
-    // 更新技能倒數顯示區
     updateSkillTimersDisplay();
-
-    // 渲染各區塊
     renderHelpers();
     renderRelics();
     renderSkills();
@@ -155,9 +149,7 @@ function renderHelpers() {
         let isAutoEvolve = false;
         let nextJobName = "";
         
-        // --- 檢查轉職狀態 ---
-        
-        // 1. 開局選擇 (Lv.1 / Lv.10)
+        // --- 1. 手動轉職檢查 (Lv.1, Lv.10, Lv.30) ---
         if (h.series === 'MAPLE') {
             if (!h.camp) actionNeeded = true;
             else if (h.lv >= 10 && (!h.grp || !h.job1)) actionNeeded = true;
@@ -165,12 +157,12 @@ function renderHelpers() {
             if (h.lv >= 10 && (!h.camp || !h.grp || !h.job1)) actionNeeded = true;
         }
 
-        // 2. 二轉選擇 (Lv.30) - 需彈窗
         if (!actionNeeded && h.lv >= 30 && !h.job2) {
             actionNeeded = true;
         }
 
-        // 3. 三轉 (Lv.70) & 四轉 (Lv.120) - 自動導航
+        // --- 2. 自動轉職檢查 (Lv.70, Lv.120) ---
+        // 優先順序：如果已經滿足手動轉職條件，就先處理手動。如果沒有，再看是不是到了自動轉職等級。
         if (!actionNeeded) {
             if (h.lv >= 70 && !h.job3) {
                 actionNeeded = true;
@@ -183,7 +175,7 @@ function renderHelpers() {
             }
         }
 
-        // 顯示名稱邏輯
+        // 顯示名稱
         let dispName = h.name; 
         if (h.series === 'MAPLE' && h.camp && !h.job1) dispName = `[${h.camp}] 初學者`;
         dispName = h.job4 || h.job3 || h.job2 || h.job1 || dispName;
@@ -201,12 +193,11 @@ function renderHelpers() {
         let cost = Math.floor(getHelperCost(h.lv, tierMult));
         let baseH = getHelperDmg(h.lv, tierMult);
         
-        // 全收集加成
         let isGrandSlam = (typeof checkGrandSlam === 'function') ? checkGrandSlam() : false;
         let finalBaseH = baseH * (isGrandSlam ? 100 : 1);
         let hDps = calculateFinalDmg(finalBaseH, 'avg');
 
-        // 按鈕狀態
+        // 按鈕狀態與文字
         let isMax = h.lv >= MAX_HELPER_LV;
         let btnDisabled = false;
         let btnText = "";
@@ -217,13 +208,13 @@ function renderHelpers() {
             btnDisabled = true;
         } else if (actionNeeded) {
             if (isAutoEvolve) {
-                // 自動轉職模式
+                // 自動模式：顯示進化目標，消耗金幣
                 btnText = `進化: ${nextJobName}`;
                 if (g.coins < cost) btnDisabled = true;
             } else {
-                // 手動選擇模式
+                // 手動模式：顯示需轉職，需點擊左側按鈕
                 btnText = "需轉職";
-                btnDisabled = true;
+                btnDisabled = true; // 鎖住升級按鈕
                 jobBtnHtml = `<button class="job-btn" onclick="openJobSelection(${i})">轉職!</button>`;
             }
         } else {
@@ -232,7 +223,7 @@ function renderHelpers() {
             if (g.coins < cost) btnDisabled = true;
         }
 
-        // 點擊事件：無論是升級還是自動進化，都走 upgradeH
+        // 點擊 Action：統一走 upgradeH，內部會判斷是升級還是自動進化
         let clickAction = `onclick="upgradeH(${i})"`;
 
         let html = `
@@ -250,7 +241,7 @@ function renderHelpers() {
     });
 }
 
-// 輔助：預測下一階職業名稱
+// 輔助：預測下一階職業 (Index Alignment 核心)
 function getNextJobName(h, targetTier) {
     const db = (h.series === 'MAPLE') ? JOB_MAPLE : JOB_RO;
     if (!db[h.camp] || !db[h.camp][h.grp]) return "進化";
@@ -263,9 +254,13 @@ function getNextJobName(h, targetTier) {
     const currentJob = h['job' + (targetTier - 1)];
     const index = prevTierList.indexOf(currentJob);
     
+    // 如果找到了對應的 index，回傳該職業名
     if (index !== -1 && targetTierList[index]) {
         return targetTierList[index];
     }
+    // 如果找不到 (例如單一路線)，直接回傳第一個，或是進化
+    if (targetTierList.length === 1) return targetTierList[0];
+    
     return "進化";
 }
 
@@ -273,24 +268,14 @@ function renderRelics() {
     const area = document.getElementById('relic-area');
     if (!area) return;
     area.innerHTML = '';
-    
     RELIC_DB.forEach((r, i) => {
         let lv = (g.rLvs && g.rLvs[i]) || 0;
         let isOwned = lv > 0;
         let cost = (lv === 0) ? 10 : lv * 5;
-        
         if (!isOwned) {
-            area.innerHTML += `<div class="item" style="opacity:0.5; filter:grayscale(1);">
-                <div class="info"><strong>???</strong><small>擊敗BOSS解鎖</small></div>
-            </div>`;
+            area.innerHTML += `<div class="item" style="opacity:0.5; filter:grayscale(1);"><div class="info"><strong>???</strong><small>擊敗BOSS解鎖</small></div></div>`;
         } else {
-            area.innerHTML += `<div class="item">
-                <div class="info">
-                    <strong>${r.n} <span style="color:#00e5ff">(Lv.${lv})</span></strong>
-                    <b>${r.d}</b>
-                </div>
-                <button class="up-btn" onclick="upR(${i})" ${g.diamonds < cost ? 'disabled' : ''}>💎${cost}</button>
-            </div>`;
+            area.innerHTML += `<div class="item"><div class="info"><strong>${r.n} <span style="color:#00e5ff">(Lv.${lv})</span></strong><b>${r.d}</b></div><button class="up-btn" onclick="upR(${i})" ${g.diamonds < cost ? 'disabled' : ''}>💎${cost}</button></div>`;
         }
     });
 }
@@ -313,10 +298,9 @@ function renderSkills() {
         let btnStyle = isActive ? 'border: 2px solid #55ff55; color:#55ff55;' : '';
         if (isL) btnStyle = 'opacity: 0.7;';
 
-        // === 技能說明動態化 (Fix: Apply Growth Formula) ===
+        // 修正：將等級成長套用到顯示文字
         let desc = s.d; 
         if (i === 0) desc = `傷害 ${100 + (currentLvl > 0 ? currentLvl - 1 : 0)} 倍`;
-        // 修正：Buff類技能時間隨等級增加
         if (i === 1) desc = `爆擊率 ${(currentLvl * 0.5).toFixed(1)}% (${30 + (currentLvl > 0 ? currentLvl - 1 : 0)}s)`; 
         if (i === 2) desc = `傷害 ${(2 + (currentLvl > 0 ? currentLvl - 1 : 0) * 0.5).toFixed(1)}倍 (${30 + (currentLvl > 0 ? currentLvl - 1 : 0)}s)`;
         if (i === 3) desc = `傷害翻倍 (${30 + (currentLvl > 0 ? currentLvl - 1 : 0)}s)`;
@@ -339,7 +323,7 @@ function renderSkills() {
     });
 }
 
-// === 升級與技能邏輯 ===
+// === 升級與自動轉職邏輯 ===
 
 function upgradePlayer() {
     let c = Math.floor(getPlayerCost(g.playerLv));
@@ -371,7 +355,28 @@ function getSeriesMaxBranches(series) {
 function upgradeH(i) {
     const h = g.helpers[i];
     
-    // 檢查是否為需要彈窗的轉職階段
+    // 優先檢查自動進化 (Lv.70, Lv.120)
+    // 這樣可以避免被下面的 manualJobNeeded 攔截
+    let autoEvolveTier = 0;
+    if (h.lv >= 70 && !h.job3) autoEvolveTier = 3;
+    else if (h.lv >= 120 && !h.job4) autoEvolveTier = 4;
+
+    if (autoEvolveTier > 0) {
+        let tierMult = (autoEvolveTier === 3) ? 10 : 20; 
+        let cost = Math.floor(getHelperCost(h.lv, tierMult));
+        
+        if (g.coins >= cost) {
+            // 執行自動進化邏輯
+            if (performAutoEvolve(i, autoEvolveTier)) {
+                g.coins -= cost;
+                updateUI();
+                save();
+            }
+        }
+        return; // 結束，不繼續執行下面的升級
+    }
+
+    // 檢查手動轉職卡點 (Lv.1, Lv.10, Lv.30)
     let manualJobNeeded = false;
     if (h.series === 'MAPLE') {
         if (!h.camp) manualJobNeeded = true;
@@ -384,41 +389,23 @@ function upgradeH(i) {
     if (manualJobNeeded) {
         return openJobSelection(i);
     }
+    
+    // 一般升級
+    if (h.lv >= MAX_HELPER_LV) return;
 
-    // 檢查是否為自動轉職階段 (Lv.70, Lv.120)
-    let autoEvolveTier = 0;
-    if (h.lv >= 70 && !h.job3) autoEvolveTier = 3;
-    else if (h.lv >= 120 && !h.job4) autoEvolveTier = 4;
+    let tierMult = 1;
+    if (h.job4) tierMult = 50;
+    else if (h.job3) tierMult = 20;
+    else if (h.job2) tierMult = 10;
+    else if (h.job1) tierMult = 5;
 
-    if (autoEvolveTier > 0) {
-        // 執行自動轉職 (消耗當前等級的升級費用)
-        let tierMult = (autoEvolveTier === 3) ? 10 : 20; // 費用倍率取決於當前階級
-        let cost = Math.floor(getHelperCost(h.lv, tierMult));
-        
-        if (g.coins >= cost) {
-            if (performAutoEvolve(i, autoEvolveTier)) {
-                g.coins -= cost;
-                updateUI();
-                save();
-            }
-        }
-    } else {
-        // 一般升級
-        if (h.lv >= MAX_HELPER_LV) return;
-        
-        let tierMult = 1;
-        if (h.job4) tierMult = 50;
-        else if (h.job3) tierMult = 20;
-        else if (h.job2) tierMult = 10;
-        else if (h.job1) tierMult = 5;
-
-        let cost = Math.floor(getHelperCost(h.lv, tierMult));
-        if (g.coins >= cost) {
-            g.coins -= cost;
-            h.lv++;
-            updateUI();
-            save();
-        }
+    let cost = Math.floor(getHelperCost(h.lv, tierMult));
+    
+    if (g.coins >= cost) {
+        g.coins -= cost;
+        h.lv++;
+        updateUI();
+        save();
     }
 }
 
@@ -426,15 +413,20 @@ function upgradeH(i) {
 function performAutoEvolve(idx, targetTier) {
     const h = g.helpers[idx];
     const db = (h.series === 'MAPLE') ? JOB_MAPLE : JOB_RO;
+    
+    // 安全性檢查：確保路徑存在
+    if (!db[h.camp] || !db[h.camp][h.grp]) return false;
+
     const prevTierList = db[h.camp][h.grp][targetTier - 1];
     const targetTierList = db[h.camp][h.grp][targetTier];
     
-    // 找出索引並繼承
+    // 根據上一階的職業名稱，找到 Index
     const currentJob = h['job' + (targetTier - 1)];
     const index = Array.isArray(prevTierList) ? prevTierList.indexOf(currentJob) : 0;
     
     let newJob = "";
-    if (Array.isArray(targetTierList) && index !== -1) {
+    // 對應到當前階層的同一個 Index
+    if (Array.isArray(targetTierList) && index !== -1 && targetTierList[index]) {
         newJob = targetTierList[index];
     } else if (!Array.isArray(targetTierList)) {
         newJob = targetTierList;
@@ -442,10 +434,9 @@ function performAutoEvolve(idx, targetTier) {
 
     if (newJob) {
         h['job' + targetTier] = newJob;
-        
         createClickEffect(canvas.width/2, canvas.height/2, `✨ ${newJob}!`, "#ffcc00");
         
-        // 四轉後檢查是否新增角色
+        // 四轉完成後，檢查是否新增角色
         if (targetTier === 4) {
             checkAndAddNextHelper(h.series);
         }
@@ -477,7 +468,6 @@ function checkAndAddNextHelper(series) {
             grp: "", 
             job1: "" 
         });
-        // 延遲提示，避免畫面更新衝突
         setTimeout(() => alert(`新的 ${series === 'MAPLE' ? '楓葉' : '仙境'} 初學者加入了隊伍！`), 300);
     }
 }
@@ -496,7 +486,6 @@ function upR(i) {
 
 function useS(i) {
     let spCost = getSkillCost(i, Math.max(1, g.sLvs[i]));
-    
     if (g.sp >= spCost && g.skillCds[i] == 0 && g.sLvs[i] > 0) {
         g.sp -= spCost;
         let currentLvl = Math.max(1, g.sLvs[i]);
@@ -509,23 +498,20 @@ function useS(i) {
             dealDmg(totalDmg, false, dmgObj.crit);
             createClickEffect(canvas.width/2, canvas.height/2 - 50, "💥", "#ff0000");
         } else { 
-            // Fix: Apply duration growth
             let duration = 30 + (currentLvl - 1); 
             g.activeTimers[i] = duration;
         }
-        
         g.skillCds[i] = SKILL_DB[i].cd;
         updateUI();
     }
 }
-
-// === 轉職視窗 ===
 
 function openJobSelection(idx) {
     const h = g.helpers[idx];
     const modal = document.getElementById('job-modal');
     const container = document.getElementById('job-options');
     const title = document.getElementById('modal-title');
+    
     container.innerHTML = '';
     modal.style.display = 'flex';
     document.getElementById('overlay').style.display = 'block';
@@ -569,7 +555,7 @@ function openJobSelection(idx) {
         return;
     }
 
-    // Lv.30 Job2 (Branch Locking)
+    // Lv.30 二轉 (唯一性鎖定)
     if (h.lv >= 30 && !h.job2) {
         title.innerText = "二轉選擇 (Lv.30)";
         let choices = TARGET_DB[h.camp][h.grp][2];
@@ -577,7 +563,6 @@ function openJobSelection(idx) {
         
         if (Array.isArray(choices)) {
             choices.forEach((job, index) => {
-                // 排除已佔用的分支
                 if (!takenIndices.has(index)) {
                     createBtn(container, job, () => {
                         h.job2 = job;
@@ -661,7 +646,7 @@ function gameLoop(timestamp) {
     if (ctx && canvas) {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 1. 繪製背景 (最底層)
+        // 1. 繪製背景
         if (bgLoaded) {
             let ratio = Math.max(canvas.width / bgImage.width, canvas.height / bgImage.height);
             let centerShift_x = (canvas.width - bgImage.width * ratio) / 2;
@@ -670,12 +655,11 @@ function gameLoop(timestamp) {
             ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         } else {
-            // 背景載入失敗時的備案
-            ctx.fillStyle = "#2c3e50";
+            ctx.fillStyle = "#2c3e50"; // 備用背景
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        // 2. 數據防呆
+        // 2. 防呆：怪物血量檢查
         if (isNaN(mHp) || mHp <= 0) refreshMonster();
 
         let cx = canvas.width / 2;
@@ -700,23 +684,20 @@ function gameLoop(timestamp) {
         let playerY = cy + 50;
         ctx.fillStyle = "#00ccff";
         ctx.fillRect(playerX, playerY, 40, 40);
-        ctx.fillStyle = "#fff"; ctx.fillRect(playerX + 25, playerY + 5, 10, 10); 
+        ctx.fillStyle = "#fff"; ctx.fillRect(playerX + 25, playerY + 5, 10, 10);
 
-        // 5. 血條與血量文字
+        // 5. 血條
         let hpPct = Math.max(0, mHp / mMaxHp);
         let barW = 160; let barH = 16; let barY = cy - size/2 - 30;
         ctx.fillStyle = "#333"; ctx.fillRect(cx - barW/2, barY, barW, barH);
         ctx.fillStyle = "#00ff00"; ctx.fillRect(cx - barW/2, barY, barW * hpPct, barH);
         ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; ctx.strokeRect(cx - barW/2, barY, barW, barH);
-        
-        ctx.fillStyle = "#fff";
-        ctx.font = "bold 12px Arial";
-        ctx.textAlign = "center";
+        ctx.fillStyle = "#fff"; ctx.font = "bold 12px Arial"; ctx.textAlign = "center";
         ctx.shadowColor = "black"; ctx.shadowBlur = 3;
         ctx.fillText(`${f(Math.ceil(mHp))} / ${f(mMaxHp)}`, cx, barY + 12);
         ctx.shadowBlur = 0;
 
-        // 6. 助手 (繞圈)
+        // 6. 助手
         let t = Date.now() / 1000;
         if (g.helpers) {
             g.helpers.forEach((h, i) => {
