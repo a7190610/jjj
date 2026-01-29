@@ -1,20 +1,25 @@
 /**
- * RPG Adventure - 資料庫與數值平衡檔 (v28 - Fixes)
+ * RPG Adventure - 資料庫與數值平衡檔 (v29 - Fix Job Tree & Scaling)
  * 包含：靜態資料 (DB) 與 成長公式 (Math)
  */
 
 // === 遊戲常數 ===
 const MAX_HELPER_LV = 150;        // 助手等級上限
 const PLAYER_ATK_INTERVAL = 3000; // 主角自動攻擊間隔 (ms)
-const CLICK_CPS_RATIO = 5;        // DPS計算用的模擬點擊頻率
-// 備用背景圖，若原圖失效可替換
+const CLICK_CPS_RATIO = 5;        // DPS計算用的模擬點擊頻率 (次/秒)
+// 背景圖連結 (若失效會顯示深色背景)
 const BG_IMAGE_URL = "https://upload.wikimedia.org/wikipedia/commons/e/e0/Creek_and_old-growth_forest-Larch_Mountain.jpg";
 
 // === [區塊 1] 靜態資料庫 ===
 
-const SERIES_DB = { "MAPLE": "楓葉系列", "RO": "仙境系列" };
+const SERIES_DB = {
+    "MAPLE": "楓葉系列",
+    "RO": "仙境系列"
+};
 
-// 楓葉系列職業樹
+// 楓葉系列職業樹 (依照圖片順序修正)
+// 結構: Camp -> Group -> Tier: [Branch A, Branch B, Branch C...]
+// 注意：Index 0 對應 Branch A，Index 1 對應 Branch B，以此類推
 const JOB_MAPLE = {
     "冒險家": {
         "劍士": { 
@@ -25,7 +30,7 @@ const JOB_MAPLE = {
         },
         "法師": { 
             1: "法師", 
-            2: ["火毒巫師", "冰雷巫師", "僧侶"], 
+            2: ["火毒巫師", "冰雷巫師", "僧侶"], // 修正順序：火毒 -> 冰雷 -> 僧侶
             3: ["火毒魔導士", "冰雷魔導士", "祭司"], 
             4: ["火毒大魔導士", "冰雷大魔導士", "主教"] 
         },
@@ -38,13 +43,13 @@ const JOB_MAPLE = {
         "盜賊": { 
             1: "盜賊", 
             2: ["刺客", "俠盜"], 
-            3: ["暗殺者", "神偷"], 
+            3: ["暗殺者", "神偷"], // 修正名稱
             4: ["夜使者", "暗影神偷"] 
         },
         "海盜": { 
             1: "海盜", 
             2: ["槍手", "打手"], 
-            3: ["神槍手", "格鬥家"], 
+            3: ["神槍手", "格鬥家"], // 修正名稱
             4: ["槍神", "拳霸"] 
         }
     },
@@ -83,6 +88,7 @@ const JOB_RO = {
         }
     },
     "弓箭手系": {
+        // 為了二轉鎖定邏輯，整合為一個 Group 的三個分支
         "弓箭手": { 
             1: "弓箭手", 
             2: ["獵人", "詩人", "舞孃"], 
@@ -136,13 +142,14 @@ const RELIC_DB = [
 
 const SKILL_DB = [
     { n: "慧心一擊", d: "造成超高額傷害", cost: 10, cd: 8, val: 100 }, 
-    // Buff 類：CD 固定 90s, 持續時間 30s + (Level-1)
+    // Buff 類技能 CD 固定 90s，持續時間會隨等級成長
     { n: "致命爆擊", d: "提升爆擊機率，爆擊2倍傷", cost: 10, cd: 90, val: 0.005, dur: 30 },
     { n: "奮力狂擊", d: "提升總攻擊倍率", cost: 10, cd: 90, val: 2, dur: 30 },
     { n: "影分身",   d: "持續時間內總傷害雙倍", cost: 15, cd: 90, val: 2, dur: 30 }
 ];
 
-// === 數值公式 ===
+
+// === [區塊 2] 數值成長公式 (Math - 防呆處理) ===
 
 function getMonsterHp(stage) { 
     stage = Math.max(1, stage || 1);
@@ -164,18 +171,22 @@ function getPlayerDmg(lv) {
     return 5 * Math.pow(1.16, lv - 1); 
 }
 
+// 助手升級費用：受轉職階級倍率影響
+// Tier Mult: 1轉(5), 2轉(10), 3轉(20), 4轉(50)
 function getHelperCost(lv, tierMult) { 
     lv = Math.max(1, lv || 1);
     tierMult = tierMult || 1;
     return 10 * tierMult * Math.pow(1.15, lv - 1); 
 }
 
+// 助手傷害
 function getHelperDmg(lv, tierMult) { 
     lv = Math.max(1, lv || 1);
     tierMult = tierMult || 1;
     return 2 * tierMult * Math.pow(1.16, lv - 1); 
 }
 
+// 技能 SP 消耗
 function getSkillCost(i, lv) {
     lv = Math.max(1, lv || 1);
     if (lv <= 1) return SKILL_DB[i].cost;
@@ -185,11 +196,13 @@ function getSkillCost(i, lv) {
     return Math.floor(Math.min(max, cost));
 }
 
+// 最大 SP
 function getMaxSP(lv) { 
     lv = Math.max(1, lv || 1);
     return Math.min(400, 10 + (lv - 1) * 2); 
 }
 
+// 數字格式化
 function f(n) { 
     if (!n || isNaN(n)) return "0";
     if (n < 10000) return Math.floor(n).toLocaleString(); 
