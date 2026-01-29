@@ -1,6 +1,6 @@
 /**
- * RPG Adventure - 核心邏輯 (v1.0 - Robust Core)
- * 負責：State 管理, 傷害計算, 強制與穩健的自動存檔, DPS 公式
+ * RPG Adventure - 核心邏輯 (v28 - Robust Core)
+ * 負責：State 管理, 傷害計算, 自動存檔, DPS 公式
  */
 
 // 定義預設遊戲狀態 (用於初始化與存檔修復)
@@ -17,7 +17,7 @@ const DEFAULT_STATE = {
     activeTimers: [0, 0, 0, 0] // 技能持續時間
 };
 
-// 遊戲全域狀態 (初始化為預設值)
+// 遊戲全域狀態
 let g = JSON.parse(JSON.stringify(DEFAULT_STATE));
 
 // 戰鬥暫存變數 (不存檔)
@@ -26,15 +26,15 @@ let mMaxHp = 1;
 let currentDps = 0;
 let lastPlayerAtkTime = 0; // 主角自動攻擊計時
 
-// 存檔鍵值 (固定名稱，依靠程式碼邏輯來兼容舊版)
-const SAVE_KEY = 'rpg_adventure_save_v1';
+// 存檔鍵值 (更新版本號以強制重置，解決舊存檔導致的白畫面)
+const SAVE_KEY = 'rpg_adventure_save_v28';
 
 // === 傷害計算核心 ===
 
 function calculateFinalDmg(base, mode = 'roll') {
     let dmg = base || 0;
 
-    // 確保陣列存在 (防呆)
+    // 防呆：確保陣列存在
     const timers = g.activeTimers || [0,0,0,0];
     const skills = g.sLvs || [0,0,0,0];
 
@@ -88,7 +88,6 @@ function checkGrandSlam() {
     [JOB_MAPLE, JOB_RO].forEach(db => {
         for (let camp in db) {
             for (let grp in db[camp]) {
-                // Tier 4 可能不存在(例如某些特殊職)，需檢查
                 if (db[camp][grp][4]) {
                     let t4 = db[camp][grp][4];
                     if (Array.isArray(t4)) t4.forEach(j => requiredJobs.add(j));
@@ -153,7 +152,6 @@ function tick() {
         let avgPlayerShot = calculateFinalDmg(pBaseRaw, 'avg');
         let avgHelperTick = calculateFinalDmg(helperTotalRaw, 'avg');
         
-        // 注意：PLAYER_ATK_INTERVAL 是毫秒，要轉成秒
         let playerAutoDps = avgPlayerShot / (PLAYER_ATK_INTERVAL / 1000); 
         let clickDps = avgPlayerShot * CLICK_CPS_RATIO;
         
@@ -195,11 +193,10 @@ function killMonster() {
     let baseCoin = getMonsterCoin(g.stage);
     let coinGain = baseCoin * (isBoss ? 5 : 1);
     
-    // 安全讀取聖物等級
     let r2 = (g.rLvs && g.rLvs[2]) || 0;
     let r8 = (g.rLvs && g.rLvs[8]) || 0;
-    
     let relicGoldBonus = (r2 * 0.05) + (r8 * 0.04);
+    
     coinGain = coinGain * (1 + relicGoldBonus);
     g.coins += Math.floor(coinGain);
 
@@ -250,30 +247,21 @@ function load() {
         if (saved) {
             let loadedData = JSON.parse(saved);
             
-            // === 關鍵修正：深度合併 (Deep Merge) ===
-            // 使用預設值填充缺失的欄位，防止舊存檔缺少新變數導致崩潰
-            g = { ...DEFAULT_STATE, ...loadedData };
+            // 深度合併：使用預設值填充缺失的欄位
+            g = Object.assign({}, DEFAULT_STATE, loadedData);
             
-            // 針對陣列做額外檢查，確保長度正確且非 null
+            // 針對陣列做額外檢查
             if (!Array.isArray(g.helpers)) g.helpers = [];
+            if (!Array.isArray(g.skillCds) || g.skillCds.length !== 4) g.skillCds = [0, 0, 0, 0];
+            if (!Array.isArray(g.activeTimers) || g.activeTimers.length !== 4) g.activeTimers = [0, 0, 0, 0];
             
-            if (!Array.isArray(g.skillCds) || g.skillCds.length !== 4) {
-                g.skillCds = [0, 0, 0, 0];
-            }
-            
-            if (!Array.isArray(g.activeTimers) || g.activeTimers.length !== 4) {
-                g.activeTimers = [0, 0, 0, 0];
-            }
-            
-            if (!Array.isArray(g.sLvs) || g.sLvs.length !== 4) {
-                g.sLvs = [0, 0, 0, 0];
-            } else {
-                // 限制等級上限
+            if (Array.isArray(g.sLvs)) {
                 g.sLvs = g.sLvs.map(l => Math.min(100, l));
+            } else {
+                g.sLvs = [0, 0, 0, 0];
             }
 
             if (!Array.isArray(g.rLvs) || g.rLvs.length < RELIC_DB.length) {
-                // 如果聖物數量增加，保留舊的並補 0
                 let old = g.rLvs || [];
                 g.rLvs = new Array(RELIC_DB.length).fill(0);
                 old.forEach((v, i) => { if(i < g.rLvs.length) g.rLvs[i] = v; });
@@ -283,7 +271,7 @@ function load() {
             g = JSON.parse(JSON.stringify(DEFAULT_STATE));
         }
     } catch (e) {
-        console.error("Load failed, resetting to default:", e);
+        console.error("Load failed, resetting:", e);
         g = JSON.parse(JSON.stringify(DEFAULT_STATE));
     }
 }
