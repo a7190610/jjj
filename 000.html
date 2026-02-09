@@ -126,7 +126,7 @@
 <div class="header">
     <div class="cloud-status">
         <div id="conn-dot" class="dot"></div>
-        <span id="conn-txt" style="color:#aaa;">離線</span>
+        <span id="conn-txt" style="color:#aaa;">帳號 未綁定</span>
     </div>
     <button class="settings-btn" onclick="openCloudSettings()">⚙️</button>
     <div class="stage-info">Stage <span id="stage-txt">1</span></div>
@@ -170,7 +170,7 @@
 </div>
 
 <script>
-/* RPG Adventure Ver 2.0 (Cloud Edition) */
+/* RPG Adventure Ver 2.1 (Cloud Edition - SP Fix) */
 
 // === Firebase Init ===
 const firebaseConfig = {
@@ -364,10 +364,11 @@ function tick() {
     let now = Date.now();
     let st = calcStats();
     let maxSp = 1000;
+    
+    // SP Logic Update: Add 100 every 30 seconds
     spTimer += 100;
-    if(spTimer >= 2000) { 
-        let baseRec = 1 + st.bonus.sp; 
-        if(g.sp < maxSp) g.sp = Math.min(maxSp, g.sp + baseRec);
+    if(spTimer >= 30000) { // 30 seconds
+        if(g.sp < maxSp) g.sp = Math.min(maxSp, g.sp + 100);
         spTimer = 0;
     }
     
@@ -507,15 +508,27 @@ function upSkill(i) {
 }
 function useSkill(i) {
     if(skillCD[i]>0 || g.skills[i]===0) return;
-    let s = SKILL_DB[i], cost = s.cost + g.skills[i];
+    
+    // Fix: Force Number conversion to prevent string concatenation bug (e.g. 100 + "1" = "1001")
+    let s = SKILL_DB[i];
+    let skillLevel = Number(g.skills[i]);
+    let cost = s.cost + skillLevel;
+    
+    // Safety check for NaN
+    if(isNaN(cost)) cost = s.cost;
+
     if(g.sp >= cost) { 
         let st = calcStats();
         let finalCD = s.cd * (1 - st.bonus.cd);
-        g.sp-=cost; skillCD[i]=finalCD; 
-        if(s.dur) skillDur[i]=s.dur + (s.incVal?g.skills[i]*s.incVal:0); 
+        
+        // Prevent negative SP or reset
+        g.sp = Math.max(0, g.sp - cost);
+        
+        skillCD[i]=finalCD; 
+        if(s.dur) skillDur[i]=s.dur + (s.incVal?skillLevel*s.incVal:0); 
         if(i===0){ 
             let dmg = getDmg(st);
-            dmg *= (s.val + g.skills[i]*s.incVal);
+            dmg *= (s.val + skillLevel*s.incVal);
             let c = checkCrit(st, "player"); 
             hitMonster(Math.ceil(dmg * c.mult), true, true); 
         } 
@@ -623,7 +636,7 @@ function render() {
     });
 
     SKILL_DB.forEach((s,i) => {
-        let lv = g.skills[i];
+        let lv = Number(g.skills[i]); // Ensure number
         let unlock = g.stage > s.unlockStage; 
         let baseStageCoin = 10 * Math.pow(1.055, s.unlockStage);
         let cost = Math.ceil((baseStageCoin * 10) * Math.pow(1.1, lv));
@@ -887,6 +900,9 @@ function openCloudSettings() {
                 <button class="up-btn" style="flex:1;" onclick="doLogin()">登入</button>
                 <button class="up-btn" style="flex:1; background:#444; border-color:#666;" onclick="doRegister()">註冊</button>
             </div>
+            <div style="text-align:center; margin-top:10px;">
+                <small onclick="doForgotPassword()" style="cursor:pointer; color:#00aaff; text-decoration:underline;">忘記密碼?</small>
+            </div>
             <div style="font-size:10px; color:#666; margin-top:10px;">*註冊即代表同意隱私權政策</div>
         `);
     }
@@ -927,6 +943,14 @@ function doLogin() {
     }).catch(err => toast("登入失敗: " + err.message));
 }
 
+function doForgotPassword() {
+    const e = document.getElementById('u-email').value;
+    if(!e) return toast("請先輸入電子郵件");
+    auth.sendPasswordResetEmail(e).then(() => {
+        toast("重設信件已發送至信箱");
+    }).catch(err => toast(err.message));
+}
+
 function doLogout() {
     auth.signOut().then(() => {
         toast("已登出");
@@ -953,11 +977,11 @@ function updateCloudStatus(isOnline) {
     const txt = document.getElementById('conn-txt');
     if(currentUser) {
         dot.classList.add('online');
-        txt.innerText = '已連線';
+        txt.innerText = '帳號 已綁定';
         txt.style.color = '#0f0';
     } else {
         dot.classList.remove('online');
-        txt.innerText = '離線';
+        txt.innerText = '帳號 未綁定';
         txt.style.color = '#aaa';
     }
 }
@@ -1069,3 +1093,5 @@ function checkOfflineProgress() {
 </script>
 </body>
 </html>
+
+
