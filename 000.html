@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RPG 冒險：異世界傳說 (Cloud Edition)</title>
+    
+    <!-- Firebase SDK (Compat Version for simple HTML usage) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* === 1. 基礎樣式 === */
+        body { margin: 0; background: #121212; color: #e0e0e0; font-family: 'Segoe UI', Roboto, sans-serif; display: flex; flex-direction: column; height: 100vh; width: 100vw; overflow: hidden; user-select: none; -webkit-tap-highlight-color: transparent; }
+        ::-webkit-scrollbar { width: 4px; background: #1a1a1a; }
+        ::-webkit-scrollbar-thumb { background: #555; border-radius: 2px; }
+        
+        /* 頂部資訊列 */
+        .header { background: #1f1f1f; padding: 8px 0; text-align: center; border-bottom: 2px solid #333; flex-shrink: 0; z-index: 10; display:flex; flex-direction:column; gap:4px; position: relative; }
+        .stage-info { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: 1px; }
+        .res-bar { display: flex; justify-content: center; gap: 10px; font-size: 12px; color: #ffd700; flex-wrap: wrap; }
+        .res-item { background: rgba(0,0,0,0.4); padding: 3px 8px; border-radius: 4px; border: 1px solid #444; display:flex; align-items:center; gap:4px; }
+        #skill-timers { min-height: 16px; font-size: 11px; color: #00ffaa; display: flex; justify-content: center; gap: 8px; margin-top:2px;}
+        
+        /* 設定按鈕 */
+        .settings-btn { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; background: none; border: none; padding: 0; z-index: 20; transition: transform 0.3s; }
+        .settings-btn:hover { transform: rotate(90deg); }
+        .cloud-status { position: absolute; top: 15px; left: 15px; font-size: 12px; display:flex; gap:5px; align-items:center; }
+        .dot { width:8px; height:8px; border-radius:50%; background:#555; }
+        .dot.online { background:#0f0; box-shadow:0 0 5px #0f0; }
+
+        /* 遊戲畫布 */
+        #game-area { flex: 1; position: relative; background: #000; overflow: hidden; display:flex; justify-content:center; align-items:center; }
+        canvas { display: block; width: 100%; height: 100%; cursor: crosshair; image-rendering: pixelated; }
+        
+        /* 底部選單 */
+        #menu-container { width: 100%; max-width: 600px; background: #1a1a1a; display: flex; flex-direction: column; height: 50vh; border-top: 3px solid #444; box-shadow: 0 -5px 20px rgba(0,0,0,0.7); z-index: 500; margin: 0 auto; }
+        .menu-header { display: flex; background: #252525; border-bottom: 1px solid #333; flex-shrink: 0; }
+        .tab { flex: 1; padding: 12px 0; text-align: center; cursor: pointer; font-size: 13px; font-weight: bold; color: #777; transition: 0.2s; position: relative; }
+        .tab.active { background: #333; color: #ffcc00; }
+        .tab.active::after { content:''; position:absolute; bottom:0; left:0; width:100%; height:3px; background:#ffcc00; }
+        
+        .panel-content { flex: 1; overflow-y: auto; display: none; padding: 10px; padding-bottom: 60px; }
+        .panel-content.active { display: block; animation: fadeIn 0.2s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* 元件樣式 */
+        .item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #333; background: #222; margin-bottom: 6px; border-radius: 6px; border-left: 3px solid transparent; }
+        .info { flex: 1; text-align: left; padding-right: 10px; }
+        .info strong { font-size: 13px; color: #eee; display: block; margin-bottom: 3px; }
+        .info b { color: #00e5ff; font-size: 11px; font-weight: normal; }
+        .btn-group { display: flex; gap: 6px; flex-shrink: 0; }
+        
+        button { border: none; font-family: inherit; transition: 0.1s; cursor: pointer; user-select: none; }
+        button:active { transform: scale(0.95); }
+        .up-btn { background: linear-gradient(180deg, #ffcc00, #ff9900); border: 1px solid #cc7a00; padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 12px; color: #330000; min-width: 60px; white-space: nowrap; }
+        .up-btn:disabled { background: #444; border-color: #333; color: #888; cursor: not-allowed; transform: none; filter: grayscale(1); opacity: 0.7; }
+        .cancel-btn { background: linear-gradient(180deg, #666, #444); border: 1px solid #555; color: #ddd; }
+        
+        /* 技能特定樣式 */
+        .skill-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #252525; border: 1px solid #444; border-radius: 6px; margin-bottom: 6px; }
+        .skill-info { display: flex; flex-direction: column; gap: 4px; }
+        .skill-name { font-size: 15px; font-weight: bold; color: #fff; }
+        .skill-desc { font-size: 12px; color: #aaa; }
+        .skill-cost { font-size: 12px; color: #ff5555; font-weight: bold; }
+        
+        /* 裝備與圖示 */
+        .equip-row { display: flex; align-items: center; background: #252525; border: 1px solid #444; border-radius: 6px; padding: 8px; margin-bottom:6px; cursor:pointer; justify-content: space-between; }
+        .equip-info { display: flex; flex-direction: column; min-width: 80px; }
+        .tier-progress { display: flex; gap: 4px; margin: 0 10px; align-items: center; }
+        .tier-icon { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; background: #1a1a1a; border: 1px solid #333; border-radius: 3px; font-size: 10px; color: #444; opacity: 0.3; }
+        .tier-icon.unlocked { opacity: 1; border-width: 1px; }
+        .u-1 { border-color: #888; color: #ccc; box-shadow: 0 0 2px #888; }
+        .u-2 { border-color: #fff; color: #fff; box-shadow: 0 0 3px #fff; }
+        .u-3 { border-color: #ffcc00; color: #ffcc00; box-shadow: 0 0 3px #ffcc00; }
+        .u-4 { border-color: #ff4444; color: #ff4444; box-shadow: 0 0 4px #ff4444; }
+        .u-5 { border-color: #aa00ff; color: #aa00ff; box-shadow: 0 0 5px #aa00ff; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+        /* 彈窗 */
+        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 999; backdrop-filter: blur(2px); }
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #222; width: 85%; max-width: 320px; border-radius: 8px; border: 2px solid #ffcc00; z-index: 1000; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .modal-head { background: #333; padding: 10px; text-align: center; font-weight: bold; color: #ffcc00; }
+        .modal-body { padding: 15px; display: flex; flex-direction: column; gap: 8px; max-height: 60vh; overflow-y: auto; text-align: center; color: #ddd; font-size: 14px; }
+        .modal-footer { padding: 10px; text-align: center; background: #252525; display: flex; justify-content: center; gap: 10px; }
+        .modal-opt { background: #444; color: white; padding: 10px; border-radius: 4px; text-align: left; cursor:pointer; border:1px solid #555; width: 100%; box-sizing: border-box; }
+        .modal-opt:hover { background: #555; border-color:#888; }
+        .modal-opt:disabled { opacity: 0.5; cursor: not-allowed; background:#333; text-decoration: line-through; }
+        
+        /* Cloud UI */
+        .input-group { display:flex; flex-direction:column; gap:5px; text-align:left; margin-bottom:10px; }
+        .input-group label { color:#aaa; font-size:12px; }
+        .input-group input { background:#111; border:1px solid #444; padding:8px; color:#fff; border-radius:4px; }
+        .save-card { background:rgba(255,255,255,0.05); padding:10px; border-radius:6px; border:1px solid #444; margin-bottom:5px; text-align:left; }
+        .save-card h4 { margin:0 0 5px 0; font-size:14px; color:#00e5ff; }
+        .save-detail { font-size:12px; color:#bbb; line-height:1.4; }
+        .compare-row { display:flex; gap:10px; }
+        .compare-col { flex:1; }
+        
+        #toast-container { position: fixed; top: 15%; left: 50%; transform: translateX(-50%); pointer-events: none; z-index: 2000; display: flex; flex-direction: column; gap: 5px; }
+        .toast { background: rgba(0,0,0,0.85); color: #fff; padding: 5px 12px; border-radius: 15px; font-size: 12px; border: 1px solid #555; animation: floatUp 4s forwards; }
+        .toast.rare { border-color: #ffcc00; color: #ffcc00; font-weight: bold; }
+        @keyframes floatUp { 0% { opacity:1; transform:translateY(0); } 80% { opacity:1; } 100% { opacity:0; transform:translateY(-50px); } }
+
+        #ro-board { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; border: 1px solid #444; font-family: monospace; font-size: 11px; margin-bottom: 5px; }
+        .ro-row { display: flex; justify-content: space-between; }
+        
+        #rebirth-panel { background: rgba(100,0,0,0.2); border: 1px solid #500; padding: 10px; text-align: center; border-radius: 6px; margin-bottom: 10px; transition: 0.3s; }
+        .rebirth-disabled { filter: grayscale(1); opacity: 0.5; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div id="modal-overlay">
+    <div id="main-modal" class="modal">
+        <div class="modal-head" id="m-title">標題</div>
+        <div class="modal-body" id="m-body">內容</div>
+        <div class="modal-footer" id="m-footer">
+            <button class="up-btn" onclick="closeModal()">關閉</button>
+        </div>
+    </div>
+</div>
+<div id="toast-container"></div>
+
+<div class="header">
+    <div class="cloud-status">
+        <div id="conn-dot" class="dot"></div>
+        <span id="conn-txt" style="color:#aaa;">離線</span>
+    </div>
+    <button class="settings-btn" onclick="openCloudSettings()">⚙️</button>
+    <div class="stage-info">Stage <span id="stage-txt">1</span></div>
+    <div class="res-bar">
+        <div class="res-item" title="金幣">💰 <span id="coin-txt">0</span></div>
+        <div class="res-item" title="鑽石">💎 <span id="dia-txt">0</span></div>
+        <div class="res-item" title="裝備碎片">🧩 <span id="frag-txt">0</span></div>
+        <div class="res-item" title="魔法值">✨ <span id="sp-txt">0</span>/<span id="sp-max-txt">1000</span></div>
+    </div>
+    <div id="skill-timers"></div>
+</div>
+
+<div id="game-area"><canvas id="gameCanvas"></canvas></div>
+
+<div id="menu-container">
+    <div class="menu-header">
+        <div class="tab active" onclick="swTab(0)">狀態</div>
+        <div class="tab" onclick="swTab(1)">裝備</div>
+        <div class="tab" onclick="swTab(2)">助手</div>
+        <div class="tab" onclick="swTab(3)">聖物</div>
+    </div>
+    
+    <div id="p0" class="panel-content active">
+        <div id="rebirth-panel">
+            <div style="font-size:12px; color:#aaa;">轉生次數: <span id="rb-count" style="color:#fff;">0</span></div>
+            <div style="font-size:11px; margin:5px 0;">獲得: <span id="rb-reward" style="color:#00e5ff;">500</span> 💎 | 傷害 +<span id="rb-bonus">0</span>%</div>
+            <button id="rb-btn" class="up-btn" style="width:100%; background:linear-gradient(180deg,#ff4444,#cc0000); margin-top:5px;" onclick="tryRebirth()">⚡ 轉生 (需 Lv.300) ⚡</button>
+        </div>
+        <div class="item" style="flex-direction:column; align-items:stretch; border-left:3px solid #ffcc00;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <div class="info"><strong>主角 (Lv.<span id="plv-txt">1</span>)</strong></div>
+                <button class="up-btn" id="pup-btn" onclick="upPlayer()">升級</button>
+            </div>
+            <div id="ro-board"></div>
+        </div>
+        <div id="skill-list" style="margin-top:10px;"></div>
+    </div>
+    <div id="p1" class="panel-content"><div id="equip-list"></div></div>
+    <div id="p2" class="panel-content"><div id="helper-list"></div></div>
+    <div id="p3" class="panel-content"><div id="relic-list"></div></div>
+</div>
+
+<script>
+/* RPG Adventure Ver 2.0 (Cloud Edition) */
+
+// === Firebase Init ===
+const firebaseConfig = {
+  apiKey: "AIzaSyD76Z1YihKxTwyg_bKfqxab6xKph6BRx20",
+  authDomain: "rpg-isekai.firebaseapp.com",
+  projectId: "rpg-isekai",
+  storageBucket: "rpg-isekai.firebasestorage.app",
+  messagingSenderId: "532976656033",
+  appId: "1:532976656033:web:d4c59086fc113cc39a5ae0"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+let currentUser = null;
+let cloudTimer = null;
+
+// === 1. 資料庫 (Databases) ===
+
+const MONSTER_DB = {
+    tier1: [{n:"波利",c:"#ffaacc",e:"💧",gif:"波利.gif"},{n:"史萊姆",c:"#44ff44",e:"🟢",gif:"史萊姆.gif"},{n:"綠水靈",c:"#44ff44",e:"💧",gif:"綠水靈.gif"},{n:"藍寶",c:"#44aaff",e:"🐚",gif:"藍寶.gif"},{n:"紅寶",c:"#ff4444",e:"🐚",gif:"紅寶.gif"},{n:"菇菇寶貝",c:"#ffee33",e:"🍄",gif:"菇菇寶貝.gif"},{n:"漂漂豬",c:"#ffaacc",e:"🐷",gif:"漂漂豬.gif"},{n:"緞帶肥肥",c:"#ffaacc",e:"🎀",gif:"緞帶肥肥.gif"},{n:"瘋狂兔",c:"#ffffff",e:"🐰",gif:"瘋狂兔.gif"},{n:"樹妖",c:"#885522",e:"🌳",gif:"樹妖.gif"},{n:"蒼蠅",c:"#aaaaaa",e:"🪰",gif:"蒼蠅.gif"},{n:"蝙蝠",c:"#666666",e:"🦇",gif:"蝙蝠.gif"},{n:"狸貓",c:"#aa8855",e:"🦝",gif:"狸貓.gif"},{n:"刺蝟蟲",c:"#999944",e:"🐛",gif:"刺蝟蟲.gif"},{n:"幼狼",c:"#aaaaaa",e:"🐺",gif:"幼狼.gif"},{n:"曼陀羅花",c:"#44ff44",e:"🌱",gif:"曼陀羅花.gif"},{n:"小雞",c:"#ffee33",e:"🐥",gif:"小雞.gif"},{n:"螃蟹",c:"#ff8844",e:"🦀",gif:"螃蟹.gif"},{n:"蝸牛",c:"#44aaff",e:"🐌",gif:"蝸牛.gif"},{n:"綠棉蟲",c:"#44ff44",e:"🐛",gif:"綠棉蟲.gif"}],
+    tier2: [{n:"哥布林",c:"#44aa44",e:"👺",gif:"哥布林.gif"},{n:"獨眼巨人",c:"#ddaa77",e:"👁️",gif:"獨眼巨人.gif"},{n:"半獸人",c:"#44aa44",e:"👹",gif:"半獸人.gif"},{n:"殭屍",c:"#6688aa",e:"🧟",gif:"殭屍.gif"},{n:"骷髏兵",c:"#dddddd",e:"💀",gif:"骷髏兵.gif"},{n:"幽靈",c:"#aaddff",e:"👻",gif:"幽靈.gif"},{n:"毒蜘蛛",c:"#aa00ff",e:"🕷️",gif:"毒蜘蛛.gif"},{n:"食人花",c:"#ff4444",e:"🌺",gif:"食人花.gif"},{n:"巨石怪",c:"#888888",e:"🗿",gif:"巨石怪.gif"},{n:"鋼鐵螃蟹",c:"#aaaaaa",e:"🦀",gif:"鋼鐵螃蟹.gif"},{n:"火獨眼獸",c:"#ff4444",e:"🔥",gif:"火獨眼獸.gif"},{n:"冰獨眼獸",c:"#44aaff",e:"❄️",gif:"冰獨眼獸.gif"},{n:"風獨眼獸",c:"#44ff44",e:"🌪️",gif:"風獨眼獸.gif"},{n:"猴子",c:"#aa8855",e:"🐒",gif:"猴子.gif"},{n:"刺藤怪",c:"#448844",e:"🌵",gif:"刺藤怪.gif"},{n:"野豬",c:"#885522",e:"🐗",gif:"野豬.gif"},{n:"黑暗妖精",c:"#aa00ff",e:"🧝",gif:"黑暗妖精.gif"},{n:"鷹身女妖",c:"#ccccff",e:"🦅",gif:"鷹身女妖.gif"},{n:"蜥蜴人",c:"#44aa44",e:"🦎",gif:"蜥蜴人.gif"},{n:"鱷魚",c:"#448844",e:"🐊",gif:"鱷魚.gif"}]
+};
+const BOSS_NAMES = {
+    normal: ["巨型波利","蘑菇王","殭屍王","骷髏王","巨人之首","肯泰羅斯","貓頭鷹男爵","鐘塔怪人","巨大史萊姆","變異蝸牛"],
+    mvp: ["巴風特","德古拉","炎魔","龍王","皮卡丘","希拉","凡雷恩","梅格耐斯","露希妲","威爾"],
+    super: ["路西法","迪亞布羅","薩菲羅斯","死亡之翼","奧丁","宙斯","克蘇魯","提亞瑪特","巴哈姆特","創世神"]
+};
+const EQUIP_SLOTS = [
+    {id:"head",n:"頭盔",icon:"🪖",stat:"def",val:5}, {id:"eye",n:"眼飾",icon:"👓",stat:"dex",val:3}, {id:"mouth",n:"臉飾",icon:"😷",stat:"int",val:3}, {id:"body",n:"上衣",icon:"👕",stat:"def",val:8}, {id:"legs",n:"褲子",icon:"👖",stat:"def",val:6}, {id:"belt",n:"腰帶",icon:"🥋",stat:"str",val:4}, {id:"cape",n:"披風",icon:"🧛",stat:"agi",val:3}, {id:"main",n:"主手",icon:"🗡️",stat:"str",val:10}, {id:"off",n:"副手",icon:"🛡️",stat:"def",val:8}, {id:"shoes",n:"鞋子",icon:"👢",stat:"agi",val:4}, {id:"ring",n:"戒指",icon:"💍",stat:"dex",val:3}, {id:"ear",n:"耳環",icon:"👂",stat:"int",val:3}, {id:"neck",n:"項鍊",icon:"📿",stat:"int",val:4}
+];
+const RELIC_DB = [
+    {n:"勇者勳章",type:"str",val:0.01,d:"力量 +1%"}, {n:"敏捷之靴",type:"agi",val:0.01,d:"敏捷 +1%"}, {n:"守望者盾",type:"haspd",val:0.05,d:"助手攻速 +5%"}, {n:"智慧卷軸",type:"int",val:0.01,d:"智力 +1%"}, {n:"貓眼手鐲",type:"dex",val:0.01,d:"靈巧 +1%"}, {n:"幸運硬幣",type:"cdmg",val:0.10,d:"爆傷 +10%"}, {n:"破碎魔石",type:"all",val:0.01,d:"全屬 +1%"}, {n:"黃金羅盤",type:"gold",val:0.10,d:"金幣 +10%"}, {n:"靈魂之罐",type:"dmg",val:0.05,d:"終傷 +5%"}, {n:"工匠鐵鎚",type:"cost",val:0.01,d:"消耗 -1%"}, {n:"虛空晶石",type:"cd",val:0.01,d:"冷卻 -1%"}, {n:"世界樹種",type:"hatk",val:0.10,d:"助手攻擊 +10%"}, {n:"時空羅盤",type:"skip",val:1,d:"小關 -1"}
+];
+const SKILL_DB = [
+    {n:"慧心一擊",d:"傷害 %V 倍",cost:100,cd:60,val:100,incVal:0.5,unlockStage:30,type:'dmg'},
+    {n:"致命爆擊",d:"爆擊乘區 %V (30s)",cost:100,cd:60,dur:30,val:0.01,incVal:0.0001,unlockStage:100,type:'buff'},
+    {n:"奮力狂擊",d:"傷害 %V 倍 (30s)",cost:100,cd:60,dur:30,val:2,incVal:1,unlockStage:200,type:'buff'},
+    {n:"影分身",d:"傷害翻倍 (30s)",cost:100,cd:60,dur:20,incVal:1,unlockStage:500,type:'buff'}
+];
+const JOB_MAPLE = { "劍士":{1:"劍士",2:["狂戰士","見習騎士","槍騎兵"],3:["十字軍","騎士","龍騎士"],4:["英雄","聖騎士","黑騎士"]},"法師":{1:"法師",2:["火毒巫師","冰雷巫師","僧侶"],3:["火毒魔導士","冰雷魔導士","祭司"],4:["火毒大魔導士","冰雷大魔導士","主教"]},"弓箭手":{1:"弓箭手",2:["獵人","弩弓手"],3:["遊俠","狙擊手"],4:["箭神","神射手"]},"盜賊":{1:"盜賊",2:["刺客","俠盜"],3:["暗殺者","神偷"],4:["夜使者","暗影神偷"]},"海盜":{1:"海盜",2:["槍手","打手"],3:["神槍手","格鬥家"],4:["槍神","拳霸"]} };
+const JOB_RO = { "劍士":{1:"劍士",2:["騎士","十字軍"],3:["騎士領主","聖殿十字軍"],4:["盧恩騎士","皇家禁衛隊"]},"魔法師":{1:"魔法師",2:["巫師","賢者"],3:["超魔導師","智者"],4:["咒術士","妖術師"]},"弓箭手":{1:"弓箭手",2:["獵人","詩人/舞孃"],3:["神射手","搞笑藝人"],4:["遊俠","宮廷樂師"]},"商人":{1:"商人",2:["鐵匠","鍊金術士"],3:["神工匠","創造者"],4:["機匠","基因學者"]},"盜賊":{1:"盜賊",2:["刺客","流氓"],3:["十字刺客","神行太保"],4:["十字斬首者","魅影追蹤者"]},"服事":{1:"服事",2:["牧師","武道家"],3:["神官","武術宗師"],4:["大主教","修羅"]} };
+
+const TIER_NAMES = ["未取得","粗糙","普通","精良","史詩","傳說"];
+const SAVE_KEY = "RPG_Ver1_0";
+
+let g = { coin:0, dia:0, frag:0, stage:1, sub:1, plv:1, sp:10, stats:{str:5,agi:5,int:5,dex:5}, helpers:[], equips:Array(13).fill(0), relics:Array(RELIC_DB.length).fill(0), skills:[0,0,0,0], rbCount:0, lastSave: Date.now() };
+let mHp=1, mMaxHp=1, lastAtk=0, lastHelperAtk=0, dps=0, skillCD=[0,0,0,0], skillDur=[0,0,0,0], clickEffects=[], uiDirty=true, currentMonster=null, monsterImgCache={};
+let spTimer = 0; 
+let globalModalCallback = null; 
+
+// === Core Logic ===
+function calcStats() {
+    let b = {...g.stats}; 
+    g.helpers.forEach(h => {
+        let main = Math.floor((h.lv||1) * 1.0), sub = Math.floor((h.lv||1) * 0.5);
+        if(h.series==="MAPLE") {
+            if(h.grp==="劍士"){ b.str+=main; b.agi+=sub; }
+            else if(h.grp==="法師"||h.grp==="服事"){ b.int+=main; b.dex+=sub; }
+            else if(h.grp==="弓箭手"){ b.agi+=main; b.dex+=sub; }
+            else if(h.grp==="盜賊"){ b.dex+=main; b.agi+=sub; }
+            else if(h.grp==="海盜"){ b.agi+=main; b.str+=sub; }
+            else if(h.grp==="商人"){ b.dex+=main; b.str+=sub; }
+            else { b.str+=main; b.dex+=sub; } 
+        } else if(h.series==="RO") {
+            if(h.grp==="劍士"){ b.str+=main; b.agi+=sub; }
+            else if(h.grp==="魔法師"||h.grp==="服事"){ b.int+=main; b.dex+=sub; }
+            else if(h.grp==="弓箭手"){ b.agi+=main; b.dex+=sub; }
+            else if(h.grp==="盜賊"){ b.dex+=main; b.agi+=sub; }
+            else if(h.grp==="商人"){ b.dex+=main; b.str+=sub; }
+            else { b.int+=main; b.dex+=sub; } 
+        }
+    });
+    g.equips.forEach((tier, i) => { if(tier>0) b[EQUIP_SLOTS[i].stat] += Math.ceil(EQUIP_SLOTS[i].val * [0,1,2.5,5,10,25][tier]); });
+    let bonus = {str:0,agi:0,int:0,dex:0,all:0,dmg:0,gold:0,cost:0,cd:0,sp:0,skip:0,hatk:0,crit:0,haspd:0,cdmg:0};
+    g.relics.forEach((lv, i) => { 
+        if(lv>0) {
+            let r = RELIC_DB[i];
+            if(r.type==='skip') bonus.skip += Math.max(0, lv-1);
+            else if(bonus[r.type]!==undefined) bonus[r.type] += r.val * lv;
+        }
+    });
+    let final = {};
+    ['str','agi','int','dex'].forEach(k => final[k] = Math.ceil(b[k]*(1+bonus[k]+bonus.all)));
+    return {base:b, final:final, bonus:bonus};
+}
+
+function getDiscountedCost(baseCost) {
+    let st = calcStats();
+    let reduction = Math.min(0.9, st.bonus.cost);
+    return Math.ceil(baseCost * (1 - reduction));
+}
+
+function getCritData(st) {
+    let dexCrit = Math.min(0.85, Math.floor(st.final.dex / 100) * 0.01);
+    let totalCrit = dexCrit;
+    if (totalCrit >= 0.85) {
+        let agiCrit = Math.min(0.15, Math.floor(st.final.agi / 500) * 0.01);
+        totalCrit += agiCrit;
+    }
+    if (skillDur[1] > 0) { 
+        let skillBonus = SKILL_DB[1].val + g.skills[1] * SKILL_DB[1].incVal;
+        totalCrit *= (1 + skillBonus);
+    }
+    totalCrit = Math.min(1.0, totalCrit);
+    let baseCDmg = 2.0;
+    let dexCDmg = Math.floor(st.final.dex / 100) * 0.1;
+    let relicCDmg = st.bonus.cdmg;
+    let totalCDmg = Math.min(3.5, baseCDmg + dexCDmg + relicCDmg);
+    return { rate: totalCrit, dmg: totalCDmg };
+}
+
+let hitCountPlayer = 0;
+let hitCountHelper = 0;
+
+function checkCrit(st, source="player") {
+    let c = getCritData(st);
+    let isCrit = false;
+    if (c.rate >= 0.85 && c.rate < 0.99) {
+        if (source === "player") {
+            hitCountPlayer++;
+            if (hitCountPlayer >= 10) { isCrit = true; hitCountPlayer = 0; }
+        } else {
+            hitCountHelper++;
+            if (hitCountHelper >= 10) { isCrit = true; hitCountHelper = 0; }
+        }
+    }
+    if (!isCrit) isCrit = Math.random() < c.rate;
+    return { isCrit: isCrit, mult: isCrit ? c.dmg : 1.0 };
+}
+
+function getDmg(st) {
+    let raw = 10 * Math.pow(1.04, g.plv) + (st.final.str * 3) + st.final.dex;
+    if(skillDur[2]>0) raw *= (SKILL_DB[2].val + (g.skills[2] * SKILL_DB[2].incVal));
+    raw *= (1 + st.bonus.dmg) * (1 + g.rbCount * 0.1);
+    if(skillDur[3]>0) raw *= 2; 
+    return Math.ceil(raw);
+}
+
+function getHelperCost(idx, lv) {
+    let targetStage = idx === 0 ? 1 : (idx === 1 ? 30 : (idx-1)*100);
+    let baseGold = 10 * Math.pow(1.055, targetStage-1);
+    let cost = baseGold * Math.pow(1.07, lv);
+    return getDiscountedCost(cost);
+}
+
+function getHelperDmg(h, st) {
+    if(!h.series) return 0;
+    let idx = g.helpers.indexOf(h);
+    let base = 10 * Math.pow(1.06, h.lv||1); 
+    if(idx > 0) base *= (1 + idx * 0.5);
+    let val = base * (1 + st.bonus.dmg) * (1 + g.rbCount * 0.1) * (1 + st.bonus.hatk);
+    if(skillDur[3]>0) val *= 2;
+    return Math.ceil(val) || 1;
+}
+
+function getMaxSub() { return Math.max(1, 10 - (calcStats().bonus.skip || 0)); }
+function isBossStage() { return g.sub >= getMaxSub(); }
+
+function spawnMonster() {
+    let stg = g.stage || 1;
+    let tierIdx = Math.floor((stg - 1) / 100) + 1;
+    let dbKey = "tier" + (((tierIdx - 1) % Object.keys(MONSTER_DB).length) + 1);
+    let pool = MONSTER_DB[dbKey] || MONSTER_DB.tier1;
+    let tpl = pool[Math.floor(Math.random() * pool.length)];
+    let isBoss = isBossStage();
+    let name = tpl.n, color = tpl.c, emoji = tpl.e, gif = tpl.gif;
+    
+    let bossMult = 1;
+    if(isBoss) {
+        if(stg%100===0) { name = BOSS_NAMES.super[Math.floor(Math.random()*BOSS_NAMES.super.length)]; color="#aa00ff"; emoji="👿"; bossMult=250; }
+        else if(stg%10===0) { name = BOSS_NAMES.mvp[Math.floor(Math.random()*BOSS_NAMES.mvp.length)]; color="#ff0000"; emoji="👹"; bossMult=25; }
+        else { name = BOSS_NAMES.normal[Math.floor(Math.random()*BOSS_NAMES.normal.length)]; color="#ff4444"; emoji="👺"; bossMult=5; }
+        gif = null;
+    }
+    if(gif && !monsterImgCache[gif]) { let i=new Image(); i.src=gif; monsterImgCache[gif]=i; }
+    
+    let calcStage = Math.min(stg, 5001);
+    let base = 200 * Math.pow(1.055, calcStage-1);
+    let variation = 0.9 + Math.random() * 0.2;
+    
+    mMaxHp = Math.ceil((base * (1+(g.sub-1)*0.1) * bossMult * variation));
+    if(isNaN(mMaxHp) || mMaxHp < 1) mMaxHp = 100;
+    mHp = mMaxHp;
+    currentMonster = {name, color, emoji, isBoss, gif};
+}
+
+function getMonsterHp() { return mMaxHp||200; }
+
+function tick() {
+    let now = Date.now();
+    let st = calcStats();
+    let maxSp = 1000;
+    spTimer += 100;
+    if(spTimer >= 2000) { 
+        let baseRec = 1 + st.bonus.sp; 
+        if(g.sp < maxSp) g.sp = Math.min(maxSp, g.sp + baseRec);
+        spTimer = 0;
+    }
+    
+    for(let i=0; i<4; i++) {
+        if(skillCD[i]>0) skillCD[i] = Math.max(0, skillCD[i]-0.1);
+        if(skillDur[i]>0) skillDur[i] = Math.max(0, skillDur[i]-0.1);
+    }
+    
+    updateRealtime(st);
+
+    let atkSpd = Math.max(100, 1000/(1+st.final.agi*0.05));
+    if(now-lastAtk > atkSpd) {
+        let rawDmg = getDmg(st);
+        let c = checkCrit(st, "player");
+        hitMonster(Math.ceil(rawDmg * c.mult), c.isCrit, false, "player"); 
+        lastAtk = now;
+    }
+    
+    let helperInterval = 1000 / (1 + st.bonus.haspd); 
+    if (now - lastHelperAtk > helperInterval) {
+        let hDmgTotal = 0;
+        let anyCrit = false;
+        g.helpers.forEach(h => {
+             let base = getHelperDmg(h, st);
+             if(base > 0) {
+                 let c = checkCrit(st, "helper");
+                 hDmgTotal += Math.ceil(base * c.mult);
+                 if(c.isCrit) anyCrit = true;
+             }
+        });
+        if (hDmgTotal > 0) hitMonster(hDmgTotal, anyCrit, false, "helper");
+        lastHelperAtk = now;
+    }
+
+    let hTotalAtk = 0;
+    g.helpers.forEach(h => hTotalAtk += getHelperDmg(h, st));
+    dps = hTotalAtk; 
+}
+
+function hitMonster(dmg, crit, isManual, source="player") {
+    if(isNaN(dmg)) dmg = 0;
+    mHp -= dmg;
+    
+    if (isManual || crit || source === "helper" || Math.random()<0.5) {
+        let col = crit ? "#ffcc00" : "#fff";
+        if (source === "helper") col = "#dd88ff"; 
+        addFloatText(f(dmg), col, crit);
+    }
+    
+    if(mHp <= 0) {
+        let calcStage = Math.min(g.stage, 5001);
+        let dropCoin = 10 * Math.pow(1.055, calcStage-1) * (1 + calcStats().bonus.gold);
+        let goldMultiplier = 1;
+        
+        if(isBossStage()) {
+            if(g.stage%100===0) goldMultiplier = 1000; 
+            else if(g.stage%10===0) goldMultiplier = 50; 
+            else goldMultiplier = 10; 
+            addFloatText(`BOSS BONUS x${goldMultiplier}`, "#ff55ff", true);
+        }
+        
+        dropCoin = Math.ceil(dropCoin * goldMultiplier);
+        if(isNaN(dropCoin)) dropCoin = 1;
+        g.coin += dropCoin;
+        
+        if(Math.random() < 0.1) {
+            let r = Math.random()*100;
+            if(r<70) { let a=Math.ceil(1+g.stage*0.5); g.frag+=a; toast(`🧩 +${a}`); }
+            else if(r<90) { let a=Math.ceil(1+g.stage*0.1); g.dia+=a; toast(`💎 +${a}`, true); }
+            else if(r<95) { 
+                let pool=[]; g.relics.forEach((v,i)=>{if(v===0)pool.push(i)});
+                if(pool.length){ g.relics[pool[Math.floor(Math.random()*pool.length)]]=1; toast("聖物GET!",true); }
+                else { g.dia+=10; toast("聖物轉鑽 +10"); }
+            } else { let c=Math.ceil(dropCoin*10); g.coin+=c; toast(`💰 +${f(c)}`); }
+        }
+
+        if(isBossStage()) { g.stage++; g.sub=1; } else { g.sub++; }
+        if(g.stage >= 5001) { showWin(); }
+        else spawnMonster();
+        uiDirty = true;
+    }
+}
+
+// === Actions ===
+function tryRebirth() {
+    if(g.plv < 100) return;
+    let reward = Math.ceil(500 * Math.pow(1.5, g.rbCount));
+    showConfirm(`轉生將重置等級與金幣，但保留聖物與裝備。\n獲得 ${reward} 鑽石?`, () => {
+        g.rbCount++; g.dia += reward;
+        g.coin=0; g.stage=1; g.sub=1; g.plv=1; g.sp=10; g.helpers=[]; g.skills=[0,0,0,0];
+        addHelper(); spawnMonster(); saveLocal(); uiDirty=true;
+    });
+}
+
+function upPlayer() {
+    let cost = getDiscountedCost(Math.ceil(10 * Math.pow(1.06, g.plv)));
+    if(g.coin >= cost) { g.coin-=cost; g.plv++; uiDirty=true; }
+}
+function upEquip(i) {
+    let tier = g.equips[i]; if(tier>=5) return;
+    let cost = [10,50,200,1000,9999][tier];
+    if(g.frag >= cost) { g.frag-=cost; g.equips[i]++; uiDirty=true; }
+}
+
+function upHelper(i) {
+    let h = g.helpers[i];
+    if(h.lv>=1 && !h.series) { openSeriesSelection(i); return; }
+    if(h.lv>=10 && !h.grp) { openJobSelection(i); return; }
+    if(h.lv>=30 && h.branchIdx===undefined) { openBranchSelection(i, 2); return; }
+    
+    let cost = getHelperCost(i, h.lv);
+    if(g.coin >= cost) {
+        g.coin-=cost; h.lv++;
+        updateHelperJob(h); 
+        if(h.lv===10 || h.lv===30) uiDirty=true; 
+        
+        let maxH = 25;
+        if(g.helpers.length < maxH && i===g.helpers.length-1 && h.lv>=120) {
+            addHelper(); toast("新助手解鎖!");
+        }
+        uiDirty=true;
+    }
+}
+function upRelic(i) {
+    let r = RELIC_DB[i], lv = g.relics[i];
+    let isC = r.type==='skip', max = isC?10:999;
+    if(lv>=max) return;
+    let cost = Math.ceil(isC ? 5*Math.pow(2,lv) : 20*Math.pow(1.1,lv));
+    if(g.dia >= cost) { g.dia-=cost; g.relics[i]++; uiDirty=true; }
+}
+function upSkill(i) {
+    let s = SKILL_DB[i], lv = g.skills[i];
+    if(g.stage <= s.unlockStage) { toast(`需通過 Stage ${s.unlockStage}`, true); return; }
+    let baseStageCoin = 10 * Math.pow(1.055, s.unlockStage);
+    let cost = getDiscountedCost(Math.ceil((baseStageCoin * 10) * Math.pow(1.1, lv)));
+    if(g.coin >= cost) { g.coin-=cost; g.skills[i]++; uiDirty=true; }
+}
+function useSkill(i) {
+    if(skillCD[i]>0 || g.skills[i]===0) return;
+    let s = SKILL_DB[i], cost = s.cost + g.skills[i];
+    if(g.sp >= cost) { 
+        let st = calcStats();
+        let finalCD = s.cd * (1 - st.bonus.cd);
+        g.sp-=cost; skillCD[i]=finalCD; 
+        if(s.dur) skillDur[i]=s.dur + (s.incVal?g.skills[i]*s.incVal:0); 
+        if(i===0){ 
+            let dmg = getDmg(st);
+            dmg *= (s.val + g.skills[i]*s.incVal);
+            let c = checkCrit(st, "player"); 
+            hitMonster(Math.ceil(dmg * c.mult), true, true); 
+        } 
+    }
+}
+
+// === Helper Logic ===
+function addHelper() { g.helpers.push({id:Date.now(), series:null, grp:null, job:"初心者", lv:1, branchIdx:undefined}); }
+function openSeriesSelection(i) { showModal("選擇陣營", `<button class="modal-opt" onclick="setSeries(${i},'MAPLE')"><strong style="color:#ff8833">[楓] 平均型</strong></button><button class="modal-opt" onclick="setSeries(${i},'RO')"><strong style="color:#33ccff">[仙] 特化型</strong></button>`); }
+function setSeries(i,s) { g.helpers[i].series=s; closeModal(); uiDirty=true; saveLocal(); }
+
+function openJobSelection(i) {
+    let h = g.helpers[i], db = h.series==='MAPLE'?JOB_MAPLE:JOB_RO, html="";
+    Object.keys(db).forEach(grp => {
+        let maxBranches = db[grp][2].length;
+        let currentCount = g.helpers.filter(x => x.series===h.series && x.grp===grp).length;
+        let isFull = currentCount >= maxBranches;
+        html += `<button class="modal-opt" onclick="setJob(${i},'${grp}')" ${isFull?'disabled':''}>${db[grp][1]} ${isFull?'(額滿)':''}</button>`;
+    });
+    showModal("選擇職業 (一轉)", html);
+}
+function setJob(i,gName) { g.helpers[i].grp=gName; updateHelperJob(g.helpers[i]); closeModal(); uiDirty=true; saveLocal(); }
+
+function openBranchSelection(i, tier) {
+    let h = g.helpers[i];
+    let db = (h.series==='MAPLE'?JOB_MAPLE:JOB_RO)[h.grp];
+    let choices = db[tier];
+    let html="";
+    if(Array.isArray(choices)) {
+        choices.forEach((jobName, idx) => { 
+            let taken = g.helpers.some(x => x.series===h.series && x.grp===h.grp && x.branchIdx===idx);
+            html += `<button class="modal-opt" onclick="setBranch(${i}, ${idx})" ${taken?'disabled':''}>${jobName} ${taken?'(已選)':''}</button>`; 
+        });
+    } else {
+        html += `<button class="modal-opt" onclick="setBranch(${i}, 0)">${choices}</button>`;
+    }
+    showModal("選擇二轉分支", html);
+}
+function setBranch(i, idx) { g.helpers[i].branchIdx = idx; updateHelperJob(g.helpers[i]); closeModal(); uiDirty=true; saveLocal(); }
+
+function updateHelperJob(h) {
+    if(!h.grp) return;
+    let db = (h.series==='MAPLE'?JOB_MAPLE:JOB_RO)[h.grp];
+    let bIdx = h.branchIdx !== undefined ? h.branchIdx : 0; 
+    const getJ = (tier) => {
+        let data = db[tier];
+        if(Array.isArray(data)) return data[Math.min(bIdx, data.length-1)];
+        return data;
+    };
+    if(h.lv>=120) h.job = getJ(4);
+    else if(h.lv>=70) h.job = getJ(3);
+    else if(h.lv>=30) h.job = getJ(2);
+    else h.job = db[1];
+}
+
+// === Modal & UI ===
+function showModal(title, bodyHtml, footerHtml = null) {
+    document.getElementById('m-title').innerText = title;
+    document.getElementById('m-body').innerHTML = bodyHtml;
+    document.getElementById('m-footer').innerHTML = footerHtml || `<button class="up-btn" onclick="closeModal()">關閉</button>`;
+    document.getElementById('main-modal').style.display = 'flex';
+    document.getElementById('modal-overlay').style.display = 'block';
+}
+
+function showConfirm(text, onYes) {
+    globalModalCallback = onYes;
+    showModal("確認", `<div>${text.replace(/\n/g, '<br>')}</div>`, 
+        `<button class="up-btn" onclick="executeConfirm()">確定</button><button class="up-btn cancel-btn" onclick="closeModal()">取消</button>`
+    );
+}
+
+function executeConfirm() {
+    if(globalModalCallback) globalModalCallback();
+    closeModal();
+    globalModalCallback = null;
+}
+
+function closeModal() { document.getElementById('modal-overlay').style.display='none'; }
+
+// === Render ===
+function render() {
+    if(!uiDirty) return;
+    let hHtml="", eqHtml="", skHtml="", rHtml="";
+    
+    g.helpers.forEach((h,i) => {
+        let cost = getHelperCost(i, h.lv);
+        let btnTxt = `💰${f(cost)}`;
+        let btnAct = `upHelper(${i})`;
+        let status = "";
+        let seriesName = h.series === 'MAPLE' ? '[楓]' : (h.series === 'RO' ? '[仙]' : '');
+        let seriesColor = h.series === 'MAPLE' ? '#ff8833' : (h.series === 'RO' ? '#33ccff' : '#aaa');
+
+        if(!h.series) { btnTxt="選陣營"; btnAct=`openSeriesSelection(${i})`; status="(需選擇)"; }
+        else if(h.lv>=10 && !h.grp) { btnTxt="轉職"; btnAct=`openJobSelection(${i})`; status="(可轉職)"; }
+        else if(h.lv>=30 && h.branchIdx===undefined) { btnTxt="二轉"; btnAct=`openBranchSelection(${i}, 2)`; status="(可轉職)"; }
+        
+        hHtml += `<div class="item"><div class="info"><strong><span style="color:${seriesColor}">${seriesName}</span> ${h.job} Lv.${h.lv} <span style="color:#f00">${status}</span></strong><b id="hdps-${i}">ATK: 0</b></div><button class="up-btn" id="hbtn-${i}" onclick="${btnAct}">${btnTxt}</button></div>`;
+    });
+    if(g.helpers.length < 25) hHtml += `<div class="item" style="opacity:0.5; justify-content:center;">🔒 下一位: Lv.120</div>`;
+    
+    g.equips.forEach((t,i) => {
+        let s = EQUIP_SLOTS[i], cost=[10,50,200,1000,9999][t];
+        let pBar=""; for(let k=1;k<=5;k++) pBar+=`<div class="tier-icon ${k<=t?`unlocked u-${k}`:''}">${k<=t?s.icon:''}</div>`;
+        eqHtml += `<div class="equip-row" onclick="upEquip(${i})"><div class="equip-info"><strong>${TIER_NAMES[t]} ${s.n}</strong><b>${s.stat.toUpperCase()} +${Math.floor(s.val*[0,1,2.5,5,10,25][t])}</b></div><div style="display:flex;gap:5px;">${pBar}</div>${t<5?`<button class="up-btn" id="eqbtn-${i}">🧩${f(cost)}</button>`:''}</div>`;
+    });
+
+    SKILL_DB.forEach((s,i) => {
+        let lv = g.skills[i];
+        let unlock = g.stage > s.unlockStage; 
+        let baseStageCoin = 10 * Math.pow(1.055, s.unlockStage);
+        let cost = Math.ceil((baseStageCoin * 10) * Math.pow(1.1, lv));
+        cost = getDiscountedCost(cost);
+        let btnTxt = unlock ? (lv>=999?"MAX":`💰${f(cost)}`) : `🔒 S.${s.unlockStage}`;
+        let desc = s.d;
+        if (i===0) desc = `傷害 x${(s.val + lv * s.incVal).toFixed(1)}`;
+        else if (i===1) desc = `爆擊 +${((s.val + lv * s.incVal)*100).toFixed(2)}%`;
+        else if (i===2) desc = `傷害 x${(s.val + lv * s.incVal).toFixed(0)}`;
+        else if (i===3) desc = `持續 ${(s.dur + lv * s.incVal).toFixed(0)}s`;
+
+        skHtml += `<div class="skill-row"><div class="skill-info"><div class="skill-name">${s.n} ${lv===0?'(未習得)':`(Lv.${lv})`}</div><div class="skill-desc">${desc}</div><div class="skill-cost">消耗: ${s.cost+lv} SP</div></div><div class="btn-group"><button class="up-btn" style="background:#006688" id="sk-use-${i}" onclick="useSkill(${i})">使用</button><button class="up-btn" id="sk-up-${i}" onclick="upSkill(${i})">${btnTxt}</button></div></div>`;
+    });
+
+    RELIC_DB.forEach((r,i) => {
+        let lv = g.relics[i], isC = r.type==='skip', max=isC?10:999;
+        let cost = Math.ceil(isC ? 5*Math.pow(2,lv) : 20*Math.pow(1.1,lv));
+        let val = (r.val * lv * (r.type==='hatk'||isC?1:100)).toFixed(0); 
+        if(isC) val = Math.max(0, lv-1);
+        let sign = isC ? '-' : '+'; let unit = (r.type==='hatk'||isC) ? '' : '%';
+        let displayVal = lv>0 ? `<span style="color:#00ffaa"> (目前: ${sign}${val}${unit})</span>` : "";
+
+        if(lv===0) rHtml += `<div class="item" style="opacity:0.5"><div class="info"><strong>???</strong><small>BOSS掉落</small></div></div>`;
+        else rHtml += `<div class="item"><div class="info"><strong>${r.n} Lv.${lv}</strong><b>${r.d} ${displayVal}</b></div><button class="up-btn" id="rl-btn-${i}" onclick="upRelic(${i})">${lv>=max?"MAX":"💎"+f(cost)}</button></div>`;
+    });
+
+    document.getElementById('helper-list').innerHTML = hHtml;
+    document.getElementById('equip-list').innerHTML = eqHtml;
+    document.getElementById('skill-list').innerHTML = skHtml;
+    document.getElementById('relic-list').innerHTML = rHtml;
+    
+    let rbBtn = document.getElementById('rebirth-panel');
+    if(g.plv < 100) { 
+        rbBtn.classList.add('rebirth-disabled'); 
+        document.getElementById('rb-btn').innerText = "⚡ 轉生 (需 Lv.100) ⚡";
+    }
+    else { 
+        rbBtn.classList.remove('rebirth-disabled'); 
+        document.getElementById('rb-btn').innerText = "⚡ 轉生 (可執行) ⚡";
+    }
+    
+    uiDirty = false;
+}
+
+function updateRealtime(st) {
+    document.getElementById('stage-txt').innerText = `${g.stage} (${g.sub}/${getMaxSub()})`;
+    document.getElementById('coin-txt').innerText = f(g.coin);
+    document.getElementById('dia-txt').innerText = f(g.dia);
+    document.getElementById('frag-txt').innerText = f(g.frag);
+    let maxSp = 1000;
+    document.getElementById('sp-txt').innerText = Math.floor(g.sp);
+    document.getElementById('sp-max-txt').innerText = Math.floor(maxSp);
+    document.getElementById('skill-timers').innerHTML = SKILL_DB.map((s,i)=>skillDur[i]>0?`<span>${s.n}:${skillDur[i].toFixed(1)}</span>`:"").join("");
+
+    let b = st.final;
+    let pCost = getDiscountedCost(Math.ceil(10 * Math.pow(1.06, g.plv)));
+    document.getElementById('plv-txt').innerText = g.plv;
+    let pupBtn = document.getElementById('pup-btn');
+    pupBtn.innerText = `升級 💰${f(pCost)}`;
+    pupBtn.disabled = g.coin < pCost;
+
+    let cData = getCritData(st);
+    let critDisp = (cData.rate * 100).toFixed(2);
+    let cdmgDisp = (cData.dmg * 100).toFixed(0);
+
+    document.getElementById('ro-board').innerHTML = `
+        <div class="ro-row"><span class="ro-lbl">STR</span><span class="ro-val">${b.str}</span></div>
+        <div class="ro-row"><span class="ro-lbl">ATK</span><span class="ro-val">${f(getDmg(st))}</span></div>
+        <div class="ro-row"><span class="ro-lbl">AGI</span><span class="ro-val">${b.agi}</span></div>
+        <div class="ro-row"><span class="ro-lbl">H.ATK</span><span class="ro-val">${f(dps)}</span></div>
+        <div class="ro-row"><span class="ro-lbl">INT</span><span class="ro-val">${b.int}</span></div>
+        <div class="ro-row"><span class="ro-lbl">CRI</span><span class="ro-val">${critDisp}%</span></div>
+        <div class="ro-row"><span class="ro-lbl">DEX</span><span class="ro-val">${b.dex}</span></div>
+        <div class="ro-row"><span class="ro-lbl">C.DMG</span><span class="ro-val" style="color:#ffaa00">${cdmgDisp}%</span></div>`;
+
+    document.getElementById('rb-count').innerText = g.rbCount;
+    document.getElementById('rb-reward').innerText = Math.floor(500 * Math.pow(1.5, g.rbCount));
+    document.getElementById('rb-bonus').innerText = g.rbCount * 10;
+    
+    let rbDiv = document.getElementById('rebirth-panel');
+    if (g.plv < 100) { if(!rbDiv.classList.contains('rebirth-disabled')) rbDiv.classList.add('rebirth-disabled'); } 
+    else { if(rbDiv.classList.contains('rebirth-disabled')) rbDiv.classList.remove('rebirth-disabled'); }
+
+    g.helpers.forEach((h,i) => {
+        let btn = document.getElementById(`hbtn-${i}`);
+        if(btn) {
+            let cost = getHelperCost(i, h.lv);
+            let dpsElem = document.getElementById(`hdps-${i}`);
+            if(dpsElem) dpsElem.innerText = `ATK: ${f(getHelperDmg(h,st))}`;
+            let needsSel = (!h.series || (h.lv>=10 && !h.grp) || (h.lv>=30 && h.branchIdx===undefined));
+            btn.disabled = !needsSel && g.coin < cost;
+        }
+    });
+    g.skills.forEach((lv,i) => {
+        let s = SKILL_DB[i];
+        let unlock = g.stage > s.unlockStage;
+        let baseStageCoin = 10 * Math.pow(1.055, s.unlockStage);
+        let cost = Math.ceil((baseStageCoin * 10) * Math.pow(1.1, lv));
+        cost = getDiscountedCost(cost);
+        let upBtn = document.getElementById(`sk-up-${i}`);
+        let useBtn = document.getElementById(`sk-use-${i}`);
+        if(upBtn) { if(!unlock) upBtn.disabled = true; else upBtn.disabled = g.coin < cost || lv >= 999; }
+        if(useBtn) { let spCost = s.cost + lv; useBtn.innerText = skillCD[i]>0 ? skillCD[i].toFixed(1) : "使用"; useBtn.disabled = skillCD[i]>0 || g.sp < spCost || lv===0; }
+    });
+    g.equips.forEach((t,i) => { let btn = document.getElementById(`eqbtn-${i}`); if(btn && t<5) { let cost = [10,50,200,1000,9999][t]; btn.disabled = g.frag < cost; } });
+    g.relics.forEach((lv,i) => { let btn = document.getElementById(`rl-btn-${i}`); if(btn && lv>0) { let r = RELIC_DB[i], isC=r.type==='skip'; let cost = Math.ceil(isC ? 5*Math.pow(2,lv) : 20*Math.pow(1.1,lv)); let max = isC?10:999; btn.disabled = lv>=max || g.dia < cost; } });
+}
+
+function f(n) { 
+    if (isNaN(n) || !isFinite(n)) return "0";
+    n = Math.ceil(n);
+    if(n < 10000) return n.toLocaleString(); 
+    if(n>1e15) return n.toExponential(2).replace("+",""); 
+    const u=["k","M","B","T","aa","bb","cc"]; 
+    let i=-1; while(n>=1000 && i<u.length-1){ n/=1000; i++; } 
+    return n.toFixed(2)+u[i]; 
+}
+
+function toast(msg, rare=false) { let d = document.createElement('div'); d.className = 'toast' + (rare ? ' rare' : ''); d.innerText = msg; document.getElementById('toast-container').appendChild(d); setTimeout(()=>d.remove(), 4000); }
+function addFloatText(txt, col, crit) { clickEffects.push({x: cvs.width/2+(Math.random()*40-20), y: cvs.height/2-50, txt: txt, col: col, life: 1.0, size: crit?30:20}); }
+function swTab(n) { document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===n)); document.querySelectorAll('.panel-content').forEach((p,i) => p.classList.toggle('active', i===n)); uiDirty=true; render(); }
+
+// === Save/Load System (Hybrid) ===
+function saveLocal() { 
+    g.lastSave = Date.now(); 
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(g)); } catch(e){}
+}
+
+function loadLocal() {
+    try {
+        let d = localStorage.getItem(SAVE_KEY);
+        if(d) {
+            let obj = JSON.parse(d); g = {...g, ...obj};
+            if(g.equips.length < 13) g.equips = Array(13).fill(0);
+            if(g.relics.length < RELIC_DB.length) { let old = g.relics; g.relics = Array(RELIC_DB.length).fill(0); old.forEach((v,i)=>g.relics[i]=v); }
+            if(g.skills.length < SKILL_DB.length) { let old=g.skills; g.skills=Array(SKILL_DB.length).fill(0); old.forEach((v,i)=>g.skills[i]=v); }
+            g.helpers.forEach(h => { updateHelperJob(h); });
+            checkOfflineProgress();
+        } else { addHelper(); }
+    } catch(e) { console.error("Load failed", e); addHelper(); }
+}
+
+async function saveCloud(isAuto = false) {
+    if(!currentUser) return;
+    try {
+        const payload = {
+            email: currentUser.email,
+            lastSave: Date.now(),
+            summary: {
+                plv: g.plv,
+                stage: g.stage,
+                rbCount: g.rbCount,
+                dia: g.dia,
+                timestamp: Date.now()
+            },
+            saveData: JSON.stringify(g)
+        };
+        await db.collection("users").doc(currentUser.uid).set(payload, { merge: true });
+        if(isAuto) console.log("Auto saved to cloud");
+        else toast("☁️ 上傳成功!");
+        updateCloudStatus();
+    } catch(e) {
+        console.error("Cloud save error:", e);
+        if(!isAuto) toast("上傳失敗: " + e.message);
+    }
+}
+
+async function loadCloud(conflictCheck = true) {
+    if(!currentUser) return;
+    try {
+        const doc = await db.collection("users").doc(currentUser.uid).get();
+        if(doc.exists) {
+            const data = doc.data();
+            if(conflictCheck) {
+                showConflictModal(data);
+            } else {
+                applyCloudData(data);
+            }
+        } else {
+            // New user on cloud, auto upload local
+            saveCloud(true);
+        }
+    } catch(e) {
+        console.error("Cloud load error:", e);
+        toast("讀取失敗");
+    }
+}
+
+function applyCloudData(data) {
+    if(data.saveData) {
+        let obj = JSON.parse(data.saveData);
+        g = {...g, ...obj};
+        saveLocal();
+        softReset();
+        toast("已讀取雲端存檔");
+        closeModal();
+    }
+}
+
+function showConflictModal(cloudData) {
+    const localTime = new Date(g.lastSave || 0).toLocaleString();
+    const cloudTime = new Date(cloudData.summary.timestamp || 0).toLocaleString();
+    
+    // Determine which is better (roughly)
+    const cloudBetter = (cloudData.summary.rbCount > g.rbCount) || 
+                        (cloudData.summary.rbCount == g.rbCount && cloudData.summary.stage > g.stage);
+    
+    const html = `
+        <div class="save-card">
+            <h4>🏠 本地紀錄 (目前)</h4>
+            <div class="save-detail">
+                等級: ${g.plv} | 轉生: ${g.rbCount}<br>
+                關卡: ${g.stage} | 鑽石: ${f(g.dia)}<br>
+                時間: ${localTime}
+            </div>
+        </div>
+        <div class="save-card" style="border-color:${cloudBetter?'#0f0':'#444'}">
+            <h4>☁️ 雲端紀錄 (已備份)</h4>
+            <div class="save-detail">
+                等級: ${cloudData.summary.plv} | 轉生: ${cloudData.summary.rbCount}<br>
+                關卡: ${cloudData.summary.stage} | 鑽石: ${f(cloudData.summary.dia)}<br>
+                時間: ${cloudTime}
+            </div>
+        </div>
+        <div style="font-size:12px; color:#aaa; margin-top:5px;">請選擇要使用的存檔：</div>
+    `;
+    
+    // Note: We need to pass cloudData to the button click handler, so we store it temporarily
+    window.tempCloudData = cloudData;
+    
+    showModal("存檔衝突", html, `
+        <button class="up-btn" onclick="saveCloud(); closeModal(); toast('已覆蓋雲端');">保留本地 (上傳)</button>
+        <button class="up-btn" style="background:linear-gradient(180deg,#00aaff,#006699); border-color:#005588;" onclick="applyCloudData(window.tempCloudData)">讀取雲端 (下載)</button>
+    `);
+}
+
+// === Cloud Settings UI ===
+function openCloudSettings() {
+    if(currentUser) {
+        // Logged In UI
+        let lastTime = "未知";
+        db.collection("users").doc(currentUser.uid).get().then(doc => {
+            if(doc.exists && doc.data().summary) {
+                lastTime = new Date(doc.data().summary.timestamp).toLocaleString();
+            }
+            renderLoggedInUI(lastTime);
+        });
+        renderLoggedInUI("讀取中...");
+    } else {
+        // Login/Register UI
+        showModal("雲端存檔登入", `
+            <div class="input-group">
+                <label>電子郵件</label>
+                <input type="email" id="u-email" placeholder="example@gmail.com">
+            </div>
+            <div class="input-group">
+                <label>密碼</label>
+                <input type="password" id="u-pass" placeholder="******">
+            </div>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="up-btn" style="flex:1;" onclick="doLogin()">登入</button>
+                <button class="up-btn" style="flex:1; background:#444; border-color:#666;" onclick="doRegister()">註冊</button>
+            </div>
+            <div style="font-size:10px; color:#666; margin-top:10px;">*註冊即代表同意隱私權政策</div>
+        `);
+    }
+}
+
+function renderLoggedInUI(lastUploadTime) {
+    showModal("雲端控制台", `
+        <div style="text-align:left; color:#ddd; font-size:13px; margin-bottom:10px;">
+            帳號: <span style="color:#00e5ff">${currentUser.email}</span><br>
+            狀態: <span style="color:#0f0">已連線</span><br>
+            上次備份: <span style="color:#aaa">${lastUploadTime}</span>
+        </div>
+        <button class="up-btn" style="width:100%; margin-bottom:5px;" onclick="saveCloud()">☁️ 立即手動上傳</button>
+        <button class="up-btn cancel-btn" style="width:100%;" onclick="doLogout()">登出</button>
+    `);
+}
+
+// === Auth Functions ===
+function doRegister() {
+    const e = document.getElementById('u-email').value;
+    const p = document.getElementById('u-pass').value;
+    if(!e || !p) return toast("請輸入帳號密碼");
+    auth.createUserWithEmailAndPassword(e, p).then(cred => {
+        toast("註冊成功!");
+        saveCloud(true); // Initial save
+        closeModal();
+    }).catch(err => toast(err.message));
+}
+
+function doLogin() {
+    const e = document.getElementById('u-email').value;
+    const p = document.getElementById('u-pass').value;
+    if(!e || !p) return toast("請輸入帳號密碼");
+    auth.signInWithEmailAndPassword(e, p).then(cred => {
+        toast("登入成功!");
+        closeModal();
+        // Load cloud will be triggered by onAuthStateChanged
+    }).catch(err => toast("登入失敗: " + err.message));
+}
+
+function doLogout() {
+    auth.signOut().then(() => {
+        toast("已登出");
+        closeModal();
+    });
+}
+
+// Auth Listener
+auth.onAuthStateChanged(user => {
+    currentUser = user;
+    if(user) {
+        updateCloudStatus(true);
+        loadCloud(true); // Check for cloud data on login
+        if(cloudTimer) clearInterval(cloudTimer);
+        cloudTimer = setInterval(() => saveCloud(true), 60000); // Auto save every 60s
+    } else {
+        updateCloudStatus(false);
+        if(cloudTimer) clearInterval(cloudTimer);
+    }
+});
+
+function updateCloudStatus(isOnline) {
+    const dot = document.getElementById('conn-dot');
+    const txt = document.getElementById('conn-txt');
+    if(currentUser) {
+        dot.classList.add('online');
+        txt.innerText = '已連線';
+        txt.style.color = '#0f0';
+    } else {
+        dot.classList.remove('online');
+        txt.innerText = '離線';
+        txt.style.color = '#aaa';
+    }
+}
+
+// === Game Init ===
+
+let cvs, ctx;
+window.onload = function() {
+    cvs = document.getElementById('gameCanvas'); ctx = cvs.getContext('2d');
+    let obs = new ResizeObserver(()=>{ cvs.width = cvs.parentElement.clientWidth; cvs.height = cvs.parentElement.clientHeight; });
+    obs.observe(document.getElementById('game-area'));
+    loadLocal(); // Load local first for instant play
+    if(!currentMonster) spawnMonster(); 
+    mMaxHp = getMonsterHp(); mHp = mMaxHp; 
+    setInterval(tick, 100); 
+    requestAnimationFrame(drawLoop); 
+    setInterval(saveLocal, 5000); // Local save every 5s
+    cvs.addEventListener('mousedown', ()=>{ hitMonster(getDmg(calcStats()), false, true); });
+    cvs.addEventListener('touchstart', (e)=>{ e.preventDefault(); hitMonster(getDmg(calcStats()), false, true); }, {passive:false});
+    render(); 
+};
+
+function drawLoop() {
+    ctx.fillStyle = "#000"; ctx.fillRect(0,0,cvs.width,cvs.height);
+    ctx.fillStyle = "#111"; ctx.fillRect(0, cvs.height*0.6, cvs.width, cvs.height*0.4);
+    let cx = cvs.width/2; let cy = cvs.height/2;
+    let boss = currentMonster ? currentMonster.isBoss : false;
+    let size = boss ? 120 : 80;
+    let shake = lastAtk + 100 > Date.now() ? (Math.random()*4-2) : 0;
+    ctx.fillStyle = currentMonster ? currentMonster.color : "#ffcc00";
+    ctx.fillRect(cx - size/2 + shake, cy - size/2, size, size);
+    
+    // Image drawing with safety check
+    let drawn = false;
+    if(currentMonster && currentMonster.gif && monsterImgCache[currentMonster.gif] && monsterImgCache[currentMonster.gif].complete && monsterImgCache[currentMonster.gif].naturalWidth > 0) {
+        try {
+            ctx.drawImage(monsterImgCache[currentMonster.gif], cx - size/2 + shake, cy - size/2, size, size);
+            drawn = true;
+        } catch(e) {}
+    } 
+    
+    // Fallback Emoji if image failed
+    if(!drawn && currentMonster && currentMonster.emoji) {
+        ctx.font = `${size/2}px Arial`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillStyle = "#fff"; ctx.fillText(currentMonster.emoji, cx + shake, cy);
+    }
+    
+    ctx.font = "bold 14px Arial"; ctx.fillStyle = "#fff"; ctx.textAlign = "center";
+    ctx.fillText(currentMonster ? currentMonster.name : "Monster", cx, cy - size/2 - 30);
+    ctx.fillStyle = "#00ccff"; ctx.fillRect(cx - 150, cy + 20, 40, 40); 
+    ctx.font = "20px Arial"; ctx.fillText("🧑‍🚀", cx - 130, cy + 40);
+    
+    let t = Date.now() / 1000;
+    if (g.helpers && g.helpers.length > 0) {
+        g.helpers.forEach((h, i) => {
+            let radius = 100, angle = t * 0.5 + (i * (Math.PI * 2 / g.helpers.length));
+            let hx = cx + Math.cos(angle) * radius, hy = cy + Math.sin(angle) * (radius * 0.3);
+            ctx.fillStyle = (!h.series) ? "#aaa" : (h.series === 'RO' ? "#33ccff" : "#ff8833");
+            ctx.beginPath(); ctx.arc(hx, hy, 10, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke();
+        });
+    }
+
+    let pct = Math.max(0, mHp/mMaxHp);
+    ctx.fillStyle = "#333"; ctx.fillRect(cx-100, cy-size/2-25, 200, 12);
+    ctx.fillStyle = "#00ff00"; ctx.fillRect(cx-100, cy-size/2-25, 200*pct, 12);
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.strokeRect(cx-100, cy-size/2-25, 200, 12);
+    ctx.fillStyle = "#fff"; ctx.font = "bold 10px Arial";
+    ctx.fillText(`${f(Math.ceil(mHp))} / ${f(Math.ceil(mMaxHp))}`, cx, cy-size/2-19);
+    
+    for(let i=clickEffects.length-1; i>=0; i--) {
+        let e = clickEffects[i]; e.y -= 1; e.life -= 0.02;
+        ctx.globalAlpha = Math.max(0, e.life); ctx.font = `bold ${e.size}px Arial`;
+        ctx.fillStyle = e.col; ctx.textAlign = "center"; ctx.fillText(e.txt, e.x, e.y);
+        ctx.globalAlpha = 1; if(e.life<=0) clickEffects.splice(i,1);
+    }
+    if(uiDirty) render();
+    updateRealtime(calcStats()); 
+    requestAnimationFrame(drawLoop);
+}
+
+function showWin() { 
+    showConfirm("恭喜通關 5000 關！\n點擊確定重新開始下一輪冒險。", () => {
+        g.stage = 1; saveLocal(); softReset();
+    });
+}
+function softReset() {
+    loadLocal();
+    uiDirty = true;
+    spawnMonster();
+}
+function checkOfflineProgress() {
+    if(!g.lastSave) return;
+    let now = Date.now(), diff = now - g.lastSave;
+    if(diff > 60000) { 
+        let maxOffline = 12*3600*1000, actualDiff = Math.min(diff, maxOffline), sec = actualDiff/1000, st = calcStats();
+        let pSpd = Math.max(0.1, 1/(1+st.final.agi*0.05)), pKills = sec/pSpd;
+        let hKills = 0, hInt = 1/(1+st.bonus.haspd); hKills = g.helpers.length * (sec/hInt);
+        let pDmg = getDmg(st), hDmg = 0; g.helpers.forEach(h=>hDmg+=getHelperDmg(h,st)); if(g.helpers.length) hDmg/=g.helpers.length;
+        let totalDmg = pDmg*pKills + hDmg*hKills, avgHp = 200*Math.pow(1.055,g.stage-1), kills = Math.floor(totalDmg/avgHp);
+        if(kills>0) {
+            let gold = Math.ceil(10*Math.pow(1.055,g.stage-1)*(1+st.bonus.gold)*kills), frag = Math.floor(kills*0.07), dia = Math.floor(kills*0.02);
+            g.coin+=gold; g.frag+=frag; g.dia+=dia;
+            let h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60);
+            showModal("離線收益", `<div style="text-align:left; padding-left:20px;">離線時間: ${h}時${m}分<br>擊殺怪物: ${f(kills)}<br>獲得金幣: ${f(gold)}<br>獲得碎片: ${f(frag)}<br>獲得鑽石: ${f(dia)}</div>`);
+        }
+    }
+}
+</script>
+</body>
+</html>
