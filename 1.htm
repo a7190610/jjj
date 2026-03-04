@@ -43,7 +43,6 @@
             background-color: #FDFBF7;
             color: #5E503F;
             -webkit-tap-highlight-color: transparent;
-            /* 移除之前的強制滿版 iframe hack */
         }
         
         .hide-scrollbar::-webkit-scrollbar {
@@ -71,14 +70,6 @@
         .btn-press:active {
             transform: scale(0.95);
         }
-
-        .toggle-checkbox:checked {
-            right: 0;
-            border-color: #D88C9A;
-        }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: #D88C9A;
-        }
     </style>
 </head>
 <body class="min-h-screen relative">
@@ -95,7 +86,6 @@
     </nav>
 
     <!-- Main Content -->
-    <!-- Reverted padding to standard pb-32 -->
     <main class="max-w-md mx-auto p-5 space-y-6 pb-32">
 
         <!-- 1. 基礎底價區 (Base Price) -->
@@ -105,6 +95,17 @@
                 <h2 class="font-bold text-cream-600">基礎底價</h2>
             </div>
             <div id="basePriceContainer" class="grid grid-cols-2 gap-3">
+                <!-- Rendered by JS -->
+            </div>
+        </section>
+
+        <!-- 1.5. 自由發揮區 (Free Style Design) -->
+        <section class="bg-white rounded-3xl p-5 shadow-sm border border-cream-100">
+            <div class="flex items-center gap-2 mb-4">
+                <i class="ph-fill ph-magic-wand text-highlight text-lg"></i>
+                <h2 class="font-bold text-cream-600">自由發揮</h2>
+            </div>
+            <div id="freeStyleContainer" class="grid grid-cols-2 gap-3">
                 <!-- Rendered by JS -->
             </div>
         </section>
@@ -198,17 +199,18 @@
                 </div>
             </div>
 
-            <!-- Birthday Discount -->
+            <!-- Birthday Discount (Fixed UI) -->
             <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <i class="ph-fill ph-cake text-highlight text-lg"></i>
                     <h2 class="font-bold text-cream-600">生日折扣 (9折)</h2>
                 </div>
                 
-                <div class="relative inline-block w-12 h-6 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="toggle" id="birthdayToggle" onchange="calculateTotal()" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer border-cream-200 transition-all duration-300 left-0"/>
-                    <label for="birthdayToggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-cream-200 cursor-pointer"></label>
-                </div>
+                <!-- Robust Tailwind Toggle -->
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="birthdayToggle" onchange="calculateTotal()" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-highlight"></div>
+                </label>
             </div>
         </section>
 
@@ -254,25 +256,38 @@
 
     <!-- Settings Modal -->
     <div id="settingsModal" class="fixed inset-0 bg-cream-50 z-50 hidden overflow-y-auto">
-        <div class="max-w-md mx-auto p-5">
+        <div class="max-w-md mx-auto p-5 pb-20">
             <div class="flex justify-between items-center mb-8">
                 <h2 class="text-2xl font-bold text-cream-700">後台設定</h2>
                 <button onclick="toggleSettings()" class="w-10 h-10 flex items-center justify-center bg-white rounded-full shadow-sm text-cream-600">
                     <i class="ph-bold ph-x"></i>
                 </button>
             </div>
+            
+            <div class="bg-orange-50 p-3 mb-6 rounded-xl text-xs text-orange-700 flex items-start gap-2 border border-orange-100">
+                <i class="ph-fill ph-pencil-simple text-base"></i>
+                <p>直接點擊下方輸入框即可修改名稱或價格，系統會自動儲存。</p>
+            </div>
 
             <!-- Base Price Settings -->
             <div class="mb-8">
                 <h3 class="font-bold text-cream-600 mb-3 border-l-4 border-highlight pl-3">底價選項管理</h3>
-                <div class="bg-orange-50 p-2 mb-2 rounded text-xs text-orange-700">
-                    <i class="ph-fill ph-pencil-simple"></i> 直接點擊輸入框即可修改名稱或價格
-                </div>
                 <ul id="settingsBaseList" class="space-y-2 mb-3"></ul>
                 <div class="flex gap-2 bg-white p-2 rounded-xl border border-cream-200 shadow-sm mt-4">
                     <input type="text" id="newBaseName" placeholder="新增名稱" class="flex-1 p-2 rounded-lg bg-cream-50 text-sm outline-none">
                     <input type="number" id="newBasePrice" placeholder="$" class="w-16 p-2 rounded-lg bg-cream-50 text-sm outline-none">
                     <button onclick="addSetting('base')" class="bg-cream-600 text-white w-10 rounded-lg flex items-center justify-center"><i class="ph-bold ph-plus"></i></button>
+                </div>
+            </div>
+
+            <!-- Free Style Settings -->
+            <div class="mb-8">
+                <h3 class="font-bold text-cream-600 mb-3 border-l-4 border-highlight pl-3">自由發揮選項管理</h3>
+                <ul id="settingsFreeList" class="space-y-2 mb-3"></ul>
+                <div class="flex gap-2 bg-white p-2 rounded-xl border border-cream-200 shadow-sm mt-4">
+                    <input type="text" id="newFreeName" placeholder="新增名稱" class="flex-1 p-2 rounded-lg bg-cream-50 text-sm outline-none">
+                    <input type="number" id="newFreePrice" placeholder="$" class="w-16 p-2 rounded-lg bg-cream-50 text-sm outline-none">
+                    <button onclick="addSetting('freeStyle')" class="bg-cream-600 text-white w-10 rounded-lg flex items-center justify-center"><i class="ph-bold ph-plus"></i></button>
                 </div>
             </div>
 
@@ -286,12 +301,8 @@
                     <button onclick="addSetting('advanced')" class="bg-cream-600 text-white w-10 rounded-lg flex items-center justify-center"><i class="ph-bold ph-plus"></i></button>
                 </div>
             </div>
-
-            <div class="bg-cream-100 p-4 rounded-xl border border-cream-200 text-cream-600 text-xs text-center">
-                 設定將自動儲存於此裝置中
-            </div>
             
-             <button onclick="resetToDefaults()" class="mt-6 w-full py-3 text-red-400 text-sm font-medium hover:text-red-500">重置為預設值</button>
+             <button onclick="resetToDefaults()" class="mt-6 w-full py-3 text-red-400 bg-white rounded-xl border border-red-100 text-sm font-bold shadow-sm hover:bg-red-50">重置為預設值</button>
         </div>
     </div>
 
@@ -305,12 +316,18 @@
         // --- Data & State ---
         const defaultData = {
             baseOptions: [
-                { name: '單色凝膠', price: 800 },
-                { name: '貓眼凝膠', price: 900 },
-                { name: '鏡面凝膠', price: 900 },
-                { name: '花磚設計款', price: 1300 },
-                { name: '旋旋驚喜設計款', price: 1250 },
-                { name: '花磚驚喜款', price: 1300 }
+                { name: '單色凝膠', price: 900 },
+                { name: '貓眼凝膠', price: 1000 },
+                { name: '鏡面凝膠', price: 1000 },
+                { name: '法式凝膠', price: 1300 },
+                { name: '漸層凝膠', price: 1200 }
+            ],
+            freeStyleOptions: [
+                { name: '6指造型+單色', price: 1450 },
+                { name: '8指造型+單色', price: 1550 },
+                { name: '10指造型', price: 1650 },
+                { name: '花磚基礎款', price: 1800 },
+                { name: '花磚進階款', price: 2500 }
             ],
             advancedPresets: [
                 { name: '手繪', price: 150 },
@@ -321,20 +338,19 @@
             ]
         };
 
-        // Load Settings
-        let appData = JSON.parse(localStorage.getItem('nailCalcData'));
+        // 修改儲存的 Key，強制載入新的預設值 (nailCalcData_v3)
+        const STORAGE_KEY = 'nailCalcData_v3';
+        let appData = JSON.parse(localStorage.getItem(STORAGE_KEY));
         
-        // Migration Check
+        // Initial load or migration
         if (!appData) {
             appData = JSON.parse(JSON.stringify(defaultData));
-        } else if (!appData.advancedPresets) {
-            appData.advancedPresets = JSON.parse(JSON.stringify(defaultData.advancedPresets));
         }
         
         // Runtime State
         let state = {
             selectedBasePrice: 0,
-            selectedBaseName: '',
+            selectedBaseName: '', // Holds the name of either Base or FreeStyle
             extensionQty: 0,
             repairQty: 0,
             advancedItems: [], 
@@ -346,6 +362,7 @@
         // --- Initialization ---
         function init() {
             renderBaseOptions();
+            renderFreeStyleOptions();
             renderQuickToolbar(); 
             setRemoval('none');
             calculateTotal();
@@ -354,6 +371,7 @@
         }
 
         // --- Render Core Sections ---
+        // 基礎底價與自由發揮共用 name="basePrice"，確保互相排斥（只能擇一）
         function renderBaseOptions() {
             const container = document.getElementById('basePriceContainer');
             container.innerHTML = '';
@@ -361,10 +379,38 @@
             appData.baseOptions.forEach((opt, index) => {
                 const div = document.createElement('div');
                 div.className = 'relative';
+                // 檢查是否是目前選中的項目，若是則加上 checked 屬性
+                const isChecked = (state.selectedBaseName === opt.name) ? 'checked' : '';
+                
                 div.innerHTML = `
                     <input type="radio" name="basePrice" id="base_${index}" 
-                           class="peer hidden" value="${opt.price}">
+                           class="peer hidden" value="${opt.price}" ${isChecked}>
                     <label for="base_${index}" 
+                           class="block bg-cream-50 border border-cream-200 rounded-xl p-3 text-center cursor-pointer transition-all h-full flex flex-col justify-center
+                                  peer-checked:bg-cream-600 peer-checked:text-white peer-checked:border-cream-600 peer-checked:shadow-md">
+                        <div class="text-sm font-medium mb-1 leading-tight">${opt.name}</div>
+                        <div class="text-lg font-bold font-sans">$${opt.price}</div>
+                    </label>
+                `;
+                const radio = div.querySelector('input');
+                radio.onchange = () => updateBase(opt.name, opt.price);
+                container.appendChild(div);
+            });
+        }
+
+        function renderFreeStyleOptions() {
+            const container = document.getElementById('freeStyleContainer');
+            container.innerHTML = '';
+            
+            appData.freeStyleOptions.forEach((opt, index) => {
+                const div = document.createElement('div');
+                div.className = 'relative';
+                const isChecked = (state.selectedBaseName === opt.name) ? 'checked' : '';
+                
+                div.innerHTML = `
+                    <input type="radio" name="basePrice" id="free_${index}" 
+                           class="peer hidden" value="${opt.price}" ${isChecked}>
+                    <label for="free_${index}" 
                            class="block bg-cream-50 border border-cream-200 rounded-xl p-3 text-center cursor-pointer transition-all h-full flex flex-col justify-center
                                   peer-checked:bg-cream-600 peer-checked:text-white peer-checked:border-cream-600 peer-checked:shadow-md">
                         <div class="text-sm font-medium mb-1 leading-tight">${opt.name}</div>
@@ -393,6 +439,7 @@
                 if(preset.name.includes('鑽')) icon = '💎';
                 if(preset.name.includes('法式')) icon = '🇫🇷';
                 if(preset.name.includes('鏡面')) icon = '✨';
+                if(preset.name.includes('漸層')) icon = '🌊';
                 
                 btn.innerText = `${icon} ${preset.name}`;
                 btn.onclick = () => addAdvancedRow(preset.name, preset.price);
@@ -400,7 +447,7 @@
             });
         }
 
-        // --- Logic: Base ---
+        // --- Logic: Base & Free Style ---
         function updateBase(name, price) {
             state.selectedBaseName = name;
             state.selectedBasePrice = price;
@@ -699,8 +746,10 @@
                 renderSettingsLists();
             } else {
                 modal.classList.add('hidden');
+                // Re-render views in case of changes
                 renderBaseOptions();
-                renderQuickToolbar(); // Also refresh quick toolbar
+                renderFreeStyleOptions();
+                renderQuickToolbar(); 
             }
         }
 
@@ -720,6 +769,21 @@
                 </li>
             `).join('');
 
+            // Free Style List
+            const freeList = document.getElementById('settingsFreeList');
+            freeList.innerHTML = appData.freeStyleOptions.map((opt, i) => `
+                <li class="flex gap-2 items-center bg-white p-2 rounded-xl border border-cream-100 shadow-sm">
+                    <input type="text" value="${opt.name}" 
+                           onchange="updateSetting('freeStyle', ${i}, 'name', this.value)"
+                           class="flex-1 bg-transparent text-sm text-cream-700 font-medium outline-none border-b border-transparent focus:border-cream-300 transition-colors" />
+                    <span class="text-cream-400 text-xs">$</span>
+                    <input type="number" value="${opt.price}" 
+                           onchange="updateSetting('freeStyle', ${i}, 'price', this.value)"
+                           class="w-16 bg-transparent text-sm text-cream-700 font-bold outline-none border-b border-transparent focus:border-cream-300 transition-colors text-right" />
+                    <button onclick="removeSetting('freeStyle', ${i})" class="text-cream-300 hover:text-red-400 p-1"><i class="ph-bold ph-trash"></i></button>
+                </li>
+            `).join('');
+
             // Advanced List
             const advList = document.getElementById('settingsAdvList');
             advList.innerHTML = appData.advancedPresets.map((opt, i) => `
@@ -736,37 +800,50 @@
             `).join('');
         }
 
-        // New Update Function
+        // Handle updates
         function updateSetting(type, index, field, value) {
             if (type === 'base') {
                 if (field === 'price') value = parseInt(value) || 0;
                 appData.baseOptions[index][field] = value;
-                renderBaseOptions(); // Update Main View immediately
+                renderBaseOptions(); 
+            } else if (type === 'freeStyle') {
+                if (field === 'price') value = parseInt(value) || 0;
+                appData.freeStyleOptions[index][field] = value;
+                renderFreeStyleOptions(); 
             } else if (type === 'advanced') {
                 if (field === 'price') value = parseInt(value) || 0;
                 appData.advancedPresets[index][field] = value;
-                renderQuickToolbar(); // Update Main View immediately
+                renderQuickToolbar(); 
             }
             saveData();
+            
+            // Recalculate just in case the currently selected base item changed price
+            calculateTotal();
         }
 
         function addSetting(type) {
-            const nameId = type === 'base' ? 'newBaseName' : 'newAdvName';
-            const priceId = type === 'base' ? 'newBasePrice' : 'newAdvPrice';
+            let nameId, priceId, targetArray;
+            
+            if (type === 'base') {
+                nameId = 'newBaseName'; priceId = 'newBasePrice'; targetArray = appData.baseOptions;
+            } else if (type === 'freeStyle') {
+                nameId = 'newFreeName'; priceId = 'newFreePrice'; targetArray = appData.freeStyleOptions;
+            } else {
+                nameId = 'newAdvName'; priceId = 'newAdvPrice'; targetArray = appData.advancedPresets;
+            }
             
             const name = document.getElementById(nameId).value;
             const price = parseInt(document.getElementById(priceId).value);
 
             if (name && !isNaN(price)) {
-                if (type === 'base') {
-                    appData.baseOptions.push({ name, price });
-                } else {
-                    appData.advancedPresets.push({ name, price });
-                }
+                targetArray.push({ name, price });
                 saveData();
                 renderSettingsLists();
-                renderBaseOptions();
-                renderQuickToolbar();
+                
+                if (type === 'base') renderBaseOptions();
+                if (type === 'freeStyle') renderFreeStyleOptions();
+                if (type === 'advanced') renderQuickToolbar();
+                
                 document.getElementById(nameId).value = '';
                 document.getElementById(priceId).value = '';
             }
@@ -776,18 +853,22 @@
             if (confirm('確定要刪除此選項嗎？')) {
                 if (type === 'base') {
                     appData.baseOptions.splice(index, 1);
+                    renderBaseOptions();
+                } else if (type === 'freeStyle') {
+                    appData.freeStyleOptions.splice(index, 1);
+                    renderFreeStyleOptions();
                 } else {
                     appData.advancedPresets.splice(index, 1);
+                    renderQuickToolbar();
                 }
                 saveData();
                 renderSettingsLists();
-                renderBaseOptions();
-                renderQuickToolbar();
+                calculateTotal();
             }
         }
 
         function saveData() {
-            localStorage.setItem('nailCalcData', JSON.stringify(appData));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
         }
 
         function resetToDefaults() {
@@ -796,7 +877,12 @@
                 saveData();
                 renderSettingsLists();
                 renderBaseOptions();
+                renderFreeStyleOptions();
                 renderQuickToolbar();
+                
+                state.selectedBaseName = '';
+                state.selectedBasePrice = 0;
+                calculateTotal();
             }
         }
 
