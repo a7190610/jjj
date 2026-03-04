@@ -156,8 +156,8 @@
                 <button onclick="addAdvancedRow()" class="text-xs bg-cream-100 text-cream-600 px-3 py-1 rounded-full font-medium border border-cream-200">+ 自訂</button>
             </div>
 
-            <!-- Quick Toolbar -->
-            <div class="mb-5 -mx-2 px-2 overflow-x-auto hide-scrollbar flex gap-2" id="quickToolbar">
+            <!-- Quick Toolbar (Changed to two rows) -->
+            <div class="mb-5 grid grid-cols-4 gap-2" id="quickToolbar">
                 <!-- Rendered by JS from Backend Data -->
             </div>
 
@@ -191,12 +191,13 @@
             <div class="flex items-center justify-between mb-4 pb-4 border-b border-cream-100">
                 <div class="flex items-center gap-2">
                     <i class="ph-fill ph-coins text-highlight text-lg"></i>
-                    <h2 class="font-bold text-cream-600">已付訂金</h2>
+                    <h2 class="font-bold text-cream-600">已付訂金 $500</h2>
                 </div>
-                <div class="relative w-32">
-                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-cream-400">$</span>
-                    <input type="number" id="depositInput" oninput="updateDeposit(this.value)" onfocus="focusInput(this)" class="w-full bg-cream-50 border border-cream-200 rounded-xl py-2 pl-6 pr-3 text-right text-cream-700 font-bold focus:ring-2 focus:ring-cream-200" placeholder="0">
-                </div>
+                <!-- Robust Tailwind Toggle -->
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="depositToggle" onchange="calculateTotal()" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-highlight"></div>
+                </label>
             </div>
 
             <!-- Birthday Discount (Fixed UI) -->
@@ -317,8 +318,7 @@
         const defaultData = {
             baseOptions: [
                 { name: '單色凝膠', price: 900 },
-                { name: '貓眼凝膠', price: 1000 },
-                { name: '鏡面凝膠', price: 1000 },
+                { name: '貓眼鏡面凝膠', price: 1000 },
                 { name: '法式凝膠', price: 1300 },
                 { name: '漸層凝膠', price: 1200 }
             ],
@@ -330,16 +330,19 @@
                 { name: '花磚進階款', price: 2500 }
             ],
             advancedPresets: [
-                { name: '手繪', price: 150 },
+                { name: '手繪', price: 100 },
                 { name: '暈染', price: 100 },
                 { name: '立體造型', price: 100 },
                 { name: '貼紙', price: 50 },
-                { name: '貼鑽', price: 50 }
+                { name: '貼鑽', price: 50 },
+                { name: '漸層', price: 80 },
+                { name: '法式', price: 80 },
+                { name: '打底', price: 100 }
             ]
         };
 
-        // 修改儲存的 Key，強制載入新的預設值 (nailCalcData_v3)
-        const STORAGE_KEY = 'nailCalcData_v3';
+        // 修改儲存的 Key，強制載入新的預設值 (nailCalcData_v5)
+        const STORAGE_KEY = 'nailCalcData_v5';
         let appData = JSON.parse(localStorage.getItem(STORAGE_KEY));
         
         // Initial load or migration
@@ -356,6 +359,7 @@
             advancedItems: [], 
             removalType: 'none',
             deposit: 0,
+            isDepositPaid: false,
             isBirthday: false
         };
 
@@ -429,7 +433,8 @@
             
             appData.advancedPresets.forEach(preset => {
                 const btn = document.createElement('button');
-                btn.className = 'btn-press flex-shrink-0 bg-cream-50 text-cream-600 border border-cream-200 px-4 py-2 rounded-full text-sm whitespace-nowrap shadow-sm';
+                // Adjust button classes for grid layout
+                btn.className = 'btn-press bg-cream-50 text-cream-600 border border-cream-200 px-1 py-2 rounded-xl text-xs sm:text-sm whitespace-nowrap shadow-sm truncate';
                 
                 let icon = '💅';
                 if(preset.name.includes('手繪')) icon = '✍️';
@@ -440,6 +445,7 @@
                 if(preset.name.includes('法式')) icon = '🇫🇷';
                 if(preset.name.includes('鏡面')) icon = '✨';
                 if(preset.name.includes('漸層')) icon = '🌊';
+                if(preset.name.includes('打底')) icon = '🛡️';
                 
                 btn.innerText = `${icon} ${preset.name}`;
                 btn.onclick = () => addAdvancedRow(preset.name, preset.price);
@@ -589,11 +595,6 @@
             calculateTotal();
         }
 
-        function updateDeposit(val) {
-            state.deposit = parseInt(val) || 0;
-            calculateTotal();
-        }
-
         function calculateTotal() {
             let subtotal = state.selectedBasePrice;
             subtotal += (state.extensionQty * 100);
@@ -612,6 +613,10 @@
             if (isBirthday) {
                 discountedTotal = Math.round(subtotal * 0.9);
             }
+
+            const isDepositPaid = document.getElementById('depositToggle').checked;
+            state.isDepositPaid = isDepositPaid;
+            state.deposit = isDepositPaid ? 500 : 0;
 
             let finalTotal = discountedTotal - state.deposit;
             animateValue("displayTotal", parseInt(document.getElementById("displayTotal").innerText.replace(/,/g, '')), finalTotal, 300);
@@ -687,11 +692,11 @@
                     <span>-10%</span>
                 </div>`;
             }
-            if (state.deposit > 0) {
+            if (state.isDepositPaid) {
                 html += `
                 <div class="flex justify-between py-1 text-cream-500">
                     <span>已付訂金</span>
-                    <span>-$${state.deposit}</span>
+                    <span>-$500</span>
                 </div>`;
             }
             const total = parseInt(document.getElementById('displayTotal').innerText.replace(/,/g, ''));
