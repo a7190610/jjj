@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>至岡二食品</title>
+    <style>
+        /* --- 🎨 外觀樣式設定 (CSS) --- */
+        :root {
+            --primary-red: #c91818;
+            --dark-red: #8a0c0c;
+            --gold: #fcc200;
+            --bg-cream: #fffdf5;
+            --text-dark: #333;
+            --btn-green: #28a745;
+            --btn-red: #dc3545;
+            --btn-orange: #ff9800;
+        }
+
+        body { font-family: "Microsoft JhengHei", sans-serif; background-color: var(--primary-red); margin: 0; padding-bottom: 100px; color: var(--text-dark); transition: background-color 0.3s; }
+        * { touch-action: manipulation; box-sizing: border-box; }
+        
+        /* 頁首 */
+        header { background-color: var(--dark-red); padding: 10px 15px; border-bottom: 3px solid var(--gold); position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; height: 70px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        h1 { color: var(--gold); font-size: 1.8rem; border: 2px solid var(--gold); padding: 5px 15px; border-radius: 50px; background: #600000; margin: 0; white-space: nowrap; }
+
+        /* 按鈕通用 */
+        .btn { border: 2px solid #fff; border-radius: 20px; padding: 8px 15px; font-weight: bold; cursor: pointer; color: white; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s; min-width: 100px; text-align: center; }
+        .btn:active { transform: scale(0.95); }
+        .btn:disabled { background: #999; cursor: wait; }
+        .mode-btn { background: var(--btn-green); }
+        .mode-btn.cancel { background: var(--btn-red); border-color: #ffcccc; }
+
+        /* 容器與列表 */
+        .container { max-width: 800px; margin: 0 auto; padding: 15px; }
+        .category-block { background: #fff; border-radius: 10px; padding: 15px; margin-bottom: 25px; border: 2px solid var(--gold); }
+        .category-title { color: var(--dark-red); font-size: 1.4rem; border-bottom: 1px dashed #ccc; padding-bottom: 8px; margin: 0 0 15px 0; font-weight: bold; }
+        
+        .product-list { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; }
+        .product-item { background: var(--bg-cream); border: 1px solid #ddd; border-radius: 8px; width: 48%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; margin-bottom: 10px; transition: height 0.3s; }
+        
+        .photo-box { width: 100%; height: 0; padding-bottom: 100%; background: #eee; position: relative; cursor: pointer; border-bottom: 1px solid #eee; }
+        .photo-box img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; font-size: 12px; color: #999; }
+        
+        .info-box { padding: 10px 5px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .p-name { font-weight: bold; color: var(--dark-red); margin-bottom: 4px; font-size: 1rem; min-height: 1.2em; }
+        .view-detail { font-size: 0.8rem; color: #007bff; text-decoration: underline; cursor: pointer; margin-bottom: 4px; display: inline-block; }
+        .p-spec { font-size: 0.85rem; color: #555; background: #fff; padding: 2px 5px; border: 1px solid #eee; border-radius: 4px; display: inline-block; align-self: center; }
+
+        /* 數量控制 */
+        .qty-control { display: none; align-items: center; justify-content: center; margin-top: auto; background: #ffecec; padding: 5px; border-radius: 5px; }
+        body.ordering-mode .qty-control { display: flex; }
+        .qty-btn { width: 32px; height: 32px; background: var(--primary-red); color: white; border: none; border-radius: 50%; font-size: 1.4rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .qty-display { width: 40px; text-align: center; font-size: 1.2rem; font-weight: bold; }
+
+        /* 訂購單 */
+        .order-summary { display: none; background: #fff; border: 3px solid var(--dark-red); border-radius: 10px; padding: 15px; margin-top: 20px; box-shadow: 0 -2px 10px rgba(0,0,0,0.3); }
+        body.ordering-mode .order-summary { display: block; }
+        .summary-header { font-size: 1.2rem; color: var(--dark-red); border-bottom: 2px solid var(--gold); padding-bottom: 10px; margin-bottom: 10px; font-weight: bold; display: flex; justify-content: space-between; }
+        #order-list { list-style: none; padding: 0; margin: 0; max-height: 300px; overflow-y: auto; }
+        #order-list li { border-bottom: 1px dashed #eee; padding: 8px 0; display: flex; justify-content: space-between; }
+        .empty-cart-msg { color: #999; text-align: center; padding: 10px; }
+        .total-row { margin-top: 15px; padding-top: 10px; border-top: 2px solid var(--dark-red); font-weight: bold; font-size: 1.3rem; text-align: right; color: var(--primary-red); }
+
+        .action-buttons { display: flex; gap: 10px; margin-top: 15px; }
+        .copy-btn { flex: 2; background: var(--btn-green); }
+        .reset-btn { flex: 1; background: var(--btn-orange); }
+
+        /* 聯絡資訊 */
+        .contact-block { text-align: center; padding: 20px; margin-top: 20px; color: white; }
+        .contact-text { font-size: 1.1rem; line-height: 1.6; margin-bottom: 20px; font-weight: bold; }
+        .qr-area { background: white; padding: 15px; display: inline-block; border-radius: 10px; text-align: center; margin-bottom: 20px; }
+        .qr-area img { width: 150px; display: block; margin: 0 auto; }
+        .map-box { width: 100%; height: 300px; background: #eee; border-radius: 10px; overflow: hidden; border: 2px solid white; margin-top: 10px; }
+        .map-box iframe { width: 100%; height: 100%; border: 0; }
+        footer { text-align: center; padding: 15px; color: #fcc200; font-size: 0.8rem; background: var(--dark-red); }
+
+        /* 彈跳視窗 */
+        .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); animation: fadeIn 0.3s; }
+        .modal-content { background: var(--bg-cream); margin: 10% auto; padding: 20px; border: 3px solid var(--dark-red); border-radius: 15px; width: 85%; max-width: 500px; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3); animation: slideUp 0.3s; max-height: 80vh; overflow-y: auto; }
+        .close-modal { color: var(--dark-red); float: right; font-size: 30px; font-weight: bold; cursor: pointer; line-height: 1; margin-left: 10px; }
+        .modal-img-box { width: 100%; height: 200px; background: #eee; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .modal-img-box img { width: 100%; height: 100%; object-fit: cover; }
+        #modalTitle { margin-top: 0; color: var(--dark-red); border-bottom: 2px solid #fcc200; padding-bottom: 10px; }
+        #modalDesc { font-size: 1.1rem; line-height: 1.6; color: #333; white-space: pre-wrap; }
+        
+        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+        @keyframes slideUp { from {transform: translateY(20px);} to {transform: translateY(0);} }
+        @media (max-width: 400px) { h1 { font-size: 1.4rem; } .mode-btn { font-size: 0.8rem; padding: 6px 12px; } .modal-content { margin: 20% auto; } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="page-title">至岡二食品</h1>
+        <button id="modeBtn" class="btn mode-btn" onclick="app.toggleMode()">我要訂購</button>
+    </header>
+
+    <div class="container">
+        <div id="dynamic-product-area"></div>
+
+        <div class="order-summary" id="order-section">
+            <div class="summary-header">
+                <span>訂購明細</span><span>至岡二食品</span>
+            </div>
+            <ul id="order-list"><li class="empty-cart-msg">尚未選擇任何商品</li></ul>
+            <div class="total-row">總數量: <span id="grand-total">0</span> 箱/件</div>
+            <div class="action-buttons">
+                <button class="btn reset-btn" onclick="app.resetCart()">🔄 重新點選</button>
+                <button class="btn copy-btn" onclick="app.copyAndOpenLine()">點我複製到 LINE@</button>
+            </div>
+        </div>
+
+        <div class="contact-block">
+            <div class="contact-text">
+                至岡二食品有限公司<br>高雄市三民區銀杉街51號<br>TEL: (07)3833786, 3957832
+            </div>
+            <div class="qr-area">
+                <a href="https://line.me/R/ti/p/@459rxhaz"><img src="https://qr-official.line.me/gs/M_459rxhaz_GW.png" alt="加好友"></a>
+                <div style="margin-top:5px; font-size:0.9rem; color:#333; font-weight:bold;">↑ 點擊 QR Code 加入好友 ↑</div>
+            </div>
+            <div class="map-box"><iframe src="https://maps.google.com/maps?q=至岡二食品有限公司&t=&z=15&ie=UTF8&iwloc=&output=embed" allowfullscreen></iframe></div>
+        </div>
+    </div>
+
+    <div id="productModal" class="modal" onclick="ui.closeModal(event)">
+        <div class="modal-content">
+            <span class="close-modal" onclick="ui.closeModalBtn()">×</span>
+            <div class="modal-img-box"><img id="modalImg" src=""></div>
+            <h2 id="modalTitle"></h2>
+            <div id="modalDesc"></div>
+        </div>
+    </div>
+
+    <footer><p>© 2026 至岡二食品有限公司</p></footer>
+
+    <script>
+        // =========================================================
+        // 🔹 1. 商品資料庫 (PRODUCT_DB)
+        // 🔹 請在這裡管理所有商品，img 欄位請填寫圖片檔名
+        // =========================================================
+        const PRODUCT_DB = [
+            {
+                category: "麻糬類",
+                items: [
+                    { name: "麻糬龜", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS_sHCeZCnTHIMBxG-gsydPKvFwzMQM1rs6vNZ-HSD0BQ&s", spec: "50粒 / 箱", desc: "手工製作的麻糬龜，外皮Q彈有勁，象徵長壽平安。內餡可選：紅豆、花生。保存期限：常溫3天。" },
+                    { name: "麻糬圓", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSAy-n_Ok7VUGuShS2NIfjdWRxfiULAfaLQrXByV3nHvAM9FHaGbsZKjcQ&s=10", spec: "50粒 / 箱", desc: "傳統麻糬圓，圓滿如意。口感軟糯，適合祭祀與點心。" },
+                    { name: "麻糬桃", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTY3-ptpY2RlAZzmMQj2oW7jXkJhE-txgmL1b-jY83GkkklaziAh1sXdFdM&s=10", spec: "50粒 / 箱", desc: "造型可愛的麻糬桃，討喜又美味。" },
+                    { name: "麻糬環", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ7APhm6s_j4GjzmYuDI7eg0z4taiO6_WDDvIJ_lwJuDy19XripyxC0JhDB&s=10", spec: "50粒 / 箱", desc: "麻糬環，口感豐富，層次分明。" },
+                    { name: "10入麻糬", img: "10入麻糬.jpg", spec: "15盒 / 箱", desc: "精緻小盒裝，每盒10入，送禮自用兩相宜。" },
+                    { name: "花之頌麻糬", img: "花之頌麻糬.jpg", spec: "16盒 / 箱", desc: "花之頌禮盒，造型優美，口味獨特。" }
+                ]
+            },
+            {
+                category: "三牲類",
+                items: [
+                    { name: "餅三牲", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTPLnLPKPafDOp-mcRGUH_hE3Q5JsW9fBOU5xkXihFzjkKERINKhQ_JeSg&s=10", spec: "6付 / 箱", desc: "傳統餅製三牲，祭拜神明祖先的最佳選擇。" },
+                    { name: "果凍三牲", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSViWdrXoipcHJeRBX_BAMKaNbD2VYdX-jZsbAVn7B_PsxFslp6KxMcHMk&s=10", spec: "6付 / 箱", desc: "創新果凍三牲，造型逼真，清爽可口。" },
+                    { name: "麻糬三牲", img: "麻糬三牲.jpg", spec: "6付 / 箱", desc: "麻糬製作的三牲，口感軟Q，別具風味。" },
+                    { name: "麵粉酥三牲", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSKQrYGg4buZW4Uzur_TLYkzPUjTI-mTqt8LI6Wb7cS8ooxn3FrAqb-Snw&s=10", spec: "6付 / 箱", desc: "酥脆口感的麵粉酥三牲。" },
+                    { name: "地瓜酥三牲", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTNfmAXXSh7RsGxMHzsWk15F_iVhobTlQQbsl_Tjyu-VMekrI_elTg5sA0b&s=10", spec: "6付 / 箱", desc: "地瓜酥風味三牲，香氣濃郁。" },
+                    { name: "蓮子酥三牲", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQUZs0WP5xR4ai448ojDo8VAZ62FT0gU1XXOAxNy0A0TtZAwAljbukXTpY&s=10", spec: "6付 / 箱", desc: "蓮子酥三牲。" },
+                    { name: "沙琪瑪三牲", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRU9AZPNMNonRfrW9-9M0TjpMQfAqXkh33dfeWOB3PeocwkiNwgF6Wl-MY&s=10", spec: "6付 / 箱", desc: "小朋友的最愛。" }
+                ]
+            },
+            {
+                category: "果凍類",
+                items: [
+                    { name: "果凍龜", img: "果凍龜.jpg", spec: "60粒 / 箱", desc: "Q彈果凍龜。" },
+                    { name: "果凍圓", img: "果凍圓.jpg", spec: "60粒 / 箱", desc: "果凍圓，色彩繽紛。" },
+                    { name: "果凍發", img: "果凍發.jpg", spec: "60粒 / 箱", desc: "果凍發粿造型，發財好運。" },
+                    { name: "果凍中桃", img: "果凍中桃.jpg", spec: "80粒 / 箱", desc: "中型壽桃造型果凍。" },
+                    { name: "果凍新中桃", img: "果凍新中桃.jpg", spec: "100粒 / 箱", desc: "新款中桃果凍，口味升級。" }
+                ]
+            },
+            {
+                category: "其他",
+                items: [
+                    { name: "米發", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQYIYKTdAKbP6Wys5YCXJmB58WgK1Sz6L6GIBymPLDk1eHfHBFvffJsSpIx&s=10", spec: "30粒 / 箱", desc: "傳統米發粿。" },
+                    { name: "吉祥小蛋糕", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRvwoB85bfhPFGe97uC8HM5kpv60vmZdxIuQem9NxX1oDD4jwZ1o55l1pfr&s=10", spec: "30粒 / 箱", desc: "傳統蛋糕。" },
+                    { name: "蛋糕龜", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRFhLmQm5d0NvU2m26Jgx7nHHk4T4GUaMOJjz2lYAF6Z5QE6Kd6d3rvybU&s=10", spec: "60隻 / 箱", desc: "祭拜神明祖先的最佳選擇。" },
+                    { name: "小鳳桃", img: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS6CLaS0XaMDnQYPvu76ZQBx7mggAXDnuui5--8mwgmFw&s", spec: "100粒 / 箱", desc: "小鳳桃，精巧可愛。" }
+                ]
+            }
+        ];
+
+        // =========================================================
+        // 🔹 2. 店家設定區 (Config)
+        // =========================================================
+        const CONFIG = {
+            LINE_ID: "@459rxhaz",
+            ENABLE_TIME_CHECK: false, // 是否開啟時間限制 (true/false)
+            OPEN_HOUR: 8,            // 開店時間 (24小時制)
+            CLOSE_HOUR: 12,          // 截止時間 (12:00)
+            // 2026 國定假日表 (MM/DD) - 優先於自動抓取的資料
+            HOLIDAYS: {
+                "01/01": "元旦", "02/14": "春節", "02/28": "228連假", 
+                "04/04": "清明連假", "06/19": "端午連假", "09/25": "中秋連假", "10/10": "國慶連假"
+            }
+        };
+
+        // =========================================================
+        // 🔹 3. 核心程式邏輯 (一般不需要修改)
+        // =========================================================
+        const state = { isOrdering: false, cart: {}, onlineHolidays: {} };
+
+        // 頁面載入初始化
+        window.onload = function() {
+            renderProductHTML();
+            app.fetchHolidays();
+        };
+
+        // 自動生成商品列表 HTML
+        function renderProductHTML() {
+            const container = document.getElementById('dynamic-product-area');
+            let htmlContent = '';
+
+            PRODUCT_DB.forEach(group => {
+                htmlContent += `<div class="category-block"><h2 class="category-title">${group.category}</h2><div class="product-list">`;
+                
+                group.items.forEach(item => {
+                    // 如果沒有設定圖片，預設使用空白或特定圖示，這裡直接讀取 db 的 img
+                    const imgSrc = item.img;
+                    const descText = item.desc || "暫無介紹";
+
+                    htmlContent += `
+                    <div class="product-item" data-name="${item.name}" data-desc="${descText}" data-img="${imgSrc}">
+                        <div class="photo-box" onclick="ui.openModal(this)">
+                            <img src="${imgSrc}" alt="${item.name}">
+                        </div>
+                        <div class="info-box">
+                            <div class="p-name">${item.name}</div>
+                            <div class="view-detail" onclick="ui.openModal(this)">查看介紹 ></div>
+                            <div class="p-spec">${item.spec}</div>
+                            <div class="qty-control">
+                                <button class="qty-btn" onclick="app.updateQty(this, -1)">-</button>
+                                <span class="qty-display">0</span>
+                                <button class="qty-btn" onclick="app.updateQty(this, 1)">+</button>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+                htmlContent += `</div></div>`;
+            });
+            container.innerHTML = htmlContent;
+        }
+
+        const logic = {
+            // 檢查颱風假 (透過 Proxy)
+            checkTyphoon: async () => {
+                try {
+                    const res = await fetch("https://corsproxy.io/?https://opener.dgpa.gov.tw/vacation/open-api.json");
+                    const data = await res.json();
+                    const kh = data.find(i => i.NaturalDisasterName === "高雄市");
+                    if (kh && kh.StatusDescription.includes("停止上班")) return { stop: true, msg: kh.StatusDescription };
+                } catch (e) { return { stop: false }; }
+                return { stop: false };
+            },
+
+            // 時間驗證 (智慧切換 網路/本機 時間)
+            validateTime: async () => {
+                if (!CONFIG.ENABLE_TIME_CHECK) return { ok: true };
+
+                const now = new Date();
+                
+                const mm = ("0" + (now.getMonth() + 1)).slice(-2);
+                const dd = ("0" + now.getDate()).slice(-2);
+                const dateStr = mm + "/" + dd;
+                const day = now.getDay();
+                const hour = now.getHours();
+                const msgSuffix = `\n開放時間：週一至週五 ${String(CONFIG.OPEN_HOUR).padStart(2,'0')}:00 ~ ${String(CONFIG.CLOSE_HOUR).padStart(2,'0')}:00`;
+
+                // 1. 檢查假日
+                let holidayName = CONFIG.HOLIDAYS[dateStr] || (state.onlineHolidays[dateStr]?.isHoliday ? state.onlineHolidays[dateStr].desc : null);
+                if (holidayName) return { ok: false, msg: `今天是「${holidayName}」不開放訂購。${msgSuffix}` };
+
+                // 2. 檢查週末
+                const isMakeUp = state.onlineHolidays[dateStr] && !state.onlineHolidays[dateStr].isHoliday;
+                if (!isMakeUp && (day === 0 || day === 6)) {
+                    return { ok: false, msg: `今天是「${day === 0 ? '星期日' : '星期六'}」不開放訂購。${msgSuffix}` };
+                }
+
+                // 3. 檢查颱風
+                const typhoon = await logic.checkTyphoon();
+                if (typhoon.stop) return { ok: false, msg: `高雄市「${typhoon.msg}」，暫停訂購。` };
+
+                // 4. 檢查時段
+                if (hour < CONFIG.OPEN_HOUR || hour >= CONFIG.CLOSE_HOUR) {
+                    return { ok: false, msg: `目前非訂購時間。${msgSuffix}` };
+                }
+
+                return { ok: true };
+            }
+        };
+
+        const app = {
+            fetchHolidays: async () => {
+                try {
+                    const year = new Date().getFullYear();
+                    const res = await fetch(`https://cdn.jsdelivr.net/gh/ruyut/taiwan-calendar-json/data/${year}.json`);
+                    const data = await res.json();
+                    data.forEach(d => {
+                        let date = d.date.substring(4,6) + "/" + d.date.substring(6,8);
+                        state.onlineHolidays[date] = { isHoliday: d.isHoliday, desc: d.description };
+                    });
+                } catch (e) { console.log("API Error, using local config."); }
+            },
+
+            toggleMode: async () => {
+                const btn = document.getElementById('modeBtn');
+                
+                if (!state.isOrdering) {
+                    btn.innerText = "檢查中...";
+                    btn.disabled = true;
+                    const check = await logic.validateTime();
+                    
+                    if (!check.ok) {
+                        alert(check.msg);
+                        btn.innerText = "我要訂購";
+                        btn.disabled = false;
+                        return;
+                    }
+                }
+
+                state.isOrdering = !state.isOrdering;
+                ui.updateMode(state.isOrdering);
+            },
+
+            updateQty: (btn, change) => {
+                const item = btn.closest('.product-item');
+                const name = item.dataset.name;
+                const display = item.querySelector('.qty-display');
+                
+                state.cart[name] = (state.cart[name] || 0) + change;
+                if (state.cart[name] < 0) state.cart[name] = 0;
+                if (state.cart[name] === 0) delete state.cart[name];
+                
+                display.innerText = state.cart[name] || 0;
+                ui.renderSummary();
+            },
+
+            resetCart: () => {
+                if (!confirm("確定清空？")) return;
+                state.cart = {};
+                document.querySelectorAll('.qty-display').forEach(el => el.innerText = '0');
+                ui.renderSummary();
+            },
+
+            copyAndOpenLine: () => {
+                const cartItems = Object.entries(state.cart);
+                if (cartItems.length === 0) return alert("請先選擇商品！");
+
+                let text = "【至岡二食品訂購單】\n------------------\n▫️姓名：\n▫️電話：\n▫️商品名稱及數量：\n";
+                let total = 0;
+                cartItems.forEach(([name, qty]) => {
+                    text += `  - ${name}：${qty} 箱\n`;
+                    total += qty;
+                });
+                
+                const d = new Date();
+                const dStr = `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+                const tStr = `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+                
+                text += `------------------\n▫️取貨/寄貨時間：\n▫️寄貨地址：\n------------------\n總數量：${total} 箱/件\n訂購日期：${dStr}\n訂購時間：${tStr}`;
+
+                const copyToClipboard = (str) => {
+                    const el = document.createElement('textarea');
+                    el.value = str;
+                    el.setAttribute('readonly', '');
+                    el.style.position = 'absolute';
+                    el.style.left = '-9999px';
+                    document.body.appendChild(el);
+                    el.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(el);
+                };
+
+                copyToClipboard(text);
+                
+                if (confirm("✅ 訂單已複製！\n按「確定」前往 LINE，請在對話框長按「貼上」。")) {
+                    window.location.href = `https://line.me/R/ti/p/${CONFIG.LINE_ID}`;
+                }
+            }
+        };
+
+        const ui = {
+            updateMode: (active) => {
+                const btn = document.getElementById('modeBtn');
+                const title = document.getElementById('page-title');
+                
+                if (active) {
+                    document.body.classList.add('ordering-mode');
+                    btn.innerText = "取消訂購";
+                    btn.classList.add('cancel-mode');
+                    title.innerText = "至岡二食品訂購單";
+                } else {
+                    document.body.classList.remove('ordering-mode');
+                    btn.innerText = "我要訂購";
+                    btn.classList.remove('cancel-mode');
+                    title.innerText = "至岡二食品";
+                }
+                btn.disabled = false;
+            },
+
+            renderSummary: () => {
+                const list = document.getElementById('order-list');
+                const totalEl = document.getElementById('grand-total');
+                list.innerHTML = '';
+                let total = 0;
+                let hasItem = false;
+
+                Object.entries(state.cart).forEach(([name, qty]) => {
+                    if (qty > 0) {
+                        hasItem = true;
+                        total += qty;
+                        list.innerHTML += `<li><span>${name}</span><span><b>${qty}</b> 箱</span></li>`;
+                    }
+                });
+
+                if (!hasItem) list.innerHTML = '<li class="empty-cart-msg">尚未選擇任何商品</li>';
+                totalEl.innerText = total;
+            },
+
+            openModal: (el) => {
+                const item = el.closest('.product-item');
+                // 直接讀取 data attribute 中的資料
+                document.getElementById('modalTitle').innerText = item.dataset.name;
+                document.getElementById('modalDesc').innerText = item.dataset.desc;
+                document.getElementById('modalImg').src = item.dataset.img;
+                
+                document.getElementById('productModal').style.display = 'block';
+            },
+
+            closeModal: (e) => {
+                if (e.target.id === 'productModal') ui.closeModalBtn();
+            },
+            
+            closeModalBtn: () => {
+                document.getElementById('productModal').style.display = 'none';
+            }
+        };
+    </script>
+</body>
+</html>
