@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生產與備料輔助系統</title>
+    
+    <!-- 載入 Tailwind CSS (用來排版與美化) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 載入 React 核心庫 -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- 載入 Babel (讓瀏覽器能即時讀懂 React 語法) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        body { font-family: 'Microsoft JhengHei', 'PingFang TC', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    
+    <!-- React 應用程式的掛載點 -->
+    <div id="root"></div>
+
+    <!-- 這裡開始是系統程式碼 -->
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // === 1. 圖示元件 (Icon Components) ===
+        const Icon = ({ children, size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+        const Settings = (p) => <Icon {...p}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></Icon>;
+        const AlertCircle = (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></Icon>;
+        const Info = (p) => <Icon {...p}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></Icon>;
+        const Cpu = (p) => <Icon {...p}><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></Icon>;
+        const Layers = (p) => <Icon {...p}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 12 12 17 22 12"/><polyline points="2 17 12 22 22 17"/></Icon>;
+        const LayoutGrid = (p) => <Icon {...p}><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></Icon>;
+        const Wrench = (p) => <Icon {...p}><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></Icon>;
+        const X = (p) => <Icon {...p}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></Icon>;
+        const Factory = (p) => <Icon {...p}><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1"/><path d="M12 18h1"/><path d="M7 18h1"/></Icon>;
+        const Calculator = (p) => <Icon {...p}><rect x="4" y="2" width="16" height="20" rx="2" ry="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="16" y1="14" x2="16" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></Icon>;
+        const Home = (p) => <Icon {...p}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></Icon>;
+        const Copy = (p) => <Icon {...p}><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></Icon>;
+        const CheckCircle = (p) => <Icon {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></Icon>;
+        const ChevronDown = (p) => <Icon {...p}><polyline points="6 9 12 15 18 9"/></Icon>;
+        const ChevronUp = (p) => <Icon {...p}><polyline points="18 15 12 9 6 15"/></Icon>;
+
+        // ==========================================
+        // === 全局共用資料庫與常數設定 ===
+        // ==========================================
+
+        // --- 米發叫料：核心資料區 (簡易編碼防窺) ---
+        const _hx = ['NA==', 'MS4y', 'MC4yNQ==', 'MC4xODc1', 'MjI=', 'MQ==', 'MTg=', 'Ni41', 'MTk1'];
+        const _get = (i) => parseFloat(atob(_hx[i]));
+
+        const RECIPE = {
+          low: { kgPerSP: _get(0), unitName: '包', kgPerUnit: _get(4) },
+          high: { kgPerSP: _get(1), unitName: '包', kgPerUnit: _get(4) },
+          sugar: { kgPerSP: _get(2), unitName: '包', kgPerUnit: _get(5) }, 
+          sp_mat: { kgPerSP: _get(3), unitName: '桶', kgPerUnit: _get(6) } 
+        };
+
+        const NAMES = {
+          low: '低筋麵粉',
+          high: '高筋麵粉',
+          sugar: '細砂',
+          sp_mat: 'SP'
+        };
+
+        // --- 生產餅數據：機台皮帶規格資料庫 ---
+        const beltSpecsDb = {
+          encrusting: ["SL-M2100 130*3260"],
+          molding1: ["240*2940", "240*1150", "240*1335"],
+          molding2: ["145*2050", "145*1750"]
+        };
+
+        // --- 生產餅數據：產品生產參數資料庫 ---
+        const productDb = {
+          "肉": {
+            encrusting: {
+              std: { label: "標準參數 (1)", inner: 33.0, outer: 74.0, time: 1.4, timeUnit: "秒", speed: 35, weight: 205, note: "餡80g" },
+              fast: { label: "快速參數 (11)", inner: 41.0, outer: 83.0, time: 1.1, timeUnit: "秒", speed: 35, weight: 205, note: "餡80g" }
+            },
+            molding1: { label: "組別設定1", p1: 0.63, p2: 0.20, p3: 0.00, p4: 0.07, p5: 0.25 },
+            tray: { label: "組別1", a: 0.0, b: 153.0, c: 0.0, d: 153.0, e: 27.0, f: 45.0, odd: 3, even: 3, rows: 4, dia: 55.0 }
+          },
+          "魚": {
+            encrusting: {
+              std: { label: "標準參數 (2)", inner: 23.5, outer: 49.0, time: 1.6, timeUnit: "秒", speed: 23, weight: 160, note: "餡60g" },
+              fast: { label: "快速參數 (12)", inner: 23.5, outer: 49.0, time: 1.6, timeUnit: "秒", speed: 23, weight: 160, note: "餡60g" }
+            },
+            molding1: { label: "組別設定2", p1: 0.54, p2: 0.35, p3: 0.00, p4: 0.09, p5: 0.35 },
+            tray: { label: "組別2", a: 0.0, b: 135.0, c: 46.0, d: 142.0, e: 10.0, f: 25.0, odd: 3, even: 3, rows: 5, dia: 55.0 }
+          },
+          "雞": {
+            encrusting: {
+              std: { label: "標準參數 (3)", inner: 34.0, outer: 72.5, time: 1.4, timeUnit: "秒", speed: 14, weight: 205, note: "餡80g" },
+              fast: { label: "快速參數 (13)", inner: 38.5, outer: 77.0, time: 1.2, timeUnit: "秒", speed: 16, weight: 205, note: "餡80g" }
+            },
+            molding1: { label: "組別設定3", p1: 0.57, p2: 0.32, p3: 0.00, p4: 0.09, p5: 0.35 },
+            tray: { label: "組別3", a: 0.0, b: 105.0, c: 0.0, d: 105.0, e: 20.0, f: 44.0, odd: 4, even: 4, rows: 4, dia: 55.0 }
+          },
+          "佛手": {
+            encrusting: {
+              std: { label: "參數 (4)", inner: 17.0, outer: 38.5, time: 1.0, timeUnit: "秒", speed: 12, weight: 85, note: "餡40g (配第二台壓模機)" }
+            },
+            molding1: { label: "組別設定4 (壓模機第一台)", p1: 0.57, p2: 0.23, p3: 0.00, p4: 0.04, p5: 0.20 },
+            molding2: { label: "組別設定1 (壓模機第二台)", p1: 0.37, p2: 0.48, p3: 0.01, p4: 0.05, p5: 0.15 },
+            tray: { label: "組別4", a: 0.0, b: 58.0, c: 0.0, d: 58.0, e: 15.0, f: 21.0, odd: 6, even: 6, rows: 5, dia: 45.0 }
+          },
+          "佛眼": {
+            encrusting: {
+              std: { label: "參數 (5)", inner: 11.0, outer: 25.5, time: 1.2, timeUnit: "秒", speed: 15, weight: 65, note: "餡30g" }
+            },
+            molding1: { label: "組別設定5", p1: 0.00, p2: 0.00, p3: 0.00, p4: 0.00, p5: 0.00 },
+            tray: { label: "組別5", a: 0.0, b: 35.0, c: 0.0, d: 35.0, e: 40.0, f: 30.0, odd: 8, even: 8, rows: 5, dia: 45.0 }
+          },
+          "擲筊": {
+            encrusting: {
+              std: { label: "參數 (6)", inner: 7.0, outer: 21.0, time: 1.3, timeUnit: "秒", speed: 15, weight: 50, note: "餡25g" }
+            },
+            molding1: { label: "組別設定6", p1: 0.50, p2: 0.37, p3: 0.00, p4: 0.10, p5: 0.15 },
+            tray: { label: "組別6", a: 0.0, b: 83.0, c: 0.0, d: 83.0, e: 25.0, f: 19.0, odd: 5, even: 5, rows: 6, dia: 45.0 }
+          },
+          "元寶": {
+            encrusting: {
+              std: { label: "參數 (7)", inner: 22.0, outer: 24.5, time: 1.1, timeUnit: "秒", speed: 15, weight: 85, note: "餡40g" }
+            },
+            yuanbaoMolding: { label: "元寶專用設定", p1: 0.06, p2: 0.01, p3: 0.49, p4: 0.01, p5: 0.01, p6: 0.0, p7: 0.10 },
+            tray: { label: "組別7", a: 15.0, b: 44.0, c: 15.0, d: 44.0, e: 20.0, f: 35.0, odd: 7, even: 7, rows: 5, dia: 45.0 }
+          },
+          "鳳桃": {
+            encrusting: {
+              std: { label: "參數 (8)", inner: 10.0, outer: 24.5, time: 1.0, timeUnit: "秒", speed: 15, weight: 50, note: "餡20g" }
+            },
+            molding1: { label: "組別設定8", p1: 0.53, p2: 0.30, p3: 0.01, p4: 0.03, p5: 0.10 },
+            tray: { label: "組別8", a: 0.0, b: 44.0, c: 0.0, d: 44.0, e: 10.0, f: 35.0, odd: 7, even: 7, rows: 4, dia: 45.0 }
+          },
+          "豬頭 (手動)": {
+            encrusting: {
+              std: { label: "參數 (9)", inner: 53.5, outer: 93.5, time: 1.7, timeUnit: "秒", speed: 20, weight: 315, note: "餡90g (壓模與排盤不支援)" }
+            }
+          },
+          "蝦蟹 (手動)": {
+            encrusting: {
+              std: { label: "參數 (10)", inner: 29.0, outer: 72.0, time: 1.3, timeUnit: "秒", speed: 14, weight: 185, note: "餡65g (壓模與排盤不支援)" }
+            }
+          },
+          "折機用": {
+            encrusting: {
+              std: { label: "參數 (0)", inner: 99.5, outer: 99.5, time: "-", timeUnit: "", speed: "-", weight: "-", note: "僅供折機用" }
+            }
+          }
+        };
+
+        const products = Object.keys(productDb);
+
+        // ==========================================
+        // === 共用 UI 元件 (生產餅數據用) ===
+        // ==========================================
+
+        const HighlightLabel = ({ text }) => {
+          const parts = text.split(/(\d+)/);
+          return (
+            <span className="flex items-center">
+              {parts.map((part, i) =>
+                /^\d+$/.test(part) ? (
+                  <span key={i} className="text-xl md:text-2xl font-black text-white bg-red-600 px-3 py-1 mx-1 rounded-lg border-2 border-red-800 shadow-md transform scale-105">
+                    {part}
+                  </span>
+                ) : (
+                  <span key={i} className="text-base md:text-lg font-bold text-gray-800 whitespace-pre-wrap">{part}</span>
+                )
+              )}
+            </span>
+          );
+        };
+
+        const SectionCard = ({ title, icon: IconComp, children, color = "gray" }) => {
+          const headerColors = {
+            gray: "bg-gray-800",
+            red: "bg-red-800"
+          };
+
+          return (
+            <div className="bg-gray-100 border-2 border-gray-400 rounded-xl shadow-lg overflow-hidden mb-6">
+              <div className={`${headerColors[color]} p-3 flex items-center border-b-4 border-gray-400`}>
+                {IconComp && <IconComp className="text-white mr-2" size={24} />}
+                <h2 className="text-xl font-bold text-white tracking-widest">{title}</h2>
+              </div>
+              <div className="p-3 md:p-4">
+                {children}
+              </div>
+            </div>
+          );
+        };
+
+        const DataBlock = ({ label, isFast = false, children, footer }) => (
+          <div className={`bg-white border-2 ${isFast ? 'border-yellow-400 bg-yellow-50' : 'border-gray-300'} rounded-lg p-3 mb-4 shadow-sm relative`}>
+            {isFast && (
+              <div className="absolute top-0 right-0 bg-yellow-400 text-black px-3 py-1 rounded-bl-lg rounded-tr-md text-xs font-bold animate-pulse shadow-sm">
+                快速版
+              </div>
+            )}
+            <div className="flex items-center mb-3 border-b-2 border-gray-100 pb-2">
+              <HighlightLabel text={label} />
+            </div>
+            <div className="mb-2">
+              {children}
+            </div>
+            {footer && (
+              <div className="mt-3">
+                {footer}
+              </div>
+            )}
+          </div>
+        );
+
+        const ValueBox = ({ label, value }) => (
+          <div className="flex flex-col items-center">
+            <span className="text-gray-800 text-sm md:text-base font-bold mb-1 whitespace-nowrap">{label}</span>
+            <div className="bg-gray-900 border-2 border-gray-500 rounded w-full py-1 md:py-2 text-center shadow-inner">
+              <span className="text-red-500 font-mono text-xl md:text-2xl" style={{ fontFamily: "'Share Tech Mono', monospace", textShadow: "0 0 5px rgba(239,68,68,0.5)" }}>
+                {value !== null && value !== undefined && value !== "-" ? value : "---"}
+              </span>
+            </div>
+          </div>
+        );
+
+        const ParamRow = ({ label, value, unit = "秒", precision = 2 }) => (
+          <div className="flex justify-between items-center bg-white border-b border-gray-200 py-3 px-2 hover:bg-gray-50">
+            <span className="text-gray-800 font-bold text-base md:text-lg flex-1 text-left">{label}</span>
+            <div className="flex items-center justify-end">
+              <div className="bg-gray-900 border-2 border-gray-500 rounded shadow-inner min-w-[5rem] md:min-w-[6rem] text-right px-2 py-1">
+                <span className="text-red-500 font-mono text-xl md:text-2xl" style={{ fontFamily: "'Share Tech Mono', monospace", textShadow: "0 0 5px rgba(239,68,68,0.5)" }}>
+                  {typeof value === 'number' ? value.toFixed(precision) : value}
+                </span>
+              </div>
+              <span className="text-gray-600 text-sm md:text-base ml-2 w-5 font-bold">{unit}</span>
+            </div>
+          </div>
+        );
+
+        const NoteFooter = ({ weight, note }) => (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 md:p-3 flex flex-col md:flex-row md:items-center text-sm shadow-sm">
+            <div className="flex items-center text-blue-800 font-bold mb-1 md:mb-0 md:mr-4">
+              <Info size={16} className="mr-1" />
+              <span>備註資訊</span>
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-700">
+              <span><strong className="text-gray-900">重量(g)：</strong>{weight !== "-" ? weight : "---"}</span>
+              {note && <span><strong className="text-gray-900">說明：</strong>{note}</span>}
+            </div>
+          </div>
+        );
+
+        // === 生產餅數據：機台面板 ===
+        const EncrustingPanel = ({ data }) => {
+          const renderContent = (rowData, isFast) => (
+            <DataBlock label={rowData.label} isFast={isFast} footer={<NoteFooter weight={rowData.weight} note={rowData.note} />}>
+              <div className="grid grid-cols-4 gap-1 md:gap-3">
+                <ValueBox label="內包材" value={rowData.inner} />
+                <ValueBox label="外包材" value={rowData.outer} />
+                <ValueBox label={`生產個數${rowData.timeUnit ? `(${rowData.timeUnit})` : ''}`} value={rowData.time} />
+                <ValueBox label="輸送帶速度" value={rowData.speed} />
+              </div>
+            </DataBlock>
+          );
+
+          return (
+            <SectionCard title="包餡機" icon={Cpu}>
+              {renderContent(data.std, false)}
+              {data.fast && renderContent(data.fast, true)}
+            </SectionCard>
+          );
+        };
+
+        const MoldingPanel = ({ data1, data2 }) => {
+          const renderMoldingBlock = (dataObj) => (
+            <DataBlock label={dataObj.label}>
+              <div className="flex flex-col">
+                <ParamRow label="定位延遲時間設定" value={dataObj.p1} />
+                <ParamRow label="成型壓模時間設定" value={dataObj.p2} />
+                <ParamRow label="延時吹氣時間設定" value={dataObj.p3} />
+                <ParamRow label="壓模吹氣時間設定" value={dataObj.p4} />
+                <ParamRow label="模具延遲時間設定" value={dataObj.p5} />
+              </div>
+            </DataBlock>
+          );
+
+          return (
+            <SectionCard title="壓模機" icon={Layers}>
+              {renderMoldingBlock(data1)}
+              {data2 && renderMoldingBlock(data2)}
+            </SectionCard>
+          );
+        };
+
+        const YuanbaoMoldingPanel = ({ data }) => (
+          <SectionCard title="元寶機" icon={Layers} color="red">
+            <DataBlock label={data.label}>
+              <div className="flex flex-col">
+                <ParamRow label="壓模成型時間" value={data.p1} />
+                <ParamRow label="合模成型時間" value={data.p2} />
+                <ParamRow label="材料延時定位" value={data.p3} />
+                <ParamRow label="延時吹氣時間" value={data.p4} />
+                <ParamRow label="吹氣時間設定" value={data.p5} />
+                <ParamRow label="機械密碼時間" value={data.p6} unit="" />
+                <ParamRow label="展臂時間設定" value={data.p7} />
+              </div>
+            </DataBlock>
+          </SectionCard>
+        );
+
+        const TrayPanel = ({ data }) => (
+          <SectionCard title="排盤機" icon={LayoutGrid}>
+            <DataBlock label={data.label}>
+              <div className="flex flex-col">
+                <ParamRow label="A送料開始距離" value={data.a} unit="mm" precision={1} />
+                <ParamRow label="B送料間隔距離" value={data.b} unit="mm" precision={1} />
+                <ParamRow label="C送料開始距離" value={data.c} unit="mm" precision={1} />
+                <ParamRow label="D送料間隔距離" value={data.d} unit="mm" precision={1} />
+                <ParamRow label="E推盤開始距離" value={data.e} unit="mm" precision={1} />
+                <ParamRow label="F推盤間隔距離" value={data.f} unit="mm" precision={1} />
+                <div className="my-1 border-t-2 border-dashed border-gray-300"></div>
+                <ParamRow label="奇行送料個數" value={data.odd} unit="個" precision={0} />
+                <ParamRow label="偶行送料個數" value={data.even} unit="個" precision={0} />
+                <ParamRow label="排盤行數" value={data.rows} unit="行" precision={0} />
+              </div>
+            </DataBlock>
+          </SectionCard>
+        );
+
+        // ==========================================
+        // === 子系統 1：生產餅數據 (Bing App) ===
+        // ==========================================
+        const BingApp = ({ onBack }) => {
+          const [selectedProduct, setSelectedProduct] = useState(products[0]);
+          const [isModalOpen, setIsModalOpen] = useState(false);
+          const currentData = productDb[selectedProduct];
+
+          return (
+            <div className="min-h-screen bg-gray-900 p-3 md:p-6 font-sans">
+              <div className="max-w-4xl mx-auto">
+                
+                {/* 頂部控制列 */}
+                <div className="bg-white rounded-xl shadow-xl p-4 mb-6 flex flex-col md:flex-row items-center justify-between border-b-4 border-blue-500">
+                  <div className="flex items-center mb-4 md:mb-0 w-full md:w-auto justify-between">
+                    <div className="flex items-center">
+                      <button onClick={onBack} className="mr-3 p-2 bg-gray-100 rounded-full hover:bg-gray-200 text-gray-700 transition">
+                        <Home size={24} />
+                      </button>
+                      <Settings className="text-blue-600 mr-2" size={28} />
+                      <h1 className="text-2xl font-black text-gray-800 tracking-wider">生產參數調閱系統</h1>
+                    </div>
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                    <button 
+                      onClick={() => setIsModalOpen(true)}
+                      className="w-full sm:w-auto bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-900 border border-blue-200 px-4 py-2 rounded-lg font-bold flex items-center justify-center transition-colors shadow-sm"
+                    >
+                      <Wrench size={18} className="mr-2" />
+                      皮帶規格
+                    </button>
+
+                    <div className="flex items-center w-full sm:w-auto bg-gray-100 p-2 rounded-lg border border-gray-200">
+                      <label className="mr-3 font-bold text-gray-700 whitespace-nowrap">選擇品項：</label>
+                      <select 
+                        className="w-full sm:w-48 bg-white border-2 border-gray-300 text-gray-900 text-lg rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 font-bold shadow-sm outline-none"
+                        value={selectedProduct}
+                        onChange={(e) => setSelectedProduct(e.target.value)}
+                      >
+                        {products.map(p => (
+                          <option key={p} value={p}>{p}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 顯示區域 */}
+                <div>
+                  {currentData.encrusting && <EncrustingPanel data={currentData.encrusting} />}
+
+                  {(!currentData.molding1 && !currentData.yuanbaoMolding && !currentData.tray) && (
+                     <div className="bg-yellow-100 border-l-4 border-yellow-500 p-4 rounded-lg shadow-md flex items-start mb-6">
+                       <AlertCircle className="text-yellow-600 mr-3 mt-1" size={24} />
+                       <div>
+                         <p className="font-bold text-yellow-800 text-lg">手動操作模式</p>
+                         <p className="text-gray-700 font-bold mt-1">此品項（{selectedProduct}）無需設定壓模機與排盤機，請忽略後方機台參數。</p>
+                       </div>
+                     </div>
+                  )}
+
+                  {currentData.molding1 && !currentData.yuanbaoMolding && (
+                    <MoldingPanel data1={currentData.molding1} data2={currentData.molding2} />
+                  )}
+
+                  {currentData.yuanbaoMolding && <YuanbaoMoldingPanel data={currentData.yuanbaoMolding} />}
+                  {currentData.tray && <TrayPanel data={currentData.tray} />}
+                </div>
+              </div>
+
+              {/* 彈出視窗：皮帶規格 */}
+              {isModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4">
+                  <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                    <div className="bg-gray-800 p-4 flex justify-between items-center border-b-4 border-blue-500">
+                      <h3 className="text-white font-bold text-xl tracking-wider flex items-center">
+                        <Wrench className="mr-2 text-blue-400" size={24} /> 
+                        機台皮帶規格
+                      </h3>
+                      <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white transition-colors bg-gray-700 rounded-full p-1">
+                        <X size={20} />
+                      </button>
+                    </div>
+                    <div className="p-6 space-y-6">
+                      <div>
+                        <h4 className="font-bold text-blue-900 border-b-2 border-blue-200 pb-1 mb-3 text-lg flex items-center">
+                          <Cpu size={18} className="mr-2" /> 包餡機
+                        </h4>
+                        <div className="flex flex-col gap-2">
+                          {beltSpecsDb.encrusting.map((spec, i) => (
+                            <div key={i} className="bg-gray-50 border border-gray-200 rounded p-2 text-gray-800 font-mono text-lg font-bold shadow-sm">{spec}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-orange-800 border-b-2 border-orange-200 pb-1 mb-3 text-lg flex items-center">
+                          <Layers size={18} className="mr-2" /> 壓模機 1
+                        </h4>
+                        <div className="flex flex-col gap-2">
+                          {beltSpecsDb.molding1.map((spec, i) => (
+                            <div key={i} className="bg-gray-50 border border-gray-200 rounded p-2 text-gray-800 font-mono text-lg font-bold shadow-sm">{spec}</div>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-orange-800 border-b-2 border-orange-200 pb-1 mb-3 text-lg flex items-center">
+                          <Layers size={18} className="mr-2" /> 壓模機 2
+                        </h4>
+                        <div className="flex flex-col gap-2">
+                          {beltSpecsDb.molding2.map((spec, i) => (
+                            <div key={i} className="bg-gray-50 border border-gray-200 rounded p-2 text-gray-800 font-mono text-lg font-bold shadow-sm">{spec}</div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-gray-100 p-4 flex justify-end">
+                      <button onClick={() => setIsModalOpen(false)} className="bg-gray-800 text-white px-6 py-2 rounded-lg font-bold hover:bg-gray-700 transition-colors shadow">關閉</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        };
+
+
+        // ==========================================
+        // === 子系統 2：米發叫料計算機 (Mifa App) ===
+        // ==========================================
+        const MifaApp = ({ onBack }) => {
+          const [activeTab, setActiveTab] = useState(1);
+          const [showRecipe, setShowRecipe] = useState(false);
+          const [showOptionalStock, setShowOptionalStock] = useState(false);
+          const [errorMsg, setErrorMsg] = useState("");
+          const [copySuccess, setCopySuccess] = useState(false);
+
+          // Tab 1 States
+          const [plan, setPlan] = useState({ morningSP: 54, afternoonSP: 46, days: 5 });
+          const [t1Stock, setT1Stock] = useState({ low: 0, high: 0, sugar: 0, sp_mat: 0 });
+          const [safeStock, setSafeStock] = useState(false);
+          const [t1Result, setT1Result] = useState(null);
+
+          // Tab 2 States
+          const [baseItem, setBaseItem] = useState('low');
+          const [baseQty, setBaseQty] = useState(0);
+          const [t2Stock, setT2Stock] = useState({ low: 0, high: 0, sugar: 0, sp_mat: 0 });
+          const [t2Result, setT2Result] = useState(null);
+
+          // Load from LocalStorage
+          useEffect(() => {
+            try {
+              const savedPlan = localStorage.getItem('mifa_plan');
+              if (savedPlan) setPlan(JSON.parse(savedPlan));
+              
+              const savedT1Stock = localStorage.getItem('mifa_t1Stock');
+              if (savedT1Stock) setT1Stock(JSON.parse(savedT1Stock));
+              
+              const savedSafe = localStorage.getItem('mifa_safeStock');
+              if (savedSafe) setSafeStock(JSON.parse(savedSafe));
+
+              const savedBase = localStorage.getItem('mifa_base');
+              if (savedBase) {
+                const p = JSON.parse(savedBase);
+                setBaseItem(p.item || 'low');
+                setBaseQty(p.qty || 0);
+              }
+
+              const savedT2Stock = localStorage.getItem('mifa_t2Stock');
+              if (savedT2Stock) setT2Stock(JSON.parse(savedT2Stock));
+            } catch (e) {
+              console.warn("Could not load local storage", e);
+            }
+          }, []);
+
+          // Save to LocalStorage
+          useEffect(() => {
+            localStorage.setItem('mifa_plan', JSON.stringify(plan));
+            localStorage.setItem('mifa_t1Stock', JSON.stringify(t1Stock));
+            localStorage.setItem('mifa_safeStock', JSON.stringify(safeStock));
+            localStorage.setItem('mifa_base', JSON.stringify({ item: baseItem, qty: baseQty }));
+            localStorage.setItem('mifa_t2Stock', JSON.stringify(t2Stock));
+          }, [plan, t1Stock, safeStock, baseItem, baseQty, t2Stock]);
+
+          // Recalculate T1 when safeStock changes if result is already showing
+          useEffect(() => {
+            if (t1Result) calcTab1();
+          }, [safeStock]);
+
+          const handleInput = (setter, key, val) => {
+            let num = parseFloat(val);
+            if (isNaN(num)) num = 0;
+            if (num < 0) {
+              num = 0;
+              setErrorMsg("庫存或需求量不可為負數，已為您自動歸零！");
+            }
+            setter(prev => ({ ...prev, [key]: num }));
+          };
+
+          const handleBaseQtyInput = (val) => {
+            let num = parseFloat(val);
+            if (isNaN(num)) num = 0;
+            if (num < 0) {
+              num = 0;
+              setErrorMsg("數值不可為負數！");
+            }
+            setBaseQty(num);
+          };
+
+          const clearInputs = (tabIndex) => {
+            if (window.confirm('確定要清空這頁的數字嗎？(預設計畫不會被清空)')) {
+              if (tabIndex === 1) {
+                setT1Stock({ low: 0, high: 0, sugar: 0, sp_mat: 0 });
+                setSafeStock(false);
+                setT1Result(null);
+              } else {
+                setBaseQty(0);
+                setT2Stock({ low: 0, high: 0, sugar: 0, sp_mat: 0 });
+                setT2Result(null);
+              }
+            }
+          };
+
+          const calcTab1 = () => {
+            const dailySP = plan.morningSP + plan.afternoonSP;
+            const totalSP = dailySP * plan.days;
+            
+            let hasOrder = false;
+            const today = new Date();
+            const dateStr = `${today.getMonth() + 1}/${today.getDate()}`;
+            let orderText = `【${dateStr} 訂貨單】\n`;
+            
+            const rows = ['low', 'high', 'sugar', 'sp_mat'].map(key => {
+              const demandUnit = (totalSP * RECIPE[key].kgPerSP) / RECIPE[key].kgPerUnit;
+              const shortage = demandUnit - t1Stock[key];
+              
+              let orderQty = 0;
+              if (shortage > 0 || (shortage === 0 && safeStock)) {
+                orderQty = Math.ceil(shortage);
+                if (safeStock) orderQty += 1;
+                
+                orderText += `${NAMES[key]}：${orderQty} ${RECIPE[key].unitName}\n`;
+                hasOrder = true;
+              }
+
+              return { key, demandUnit, shortage, orderQty };
+            });
+
+            if (!hasOrder) {
+              orderText = `【${dateStr} 訂貨單】\n目前庫存充足，無需叫貨。`;
+            }
+
+            setT1Result({ dailySP, totalSP, rows, hasOrder, orderText });
+          };
+
+          const calcTab2 = () => {
+            const TAB2_RECIPE = JSON.parse(JSON.stringify(RECIPE));
+            TAB2_RECIPE.sp_mat.unitName = '顆';
+            TAB2_RECIPE.sp_mat.kgPerUnit = _get(3); 
+
+            const baseTotalKg = baseQty * TAB2_RECIPE[baseItem].kgPerUnit;
+            const maxSP = Math.floor(baseTotalKg / TAB2_RECIPE[baseItem].kgPerSP);
+
+            const calcStocks = { ...t2Stock, [baseItem]: baseQty };
+            
+            const rows = ['low', 'high', 'sugar', 'sp_mat'].map(key => {
+              if (key === baseItem) {
+                return { key, isBase: true };
+              }
+              const reqUnit = (maxSP * TAB2_RECIPE[key].kgPerSP) / TAB2_RECIPE[key].kgPerUnit;
+              const shortage = reqUnit - calcStocks[key];
+              return { key, isBase: false, shortage, orderQty: Math.ceil(shortage), unitName: TAB2_RECIPE[key].unitName };
+            });
+
+            setT2Result({ maxSP, rows });
+          };
+
+          const copyOrderText = () => {
+            if (!t1Result) return;
+            const textarea = document.createElement('textarea');
+            textarea.value = t1Result.orderText;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+              document.execCommand('copy');
+              setCopySuccess(true);
+              setTimeout(() => setCopySuccess(false), 3000);
+            } catch (err) {
+              console.error('Copy failed', err);
+            }
+            document.body.removeChild(textarea);
+          };
+
+          return (
+            <div className="min-h-screen bg-[#f4f7f6] text-[#333] font-sans pb-10">
+              <div className="max-w-[600px] mx-auto pt-4 px-4">
+                
+                {/* Container */}
+                <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
+                  
+                  {/* Header */}
+                  <div className="bg-[#0056b3] text-white p-4 flex justify-between items-center relative">
+                    <div className="flex items-center absolute left-2">
+                      <button onClick={onBack} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition">
+                        <Home size={20} />
+                      </button>
+                    </div>
+                    <h1 className="text-xl font-bold w-full text-center tracking-wide">米發生產備料計算機</h1>
+                    <button 
+                      className="absolute right-4 bg-white/20 border border-white/50 text-white px-3 py-1 rounded-md text-sm hover:bg-white/40 transition"
+                      onClick={() => setShowRecipe(!showRecipe)}
+                    >
+                      米發比例
+                    </button>
+                  </div>
+
+                  {/* Recipe Panel */}
+                  {showRecipe && (
+                    <div className="bg-[#e3f2fd] p-4 border-b-2 border-[#0056b3] text-[#004085] text-sm leading-relaxed animate-in slide-in-from-top-2">
+                      <strong>【 1 顆 SP 製作標準比例 】</strong><br/>
+                      • <strong>低筋麵粉：</strong> {_get(0)} 公斤<br/>
+                      • <strong>高筋麵粉：</strong> {_get(1)} 公斤 (2台斤)<br/>
+                      • <strong>細砂：</strong> {_get(2)} 包 (即 4 顆用 1 包)<br/>
+                      • <strong>SP：</strong> 5 兩 (約 {_get(3)} 公斤)<br/>
+                      • <strong>預計產出：</strong> {_get(7)} 箱米發 ({_get(8)} 顆)
+                    </div>
+                  )}
+
+                  {/* Tabs */}
+                  <div className="flex bg-[#f1f3f5] rounded-xl m-4 p-1 shadow-inner">
+                    <button 
+                      className={`flex-1 py-2.5 text-center rounded-lg text-base font-bold transition-all duration-300 ${activeTab === 1 ? 'bg-[#0056b3] text-white shadow-md' : 'text-gray-500 hover:text-[#0056b3]'}`}
+                      onClick={() => setActiveTab(1)}
+                    >
+                      常規叫料
+                    </button>
+                    <button 
+                      className={`flex-1 py-2.5 text-center rounded-lg text-base font-bold transition-all duration-300 ${activeTab === 2 ? 'bg-[#0056b3] text-white shadow-md' : 'text-gray-500 hover:text-[#0056b3]'}`}
+                      onClick={() => setActiveTab(2)}
+                    >
+                      庫存回推
+                    </button>
+                  </div>
+
+                  <div className="p-5 pt-0">
+                    {/* ================= 版面 1: 常規叫料計算 ================= */}
+                    {activeTab === 1 && (
+                      <div className="animate-in fade-in duration-300">
+                        <h2 className="text-[#0056b3] text-lg font-bold border-b-2 border-gray-200 pb-1 mb-4">1. 生產計畫</h2>
+                        <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
+                          <label className="font-bold text-gray-700">上午預計幾顆 SP？</label>
+                          <input type="number" className="w-24 p-2 border border-gray-300 rounded text-center outline-none focus:border-blue-500" value={plan.morningSP} onChange={e => handleInput(setPlan, 'morningSP', e.target.value)} />
+                        </div>
+                        <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
+                          <label className="font-bold text-gray-700">下午預計幾顆 SP？</label>
+                          <input type="number" className="w-24 p-2 border border-gray-300 rounded text-center outline-none focus:border-blue-500" value={plan.afternoonSP} onChange={e => handleInput(setPlan, 'afternoonSP', e.target.value)} />
+                        </div>
+                        <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200 mb-5">
+                          <label className="font-bold text-gray-700">預計做幾天？</label>
+                          <input type="number" className="w-24 p-2 border border-gray-300 rounded text-center outline-none focus:border-blue-500" value={plan.days} onChange={e => handleInput(setPlan, 'days', e.target.value)} />
+                        </div>
+
+                        <h2 className="text-[#0056b3] text-lg font-bold border-b-2 border-gray-200 pb-1 mb-4 mt-6">2. 現場庫存</h2>
+                        <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
+                          <label className="font-bold text-gray-700">低筋麵粉 (包)</label>
+                          <input type="number" step="0.1" className="w-24 p-2 border border-gray-300 rounded text-center outline-none focus:border-blue-500" value={t1Stock.low} onChange={e => handleInput(setT1Stock, 'low', e.target.value)} />
+                        </div>
+                        <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
+                          <label className="font-bold text-gray-700">高筋麵粉 (包)</label>
+                          <input type="number" step="0.1" className="w-24 p-2 border border-gray-300 rounded text-center outline-none focus:border-blue-500" value={t1Stock.high} onChange={e => handleInput(setT1Stock, 'high', e.target.value)} />
+                        </div>
+                        <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
+                          <label className="font-bold text-gray-700">細砂 (包)</label>
+                          <input type="number" step="0.1" className="w-24 p-2 border border-gray-300 rounded text-center outline-none focus:border-blue-500" value={t1Stock.sugar} onChange={e => handleInput(setT1Stock, 'sugar', e.target.value)} />
+                        </div>
+                        <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
+                          <label className="font-bold text-gray-700">SP (桶)</label>
+                          <input type="number" step="0.1" className="w-24 p-2 border border-gray-300 rounded text-center outline-none focus:border-blue-500" value={t1Stock.sp_mat} onChange={e => handleInput(setT1Stock, 'sp_mat', e.target.value)} />
+                        </div>
+
+                        {/* Switch */}
+                        <div className="flex items-center justify-between bg-[#fff3cd] border border-[#ffeeba] text-[#856404] p-3 rounded-lg font-bold mt-4">
+                          <span>預留安全庫存 <small className="text-gray-600 font-normal">(自動+1單位防耗損)</small></span>
+                          <label className="relative inline-block w-12 h-7 cursor-pointer">
+                            <input type="checkbox" className="sr-only peer" checked={safeStock} onChange={e => setSafeStock(e.target.checked)} />
+                            <div className="w-12 h-7 bg-gray-400 rounded-full peer peer-checked:bg-[#28a745] transition-colors duration-300"></div>
+                            <div className="absolute left-1 top-1 bg-white w-5 h-5 rounded-full transition-transform duration-300 peer-checked:translate-x-5 shadow-sm"></div>
+                          </label>
+                        </div>
+
+                        {/* Buttons */}
+                        <div className="flex gap-3 mt-5">
+                          <button onClick={() => clearInputs(1)} className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 rounded-lg transition active:scale-95">清空重填</button>
+                          <button onClick={calcTab1} className="flex-[2] bg-[#007bff] hover:bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md transition active:scale-95">計算叫料量</button>
+                        </div>
+
+                        {/* Results T1 */}
+                        {t1Result && (
+                          <div className="mt-6 pt-5 border-t-2 border-dashed border-gray-300 animate-in slide-in-from-bottom-2">
+                            <div className="text-center text-lg text-[#0056b3] font-bold mb-4">
+                              一天做 <span>{t1Result.dailySP}</span> 顆<br/>
+                              總計要做 <span className="text-[#dc3545] font-black">{t1Result.totalSP}</span> 顆 SP
+                            </div>
+                            <table className="w-full border-collapse mb-4 text-center">
+                              <thead>
+                                <tr className="bg-gray-100 text-gray-700 border border-gray-300">
+                                  <th className="p-2 border border-gray-300 w-1/4">原料</th>
+                                  <th className="p-2 border border-gray-300 w-1/4">總需求</th>
+                                  <th className="p-2 border border-gray-300 w-1/2">需叫貨 (無條件進位)</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {t1Result.rows.map(row => (
+                                  <tr key={row.key} className="border border-gray-300">
+                                    <td className="p-2 border border-gray-300 font-bold">{NAMES[row.key]}</td>
+                                    <td className="p-2 border border-gray-300">{row.demandUnit.toFixed(1)} {RECIPE[row.key].unitName}</td>
+                                    <td className="p-2 border border-gray-300">
+                                      {(row.shortage > 0 || (row.shortage === 0 && safeStock)) ? (
+                                        <>
+                                          <span className="text-[#dc3545] font-bold">叫 {row.orderQty} {RECIPE[row.key].unitName}</span>
+                                          {safeStock && <small className="text-[#ffc107] ml-1">(含安全庫存)</small>}
+                                          <br/><small className="text-gray-500">(缺 {row.shortage.toFixed(1)})</small>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span className="text-[#28a745] font-bold">夠用</span>
+                                          <br/><small className="text-gray-500">(剩 {Math.abs(row.shortage).toFixed(1)})</small>
+                                        </>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                            <button 
+                              onClick={copyOrderText} 
+                              className={`w-full flex items-center justify-center font-bold py-3 rounded-lg shadow-md transition active:scale-95 ${copySuccess ? 'bg-[#17a2b8] text-white' : 'bg-[#28a745] hover:bg-green-600 text-white'}`}
+                            >
+                              {copySuccess ? <><CheckCircle className="mr-2" size={20} /> 已複製！可直接貼上 LINE</> : <><Copy className="mr-2" size={20} /> 一鍵複製訂貨單</>}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ================= 版面 2: 庫存回推計算 ================= */}
+                    {activeTab === 2 && (
+                      <div className="animate-in fade-in duration-300">
+                        <h2 className="text-[#0056b3] text-lg font-bold border-b-2 border-gray-200 pb-1 mb-4">1. 選擇要清空的基準原料</h2>
+                        <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
+                          <label className="font-bold text-gray-700">基準原料</label>
+                          <select className="w-36 p-2 border border-gray-300 rounded text-center outline-none focus:border-blue-500" value={baseItem} onChange={e => setBaseItem(e.target.value)}>
+                            <option value="low">低筋麵粉 (包)</option>
+                            <option value="high">高筋麵粉 (包)</option>
+                            <option value="sugar">細砂 (包)</option>
+                            <option value="sp_mat">SP (顆)</option>
+                          </select>
+                        </div>
+                        <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200 mb-5">
+                          <label className="font-bold text-gray-700">剩餘數量</label>
+                          <input type="number" step="0.1" className="w-24 p-2 border border-gray-300 rounded text-center outline-none focus:border-blue-500" value={baseQty} onChange={e => handleBaseQtyInput(e.target.value)} />
+                        </div>
+
+                        <div 
+                          className="flex justify-between items-center bg-gray-100 hover:bg-gray-200 cursor-pointer p-3 rounded-lg border border-gray-300 mt-6 mb-3 transition"
+                          onClick={() => setShowOptionalStock(!showOptionalStock)}
+                        >
+                          <span className="text-[#0056b3] font-bold text-lg">2. 其他原料庫存 (選填)</span>
+                          <span className="text-[#0056b3]">{showOptionalStock ? <ChevronUp /> : <ChevronDown />}</span>
+                        </div>
+
+                        {showOptionalStock && (
+                          <div className="animate-in slide-in-from-top-2">
+                            <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
+                              <label className="font-bold text-gray-700">低筋麵粉 (包)</label>
+                              <input type="number" step="0.1" className="w-24 p-2 border border-gray-300 rounded text-center outline-none focus:border-blue-500" value={t2Stock.low} onChange={e => handleInput(setT2Stock, 'low', e.target.value)} />
+                            </div>
+                            <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
+                              <label className="font-bold text-gray-700">高筋麵粉 (包)</label>
+                              <input type="number" step="0.1" className="w-24 p-2 border border-gray-300 rounded text-center outline-none focus:border-blue-500" value={t2Stock.high} onChange={e => handleInput(setT2Stock, 'high', e.target.value)} />
+                            </div>
+                            <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
+                              <label className="font-bold text-gray-700">細砂 (包)</label>
+                              <input type="number" step="0.1" className="w-24 p-2 border border-gray-300 rounded text-center outline-none focus:border-blue-500" value={t2Stock.sugar} onChange={e => handleInput(setT2Stock, 'sugar', e.target.value)} />
+                            </div>
+                            <div className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
+                              <label className="font-bold text-gray-700">SP (顆)</label>
+                              <input type="number" step="1" className="w-24 p-2 border border-gray-300 rounded text-center outline-none focus:border-blue-500" value={t2Stock.sp_mat} onChange={e => handleInput(setT2Stock, 'sp_mat', e.target.value)} />
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex gap-3 mt-5">
+                          <button onClick={() => clearInputs(2)} className="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 rounded-lg transition active:scale-95">清空重填</button>
+                          <button onClick={calcTab2} className="flex-[2] bg-[#007bff] hover:bg-blue-600 text-white font-bold py-3 rounded-lg shadow-md transition active:scale-95">回推計算</button>
+                        </div>
+
+                        {/* Results T2 */}
+                        {t2Result && (
+                          <div className="mt-6 pt-5 border-t-2 border-dashed border-gray-300 animate-in slide-in-from-bottom-2">
+                            <div className="text-center text-lg text-[#28a745] font-bold mb-1">
+                              以基準原料可製作 <span className="text-[#dc3545] text-2xl font-black mx-1">{t2Result.maxSP}</span> 顆 SP
+                            </div>
+                            <p className="text-center text-gray-500 text-sm mb-4">為了完美搭配這批生產，其他原料還需要：</p>
+                            <table className="w-full border-collapse mb-4 text-center">
+                              <thead>
+                                <tr className="bg-gray-100 text-gray-700 border border-gray-300">
+                                  <th className="p-2 border border-gray-300 w-1/3">原料</th>
+                                  <th className="p-2 border border-gray-300 w-2/3">還缺多少？(建議叫貨)</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {t2Result.rows.map(row => (
+                                  <tr key={row.key} className={`border border-gray-300 ${row.isBase ? 'bg-[#fff3cd]' : ''}`}>
+                                    <td className="p-2 border border-gray-300 leading-tight">
+                                      <b>{NAMES[row.key]}</b><br/>
+                                      {row.isBase && <small className="text-[#856404]">(基準原料)</small>}
+                                    </td>
+                                    <td className="p-2 border border-gray-300">
+                                      {row.isBase ? (
+                                        <span className="text-[#28a745] font-bold">剛好用完</span>
+                                      ) : row.shortage > 0 ? (
+                                        <>
+                                          <span className="text-[#dc3545] font-bold">叫 {row.orderQty} {row.unitName}</span>
+                                          <br/><small className="text-gray-500">(還缺 {row.shortage.toFixed(1)})</small>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <span className="text-[#28a745] font-bold">庫存充足</span>
+                                          <br/><small className="text-gray-500">(還剩 {Math.abs(row.shortage).toFixed(1)} {row.unitName})</small>
+                                        </>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 錯誤提示視窗 */}
+                {errorMsg && (
+                  <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex justify-center items-center animate-in fade-in">
+                    <div className="bg-white p-6 rounded-xl text-center shadow-2xl max-w-[80%] w-[300px]">
+                      <h3 className="text-[#dc3545] text-xl font-bold mb-4 flex items-center justify-center"><AlertCircle className="mr-2"/> 輸入錯誤</h3>
+                      <p className="text-gray-700 mb-6 font-bold">{errorMsg}</p>
+                      <button 
+                        onClick={() => setErrorMsg("")}
+                        className="w-full bg-[#0056b3] hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition"
+                      >
+                        我知道了
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            </div>
+          );
+        };
+
+
+        // ==========================================
+        // === 主程式 (系統入口) ===
+        // ==========================================
+        const App = () => {
+          const [activeApp, setActiveApp] = useState('menu'); // 'menu' | 'bing' | 'mifa'
+
+          if (activeApp === 'bing') {
+            return <BingApp onBack={() => setActiveApp('menu')} />;
+          }
+
+          if (activeApp === 'mifa') {
+            return <MifaApp onBack={() => setActiveApp('menu')} />;
+          }
+
+          // 系統主選單 (Landing Page)
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-300 flex flex-col items-center justify-center p-6 font-sans">
+              <div className="mb-10 text-center animate-in slide-in-from-top-4 duration-500">
+                <h1 className="text-4xl md:text-5xl font-black text-gray-800 tracking-wider mb-3 drop-shadow-sm">生產與備料輔助系統</h1>
+                <p className="text-gray-600 font-bold text-lg tracking-widest border-t-2 border-gray-400 inline-block pt-2">請選擇您要使用的工具</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">
+                
+                {/* 選項 1: 生產餅數據 */}
+                <button 
+                  onClick={() => setActiveApp('bing')} 
+                  className="group flex flex-col items-center bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-t-8 border-blue-600 relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -z-10 transition-transform group-hover:scale-125"></div>
+                  <Factory size={72} className="text-blue-600 mb-6 group-hover:scale-110 transition-transform duration-300" />
+                  <h2 className="text-3xl font-black text-gray-800 mb-3 tracking-wide">生產餅數據</h2>
+                  <p className="text-gray-500 text-center font-bold text-lg leading-relaxed">查詢各項產品包餡、壓模、排盤機台的標準與快速參數</p>
+                  <div className="mt-6 text-blue-600 font-bold flex items-center bg-blue-50 px-4 py-2 rounded-full group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                    進入系統 <span className="ml-2 font-serif text-xl">→</span>
+                  </div>
+                </button>
+
+                {/* 選項 2: 米發叫料計算機 */}
+                <button 
+                  onClick={() => setActiveApp('mifa')} 
+                  className="group flex flex-col items-center bg-white p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-t-8 border-green-600 relative overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-green-50 rounded-bl-full -z-10 transition-transform group-hover:scale-125"></div>
+                  <Calculator size={72} className="text-green-600 mb-6 group-hover:scale-110 transition-transform duration-300" />
+                  <h2 className="text-3xl font-black text-gray-800 mb-3 tracking-wide">米發叫料計算機</h2>
+                  <p className="text-gray-500 text-center font-bold text-lg leading-relaxed">計算常規生產叫料量與庫存數量回推生產計畫</p>
+                  <div className="mt-6 text-green-600 font-bold flex items-center bg-green-50 px-4 py-2 rounded-full group-hover:bg-green-600 group-hover:text-white transition-colors">
+                    進入系統 <span className="ml-2 font-serif text-xl">→</span>
+                  </div>
+                </button>
+
+              </div>
+              
+              <div className="mt-12 text-gray-400 font-mono text-sm">
+                系統整合完畢 · 支援行動裝置瀏覽
+              </div>
+            </div>
+          );
+        };
+
+        // 最後：將 React 應用程式渲染到畫面上
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
