@@ -59,28 +59,28 @@
         const _hx = ['NA==', 'MS4y', 'MC4yNQ==', 'MC4xODc1', 'MjI=', 'MQ==', 'MTg=', 'Ni41', 'MTk1'];
         const _get = (i) => parseFloat(atob(_hx[i]));
 
-        const RECIPE = {
-          low: { kgPerSP: _get(0), unitName: '包', kgPerUnit: _get(4) },
-          high: { kgPerSP: _get(1), unitName: '包', kgPerUnit: _get(4) },
-          sugar: { kgPerSP: _get(2), unitName: '包', kgPerUnit: _get(5) }, 
-          sp_mat: { kgPerSP: _get(3), unitName: '桶', kgPerUnit: _get(6) } 
-        };
-
-        const NAMES = {
-          low: '低筋麵粉',
-          high: '高筋麵粉',
-          sugar: '細砂',
-          sp_mat: 'SP'
-        };
-
-        // --- 生產餅數據：機台皮帶規格資料庫 ---
+        // --- 1. 機台皮帶規格資料庫 ---
         const beltSpecsDb = {
           encrusting: ["SL-M2100 130*3260"],
           molding1: ["240*2940", "240*1150", "240*1335"],
           molding2: ["145*2050", "145*1750"]
         };
 
-        // --- 生產餅數據：產品生產參數資料庫 ---
+        // --- 2. 餡料重量對照表 (用於計算，一塊 = 12公斤) ---
+        const fillingWeightsDb = {
+          "肉": 80,
+          "魚": 60,
+          "雞": 80,
+          "佛手": 40,
+          "佛眼": 30, // 包含佛包
+          "擲筊": 25,
+          "元寶": 40,
+          "鳳桃": 20,
+          "豬頭 (手動)": 110,
+          "蝦蟹 (手動)": 70
+        };
+
+        // --- 3. 產品生產參數資料庫 ---
         const productDb = {
           "肉": {
             encrusting: {
@@ -144,12 +144,12 @@
           },
           "豬頭 (手動)": {
             encrusting: {
-              std: { label: "參數 (9)", inner: 53.5, outer: 93.5, time: 1.7, timeUnit: "秒", speed: 20, weight: 315, note: "餡90g (壓模與排盤不支援)" }
+              std: { label: "參數 (9)", inner: 53.5, outer: 93.5, time: 1.7, timeUnit: "秒", speed: 20, weight: 315, note: "餡110g (壓模與排盤不支援)" }
             }
           },
           "蝦蟹 (手動)": {
             encrusting: {
-              std: { label: "參數 (10)", inner: 29.0, outer: 72.0, time: 1.3, timeUnit: "秒", speed: 14, weight: 185, note: "餡65g (壓模與排盤不支援)" }
+              std: { label: "參數 (10)", inner: 29.0, outer: 72.0, time: 1.3, timeUnit: "秒", speed: 14, weight: 185, note: "餡70g (壓模與排盤不支援)" }
             }
           },
           "折機用": {
@@ -343,6 +343,11 @@
         const BingApp = ({ onBack }) => {
           const [selectedProduct, setSelectedProduct] = useState(products[0]);
           const [isModalOpen, setIsModalOpen] = useState(false);
+
+          // 新增：計算機的狀態
+          const [calcProduct, setCalcProduct] = useState("佛手");
+          const [calcCount, setCalcCount] = useState("");
+
           const currentData = productDb[selectedProduct];
 
           return (
@@ -350,26 +355,28 @@
               <div className="max-w-4xl mx-auto">
                 
                 {/* 頂部控制列 */}
-                <div className="bg-white rounded-xl shadow-xl p-4 mb-6 flex flex-col md:flex-row items-center justify-between border-b-4 border-blue-500">
-                  <div className="flex items-center mb-4 md:mb-0 w-full md:w-auto justify-between">
-                    <div className="flex items-center">
-                      <button onClick={onBack} className="mr-3 p-2 bg-gray-100 rounded-full hover:bg-gray-200 text-gray-700 transition">
-                        <Home size={24} />
-                      </button>
-                      <Settings className="text-blue-600 mr-2" size={28} />
-                      <h1 className="text-2xl font-black text-gray-800 tracking-wider">生產參數調閱系統</h1>
-                    </div>
+                <div className="bg-white rounded-xl shadow-xl p-4 mb-6 flex flex-col md:flex-row items-center justify-between border-b-4 border-blue-500 gap-4">
+                  <div className="flex items-center w-full md:w-auto">
+                    <button onClick={onBack} className="mr-3 sm:mr-4 px-3 sm:px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition flex items-center font-bold shadow-md shrink-0 transform hover:scale-105">
+                      <Home size={20} className="mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">返回首頁</span>
+                      <span className="sm:hidden">返回</span>
+                    </button>
+                    <Settings className="text-blue-600 mr-2 shrink-0 hidden sm:block" size={28} />
+                    <h1 className="text-xl sm:text-2xl font-black text-gray-800 tracking-wider truncate">生產參數調閱系統</h1>
                   </div>
                   
-                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto shrink-0">
+                    {/* 附註資訊按鈕 */}
                     <button 
                       onClick={() => setIsModalOpen(true)}
                       className="w-full sm:w-auto bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-900 border border-blue-200 px-4 py-2 rounded-lg font-bold flex items-center justify-center transition-colors shadow-sm"
                     >
-                      <Wrench size={18} className="mr-2" />
-                      皮帶規格
+                      <Info size={18} className="mr-2" />
+                      附註資訊
                     </button>
 
+                    {/* 品項選擇器 */}
                     <div className="flex items-center w-full sm:w-auto bg-gray-100 p-2 rounded-lg border border-gray-200">
                       <label className="mr-3 font-bold text-gray-700 whitespace-nowrap">選擇品項：</label>
                       <select 
@@ -408,61 +415,175 @@
                 </div>
               </div>
 
-              {/* 彈出視窗：皮帶規格 */}
+              {/* 彈出視窗：附註資訊 (Modal) */}
               {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 backdrop-blur-sm p-4">
                   <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                    
+                    {/* 視窗標題 */}
                     <div className="bg-gray-800 p-4 flex justify-between items-center border-b-4 border-blue-500">
                       <h3 className="text-white font-bold text-xl tracking-wider flex items-center">
-                        <Wrench className="mr-2 text-blue-400" size={24} /> 
-                        機台皮帶規格
+                        <Info className="mr-2 text-blue-400" size={24} /> 
+                        機台附註資訊
                       </h3>
-                      <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white transition-colors bg-gray-700 rounded-full p-1">
+                      <button 
+                        onClick={() => setIsModalOpen(false)} 
+                        className="text-gray-400 hover:text-white transition-colors bg-gray-700 rounded-full p-1"
+                      >
                         <X size={20} />
                       </button>
                     </div>
-                    <div className="p-6 space-y-6">
-                      <div>
-                        <h4 className="font-bold text-blue-900 border-b-2 border-blue-200 pb-1 mb-3 text-lg flex items-center">
-                          <Cpu size={18} className="mr-2" /> 包餡機
-                        </h4>
-                        <div className="flex flex-col gap-2">
-                          {beltSpecsDb.encrusting.map((spec, i) => (
-                            <div key={i} className="bg-gray-50 border border-gray-200 rounded p-2 text-gray-800 font-mono text-lg font-bold shadow-sm">{spec}</div>
+
+                    {/* 視窗內容 */}
+                    <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+                      
+                      {/* 一車總數對照表 */}
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-3 shadow-sm">
+                        <h5 className="font-bold text-green-800 mb-2 text-sm flex items-center">
+                          <span>📦 一車總數對照表 (每車 30 盤)</span>
+                        </h5>
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-700 bg-white p-2 rounded border border-green-100">
+                          {products.filter(p => productDb[p].tray).map(p => (
+                            <div key={p} className="flex justify-between items-center border-b border-gray-100 pb-1 last:border-0">
+                              <span className="font-bold">{p}</span>
+                              <span className="font-bold text-green-700 bg-green-100 px-2 rounded-full">{productDb[p].tray.even * productDb[p].tray.rows * 30} 個</span>
+                            </div>
                           ))}
                         </div>
                       </div>
-                      <div>
-                        <h4 className="font-bold text-orange-800 border-b-2 border-orange-200 pb-1 mb-3 text-lg flex items-center">
-                          <Layers size={18} className="mr-2" /> 壓模機 1
-                        </h4>
-                        <div className="flex flex-col gap-2">
-                          {beltSpecsDb.molding1.map((spec, i) => (
-                            <div key={i} className="bg-gray-50 border border-gray-200 rounded p-2 text-gray-800 font-mono text-lg font-bold shadow-sm">{spec}</div>
-                          ))}
+
+                      {/* 餡料計算模組 */}
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 shadow-sm">
+                        <h5 className="font-bold text-yellow-800 mb-3 text-sm">🧮 餡料需求計算 (一塊 = 12公斤)</h5>
+
+                        {/* 1. 一塊餡料產量對照 */}
+                        <div className="mb-3">
+                          <h6 className="text-xs font-bold text-gray-500 mb-2">▶ 一塊餡料可做數量：</h6>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-700 bg-white p-2 rounded border border-gray-200">
+                              {Object.entries(fillingWeightsDb).map(([name, weight]) => (
+                                  <div key={name} className="flex justify-between items-center border-b border-gray-100 pb-1 last:border-0">
+                                      <span className="font-bold">{name.replace(' (手動)', '')} ({weight}g)</span>
+                                      <span className="font-bold text-yellow-700 bg-yellow-100 px-2 rounded-full">{Math.floor(12000 / weight)} 顆</span>
+                                  </div>
+                              ))}
+                          </div>
+                        </div>
+
+                        {/* 2. 套組需求 (肉、魚、雞) */}
+                        <div className="mb-3 bg-orange-50 p-2 rounded border border-orange-200 text-sm shadow-sm">
+                          <h6 className="font-bold text-orange-800 mb-2 border-b border-orange-200 pb-1">▶ 套組生產需求 (肉、魚、雞)</h6>
+                          <div className="flex justify-between items-center mb-1.5">
+                              <span className="font-bold text-gray-700 bg-white px-2 rounded border border-gray-200 text-xs py-0.5 shadow-sm">半天 (1800組)</span>
+                              <span className="text-orange-900 text-xs md:text-sm">肉:<span className="font-bold mx-1 text-base">12</span>塊 | 魚:<span className="font-bold mx-1 text-base">9</span>塊 | 雞:<span className="font-bold mx-1 text-base">12</span>塊</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                              <span className="font-bold text-gray-700 bg-white px-2 rounded border border-gray-200 text-xs py-0.5 shadow-sm">一天 (3600組)</span>
+                              <span className="text-orange-900 text-xs md:text-sm">肉:<span className="font-bold mx-1 text-base">24</span>塊 | 魚:<span className="font-bold mx-1 text-base">18</span>塊 | 雞:<span className="font-bold mx-1 text-base">24</span>塊</span>
+                          </div>
+                        </div>
+
+                        {/* 3. 單品計算機 */}
+                        <div className="bg-white p-3 rounded border border-gray-200 text-sm shadow-inner">
+                           <h6 className="font-bold text-blue-800 mb-3 border-b border-gray-200 pb-1">▶ 單品餡料計算機</h6>
+                           <div className="flex flex-col gap-3">
+                               <div className="flex flex-row gap-2 items-center w-full">
+                                   <select
+                                       className="border-2 border-blue-200 rounded p-1.5 flex-1 font-bold text-gray-700 focus:outline-none focus:border-blue-400 min-w-0"
+                                       value={calcProduct}
+                                       onChange={(e) => setCalcProduct(e.target.value)}
+                                   >
+                                      {Object.entries(fillingWeightsDb).map(([k, w]) => (
+                                          <option key={k} value={k}>{k.replace(' (手動)', '')} ({w}g)</option>
+                                      ))}
+                                   </select>
+                                   <div className="flex items-center whitespace-nowrap">
+                                       <span className="text-gray-500 font-bold mr-2">預計</span>
+                                       <input
+                                           type="number"
+                                           min="0"
+                                           className="border-2 border-gray-300 rounded-l p-1.5 w-20 md:w-24 text-right font-bold focus:outline-none focus:border-blue-400"
+                                           placeholder="顆數"
+                                           value={calcCount}
+                                           onChange={(e) => setCalcCount(e.target.value)}
+                                       />
+                                       <span className="bg-gray-100 border-2 border-l-0 border-gray-300 rounded-r px-2 py-1.5 text-gray-600 font-bold">顆</span>
+                                   </div>
+                               </div>
+                               
+                               <div className="bg-blue-100 text-blue-900 font-black px-4 py-2 rounded w-full text-center border-2 border-blue-300 shadow-sm text-lg">
+                                   需 {calcCount ? (calcCount * fillingWeightsDb[calcProduct] / 12000).toFixed(1) : "0.0"} 塊
+                               </div>
+                           </div>
                         </div>
                       </div>
-                      <div>
-                        <h4 className="font-bold text-orange-800 border-b-2 border-orange-200 pb-1 mb-3 text-lg flex items-center">
-                          <Layers size={18} className="mr-2" /> 壓模機 2
+
+                      {/* 區隔線與皮帶標題 */}
+                      <div className="pt-2 border-t-2 border-dashed border-gray-300">
+                        <h4 className="font-black text-gray-800 text-lg flex items-center mb-4">
+                          <Wrench size={20} className="mr-2 text-gray-600" /> 機台皮帶規格
                         </h4>
-                        <div className="flex flex-col gap-2">
-                          {beltSpecsDb.molding2.map((spec, i) => (
-                            <div key={i} className="bg-gray-50 border border-gray-200 rounded p-2 text-gray-800 font-mono text-lg font-bold shadow-sm">{spec}</div>
-                          ))}
+                        
+                        {/* 包餡機規格 */}
+                        <div className="mb-4">
+                          <h5 className="font-bold text-blue-900 border-b-2 border-blue-200 pb-1 mb-2 text-md flex items-center">
+                            <Cpu size={18} className="mr-2" /> 包餡機
+                          </h5>
+                          <div className="flex flex-col gap-2">
+                            {beltSpecsDb.encrusting.map((spec, i) => (
+                              <div key={i} className="bg-gray-50 border border-gray-200 rounded p-2 text-gray-800 font-mono text-lg font-bold shadow-sm">
+                                {spec}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* 壓模機1規格 */}
+                        <div className="mb-4">
+                          <h5 className="font-bold text-orange-800 border-b-2 border-orange-200 pb-1 mb-2 text-md flex items-center">
+                            <Layers size={18} className="mr-2" /> 壓模機 1
+                          </h5>
+                          <div className="flex flex-col gap-2">
+                            {beltSpecsDb.molding1.map((spec, i) => (
+                              <div key={i} className="bg-gray-50 border border-gray-200 rounded p-2 text-gray-800 font-mono text-lg font-bold shadow-sm">
+                                {spec}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* 壓模機2規格 */}
+                        <div>
+                          <h5 className="font-bold text-orange-800 border-b-2 border-orange-200 pb-1 mb-2 text-md flex items-center">
+                            <Layers size={18} className="mr-2" /> 壓模機 2
+                          </h5>
+                          <div className="flex flex-col gap-2">
+                            {beltSpecsDb.molding2.map((spec, i) => (
+                              <div key={i} className="bg-gray-50 border border-gray-200 rounded p-2 text-gray-800 font-mono text-lg font-bold shadow-sm">
+                                {spec}
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </div>
+
                     </div>
+
+                    {/* 視窗底部按鈕 */}
                     <div className="bg-gray-100 p-4 flex justify-end">
-                      <button onClick={() => setIsModalOpen(false)} className="bg-gray-800 text-white px-6 py-2 rounded-lg font-bold hover:bg-gray-700 transition-colors shadow">關閉</button>
+                      <button 
+                        onClick={() => setIsModalOpen(false)}
+                        className="bg-gray-800 text-white px-6 py-2 rounded-lg font-bold hover:bg-gray-700 transition-colors shadow"
+                      >
+                        關閉
+                      </button>
                     </div>
+
                   </div>
                 </div>
               )}
             </div>
           );
         };
-
 
         // ==========================================
         // === 子系統 2：米發叫料計算機 (Mifa App) ===
@@ -638,18 +759,19 @@
                 <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
                   
                   {/* Header */}
-                  <div className="bg-[#0056b3] text-white p-4 flex justify-between items-center relative">
-                    <div className="flex items-center absolute left-2">
-                      <button onClick={onBack} className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition">
-                        <Home size={20} />
-                      </button>
-                    </div>
-                    <h1 className="text-xl font-bold w-full text-center tracking-wide">米發生產備料計算機</h1>
+                  <div className="bg-[#0056b3] text-white p-3 sm:p-4 flex justify-between items-center gap-2">
+                    <button onClick={onBack} className="px-3 py-1.5 bg-white text-[#0056b3] hover:bg-gray-100 rounded-lg font-bold flex items-center transition shadow-md shrink-0 transform hover:scale-105">
+                      <Home size={18} className="mr-1 sm:mr-2" />
+                      <span className="hidden sm:inline">返回首頁</span>
+                      <span className="sm:hidden">返回</span>
+                    </button>
+                    <h1 className="text-lg sm:text-xl font-bold text-center tracking-wide truncate shrink">米發備料計算機</h1>
                     <button 
-                      className="absolute right-4 bg-white/20 border border-white/50 text-white px-3 py-1 rounded-md text-sm hover:bg-white/40 transition"
+                      className="bg-white/20 border border-white/50 text-white px-2 sm:px-3 py-1.5 rounded-lg text-sm hover:bg-white/40 transition shadow-sm font-bold shrink-0"
                       onClick={() => setShowRecipe(!showRecipe)}
                     >
-                      米發比例
+                      <span className="hidden sm:inline">米發比例</span>
+                      <span className="sm:hidden">比例</span>
                     </button>
                   </div>
 
