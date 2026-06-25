@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>生產日報表 - 總覽</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js"></script>
+    <style>
+        body { background-color: #e2e8f0; -webkit-tap-highlight-color: transparent; }
+        thead.sticky-header { position: sticky; top: 0; z-index: 10; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 🌟 Excel 經典高對比：黑框線、白底、黑字，邊界極度清晰 */
+        table, th, td {
+            border: 2px solid #000000 !important;
+        }
+        
+        /* 🌟 儲存格留白：因應字體放大，垂直高度加高，並微調左右間距以防擠壓換行 */
+        th, td { 
+            padding: 16px 2px !important; 
+            line-height: 1.4;
+            color: #000000 !important;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col overflow-hidden">
+    <div id="root" class="h-full w-full"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo, useEffect } = React;
+
+        const USER_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyCa0s6Xuxa9Pm3VD7I_WJG_zPjfloZv8D8",
+            authDomain: "zy-cbm.firebaseapp.com",
+            projectId: "zy-cbm",
+            storageBucket: "zy-cbm.firebasestorage.app",
+            messagingSenderId: "768904093823",
+            appId: "1:768904093823:web:a80401260bf9cb9a1f5f4a"
+        };
+
+        const holidays2026 = [
+            '2026-01-01', '2026-01-02', '2026-01-03', '2026-01-04',
+            '2026-02-14', '2026-02-15', '2026-02-16', '2026-02-17', '2026-02-18', '2026-02-19', '2026-02-20', '2026-02-21', '2026-02-22',
+            '2026-02-27', '2026-02-28', '2026-03-01',
+            '2026-04-03', '2026-04-04', '2026-04-05', '2026-04-06',
+            '2026-05-01', '2026-05-02', '2026-05-03',
+            '2026-06-19', '2026-06-20', '2026-06-21',
+            '2026-09-25', '2026-09-26', '2026-09-27', '2026-09-28',
+            '2026-10-09', '2026-10-10', '2026-10-11',
+            '2026-10-24', '2026-10-25', '2026-10-26',
+            '2026-12-25', '2026-12-26', '2026-12-27'
+        ];
+
+        const generateEmptyRows = (year, month) => {
+            const days = new Date(year, month, 0).getDate() || 31;
+            return Array.from({ length: days }, (_, i) => ({ date: i + 1, g1: '', g2: '', g3: '' }));
+        };
+
+        const App = () => {
+            const savedYear = localStorage.getItem('zy_view_year') ? parseInt(localStorage.getItem('zy_view_year')) : new Date().getFullYear();
+            const savedMonth = localStorage.getItem('zy_view_month') ? parseInt(localStorage.getItem('zy_view_month')) : (new Date().getMonth() + 1);
+            
+            const [year, setYear] = useState(savedYear); 
+            const [month, setMonth] = useState(savedMonth);
+            const [reportRows, setReportRows] = useState(generateEmptyRows(savedYear, savedMonth));
+
+            const [user, setUser] = useState(null);
+            const [firebaseReady, setFirebaseReady] = useState(false);
+            const [isLoadingData, setIsLoadingData] = useState(true);
+            const [syncStatus, setSyncStatus] = useState('☁️ 連線中...');
+
+            // 記憶選擇的年月
+            useEffect(() => {
+                localStorage.setItem('zy_view_year', year.toString());
+                localStorage.setItem('zy_view_month', month.toString());
+            }, [year, month]);
+
+            // 初始化 Firebase 並自動登入
+            useEffect(() => {
+                let isMounted = true;
+                const initFirebase = async () => {
+                    try {
+                        const loadModule = (url) => new Function(`return import("${url}")`)();
+                        const { initializeApp } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js');
+                        const { getAuth, signInWithEmailAndPassword, onAuthStateChanged } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
+                        const { getFirestore, doc, getDoc } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+                        
+                        const app = initializeApp(USER_FIREBASE_CONFIG);
+                        const auth = getAuth(app);
+                        const db = getFirestore(app);
+                        
+                        window.db = db;
+                        window.doc = doc;
+                        window.getDoc = getDoc;
+
+                        try {
+                            await signInWithEmailAndPassword(auth, 'joe623@zy.com', 'joe0623');
+                        } catch (authErr) {
+                            if (isMounted) { 
+                                setFirebaseReady(true); 
+                                setIsLoadingData(false); 
+                                setSyncStatus('⚠️ 權限驗證失敗'); 
+                            }
+                            return;
+                        }
+
+                        onAuthStateChanged(auth, (currentUser) => {
+                            if (!isMounted) return;
+                            setUser(currentUser);
+                            setFirebaseReady(true);
+                        });
+                    } catch (error) {
+                        if(isMounted) {
+                            setFirebaseReady(true);
+                            setIsLoadingData(false);
+                            setSyncStatus('⚠️ 系統連線失敗');
+                        }
+                    }
+                };
+                initFirebase();
+                return () => { isMounted = false; };
+            }, []);
+
+            // 讀取當月資料
+            useEffect(() => {
+                if (!user || !firebaseReady || !window.db) return;
+                
+                setIsLoadingData(true);
+                setSyncStatus('☁️ 載入中...');
+
+                const docId = `report_${year}_${month}`;
+                const docPath = window.doc(window.db, 'users', user.uid, 'app_data', docId);
+
+                window.getDoc(docPath).then(snap => {
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        setReportRows(data.reportRows || generateEmptyRows(year, month));
+                    } else {
+                        setReportRows(generateEmptyRows(year, month));
+                    }
+                    setIsLoadingData(false);
+                    setSyncStatus('✅ 資料已更新');
+                }).catch(e => {
+                    setIsLoadingData(false);
+                    setSyncStatus('⚠️ 讀取失敗');
+                });
+            }, [user, firebaseReady, year, month]);
+
+            // 計算相關工具函數
+            const getDayInfo = (dateNum) => {
+                const dateObj = new Date(year, month - 1, dateNum);
+                const dayOfWeek = dateObj.getDay();
+                const weekStr = ['日','一','二','三','四','五','六'][dayOfWeek];
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(dateNum).padStart(2, '0')}`;
+                const isHoliday = dayOfWeek === 0 || dayOfWeek === 6 || holidays2026.includes(dateStr);
+                return { label: `${dateNum}-${weekStr}`, isHoliday };
+            };
+
+            const getNum = (val) => parseFloat(val) || 0;
+
+            const computedReport = useMemo(() => {
+                let sumG1 = 0, sumG2 = 0, sumG3 = 0, sumTotal = 0;
+                const processedRows = reportRows.map(row => {
+                    const dailyTotal = getNum(row.g1) + getNum(row.g2) + getNum(row.g3);
+                    const hasData = row.g1 !== '' || row.g2 !== '' || row.g3 !== '';
+                    if (hasData) {
+                        sumG1 += getNum(row.g1); sumG2 += getNum(row.g2); sumG3 += getNum(row.g3); sumTotal += dailyTotal;
+                    }
+                    return { ...row, dailyTotal, hasData };
+                });
+                return { processedRows, sumG1, sumG2, sumG3, sumTotal };
+            }, [reportRows]);
+
+            const enrichedReportRows = useMemo(() => {
+                const rows = [];
+                let currentWeekTotal = 0;
+
+                computedReport.processedRows.forEach((row, idx) => {
+                    rows.push({ type: 'day', ...row, originalIndex: idx });
+                    currentWeekTotal += row.dailyTotal;
+
+                    const dateObj = new Date(year, month - 1, row.date);
+                    if (dateObj.getDay() === 0 || row.date === computedReport.processedRows.length) {
+                        rows.push({ type: 'week_total', label: '本週小計', total: currentWeekTotal, key: `wt-${row.date}` });
+                        currentWeekTotal = 0;
+                    }
+                });
+
+                rows.push({ type: 'month_total', label: '當月總計', g1: computedReport.sumG1, g2: computedReport.sumG2, g3: computedReport.sumG3, total: computedReport.sumTotal, key: 'mt-final' });
+                return rows;
+            }, [computedReport, year, month]);
+
+            return (
+                <div className="flex flex-col h-full bg-slate-200 w-full max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
+                    
+                    {/* 頂部導覽列：年份與月份下拉式選單各佔一半，移除其餘標題與圖示 */}
+                    <div className="bg-slate-800 p-3 shadow-md z-20 flex-shrink-0 flex gap-3 w-full">
+                        <div className="flex-1">
+                            <select value={year} onChange={(e) => setYear(parseInt(e.target.value))} className="w-full text-center bg-slate-700 text-white border-2 border-slate-600 rounded-lg py-3 text-xl font-black outline-none">
+                                <option value={2026}>2026 年</option>
+                                <option value={2027}>2027 年</option>
+                            </select>
+                        </div>
+                        <div className="flex-1">
+                            <select value={month} onChange={(e) => setMonth(parseInt(e.target.value))} className="w-full text-center bg-slate-700 text-white border-2 border-slate-600 rounded-lg py-3 text-xl font-black outline-none">
+                                {Array.from({length: 12}, (_, i) => <option key={i+1} value={i+1}>{i+1} 月</option>)}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* 狀態列 */}
+                    {syncStatus !== '✅ 資料已更新' && (
+                        <div className={`text-sm py-2 text-center font-bold shadow-inner ${syncStatus.includes('⚠️') ? 'bg-red-100 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
+                            {syncStatus}
+                        </div>
+                    )}
+
+                    {/* 🌟 報表表格區域：修改為 w-full 滿版呈現 */}
+                    <div className="flex-1 overflow-auto py-2 px-0 no-scrollbar bg-slate-200 flex justify-center">
+                        {isLoadingData ? (
+                            <div className="flex flex-col items-center justify-center bg-transparent w-full h-48">
+                                <div className="animate-spin text-4xl mb-2 text-slate-600">⌛</div>
+                                <div className="font-bold text-slate-600 text-base">載入資料中...</div>
+                            </div>
+                        ) : (
+                            <div className="w-full bg-white p-1 shadow-lg border-b border-black h-fit">
+                                <table className="w-full border-collapse table-fixed select-none">
+                                    <thead className="bg-[#E6E6E6] text-black">
+                                        {/* 🌟 表頭字體放大到 text-base sm:text-lg */}
+                                        <tr className="font-extrabold text-base sm:text-lg">
+                                            {/* 🌟 欄位寬度分配 */}
+                                            <th className="w-[18%] py-3.5 align-middle border-r border-black">日期</th>
+                                            <th className="w-[20%] py-3.5 align-middle border-r border-black">第一組</th>
+                                            <th className="w-[20%] py-3.5 align-middle border-r border-black">第二組</th>
+                                            <th className="w-[20%] py-3.5 align-middle border-r border-black">第三組</th>
+                                            <th className="w-[22%] py-3.5 align-middle">小計</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {enrichedReportRows.map((r) => {
+                                            if (r.type === 'week_total') {
+                                                return (
+                                                    <tr key={r.key} className="bg-[#F2F2F2] font-black">
+                                                        {/* 🌟 小計行字體放大到 text-sm sm:text-base */}
+                                                        <td className="text-center bg-[#D9D9D9] py-3.5 align-middle text-sm sm:text-base border-r border-black font-extrabold">{r.label}</td>
+                                                        <td className="border-r border-black"></td>
+                                                        <td className="border-r border-black"></td>
+                                                        <td className="border-r border-black"></td>
+                                                        <td className="text-center align-middle py-3.5">
+                                                            <div className="font-mono font-black text-sm sm:text-base text-black truncate">{r.total > 0 ? Number(r.total.toFixed(2)).toLocaleString() : ''}</div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            }
+                                            
+                                            if (r.type === 'month_total') {
+                                                return (
+                                                    <tr key={r.key} className="bg-[#E6E6E6] font-black border-t-2 border-double border-black">
+                                                        {/* 🌟 當月總計字體放大到 text-sm sm:text-base / 數據更清晰 */}
+                                                        <td className="text-center bg-[#D9D9D9] py-4 align-middle border-r border-black font-extrabold tracking-wider text-sm sm:text-base">{r.label}</td>
+                                                        <td className="text-center align-middle font-mono font-black text-black border-r border-black py-4 text-sm sm:text-base">{r.g1 > 0 ? Number(r.g1.toFixed(2)).toLocaleString() : '-'}</td>
+                                                        <td className="text-center align-middle font-mono font-black text-black border-r border-black py-4 text-xs sm:text-sm">{r.g2 > 0 ? Number(r.g2.toFixed(2)).toLocaleString() : '-'}</td>
+                                                        <td className="text-center align-middle font-mono font-black text-black border-r border-black py-4 text-xs sm:text-sm">{r.g3 > 0 ? Number(r.g3.toFixed(2)).toLocaleString() : '-'}</td>
+                                                        <td className="text-center align-middle bg-[#F2F2F2] py-4">
+                                                            <div className="font-mono font-black text-xs sm:text-sm text-black truncate underline decoration-double underline-offset-4">{r.total > 0 ? Number(r.total.toFixed(2)).toLocaleString() : '-'}</div>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            }
+
+                                            const dayInfo = getDayInfo(r.date);
+                                            return (
+                                            <tr key={`day-${r.date}`} className="bg-white hover:bg-slate-50 transition-colors">
+                                                {/* 🌟 每日日期與數據字體放大到 text-sm sm:text-base，滿足大字體需求 */}
+                                                <td className={`text-center font-extrabold bg-[#F2F2F2] py-4 align-middle border-r border-black text-sm sm:text-base ${dayInfo.isHoliday ? 'text-red-600' : 'text-black'}`}>
+                                                    {dayInfo.label}
+                                                </td>
+                                                {['g1', 'g2', 'g3'].map(g => (
+                                                    <td key={g} className="text-center align-middle py-4 border-r border-black">
+                                                        <div className="font-mono font-black text-sm sm:text-base text-black truncate w-full">
+                                                            {r[g] || '-'}
+                                                        </div>
+                                                    </td>
+                                                ))}
+                                                <td className="text-center align-middle py-4">
+                                                    <div className="font-mono font-black text-sm sm:text-base text-black truncate w-full">
+                                                        {r.dailyTotal > 0 ? Number(r.dailyTotal.toFixed(2)).toLocaleString() : '-'}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )})}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
