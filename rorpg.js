@@ -36,7 +36,7 @@ export const RO_DATABASE = {
   // ==========================================
   MONSTERS: {
     'prt_fild08': [
-      { id: 1002, name: '波利', emoji: '💧', lv: 1, hp: 50, atk: 7, def: 0, hit: 10, flee: 5, baseExp: 20000, jobExp: 10000, gold: 5, dropRate: 0.1 },
+      { id: 1002, name: '波利', emoji: '💧', lv: 1, hp: 50, atk: 7, def: 0, hit: 10, flee: 5, baseExp: 200000, jobExp: 100000, gold: 5, dropRate: 0.1 },
       { id: 1063, name: '瘋兔', emoji: '🐇', lv: 2, hp: 60, atk: 11, def: 0, hit: 15, flee: 8, baseExp: 5, jobExp: 4, gold: 8, dropRate: 0.12 },
       { id: 1014, name: '綠棉蟲', emoji: '🐛', lv: 3, hp: 120, atk: 15, def: 5, hit: 20, flee: 12, baseExp: 9, jobExp: 7, gold: 12, dropRate: 0.15 },
       { id: 1049, name: '蒼蠅', emoji: '🪰', lv: 4, hp: 90, atk: 20, def: 2, hit: 25, flee: 25, baseExp: 11, jobExp: 9, gold: 10, dropRate: 0.15 },
@@ -265,10 +265,10 @@ export const RO_DATABASE = {
   // ==========================================
   SKILLS: {
     novice: [
-      { id: 'n_bash', name: '重擊', icon: '💥', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${2+lv} SP，造成 ${110 + lv*10}% 傷害`, spCost: (lv) => 2+lv, dmgMulti: (lv) => 1.1 + lv*0.1 },
-      { id: 'n_playdead', name: '裝死', icon: '👻', type: 'active', maxLv: 1, reqJobLv: 5, desc: (lv) => `消耗 10 SP，瞬間回復 30% HP`, spCost: (lv) => 10, healHpPct: 0.3 },
-      { id: 'n_basic', name: '基本技能', icon: '📖', type: 'passive', maxLv: 10, reqJobLv: 1, desc: (lv) => `全屬性微幅增加 ${lv}` },
-      { id: 'n_regen', name: '快速回復', icon: '❤️', type: 'passive', maxLv: 10, reqJobLv: 3, desc: (lv) => `戰鬥中每 6 秒回復 ${lv*2} HP` }
+      //{ id: 'n_bash', name: '重擊', icon: '💥', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${2+lv} SP，造成 ${110 + lv*10}% 傷害`, spCost: (lv) => 2+lv, dmgMulti: (lv) => 1.1 + lv*0.1 },
+      //{ id: 'n_playdead', name: '裝死', icon: '👻', type: 'active', maxLv: 1, reqJobLv: 5, desc: (lv) => `消耗 10 SP，瞬間回復 30% HP`, spCost: (lv) => 10, healHpPct: 0.3 },
+      { id: 'n_basic', name: '基本技能', icon: '📖', type: 'passive', maxLv: 10, reqJobLv: 1, desc: (lv) => `全屬性微幅增加 ${lv}` }
+      //,{ id: 'n_regen', name: '快速回復', icon: '❤️', type: 'passive', maxLv: 10, reqJobLv: 3, desc: (lv) => `戰鬥中每 6 秒回復 ${lv*2} HP` }
     ],
     swordman: [
       { id: 's_bash', name: '狂擊', icon: '⚔️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${5+lv*2} SP，造成 ${150 + lv*30}% 物理傷害`, spCost: (lv) => 5+lv*2, dmgMulti: (lv) => 1.5 + lv*0.3 },
