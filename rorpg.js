@@ -1,14 +1,46 @@
 /**
- * 掛機物語 - 仙境傳說 (RO) 經典還原資料庫 v2.0 (大型擴充版)
+ * 掛機物語 - 仙境傳說 (RO) 經典還原資料庫 v4.0 (完整合併版)
  * 
  * 部署指南：
- * 1. 將此檔案上傳至 GitHub。
- * 2. 透過 jsDelivr 或 Raw 連結在前端載入 (例如: https://cdn.jsdelivr.net/gh/您的帳號/您的Repo/ro_database.js)
+ * 1. 將此檔案上傳至 GitHub 並覆蓋原本的 rorpg.js。
+ * 2. 前端 App.jsx 會自動讀取並套用所有更新。
  */
 
 export const RO_DATABASE = {
   // ==========================================
-  // 2. 經典地圖資料 (擴充至 18 張)
+  // 1. 職業樹與素質成長資料庫 (包含 2-1 與 2-2 轉)
+  // ==========================================
+  CLASSES: {
+    // 初心者
+    novice: { name: '初心者', icon: '🥚', primaryStat: 'str', hpMulti: 1.0, spMulti: 1.0, atkMulti: 1.0, defMulti: 1.0, isJob2: false, advClasses: ['swordman', 'magician', 'thief', 'acolyte', 'archer', 'merchant'] },
+    
+    // 一轉職業 (1st Job)
+    swordman: { name: '劍士', icon: '🛡️', primaryStat: 'str', hpMulti: 1.5, spMulti: 0.8, atkMulti: 1.0, defMulti: 1.2, isJob2: false, advClasses: ['knight', 'crusader'] },
+    magician: { name: '魔法師', icon: '🔮', primaryStat: 'int', hpMulti: 0.8, spMulti: 2.0, atkMulti: 1.5, defMulti: 0.7, isJob2: false, advClasses: ['wizard', 'sage'] },
+    thief: { name: '盜賊', icon: '🗡️', primaryStat: 'agi', hpMulti: 1.0, spMulti: 1.0, atkMulti: 1.2, defMulti: 0.9, isJob2: false, advClasses: ['assassin', 'rogue'] },
+    acolyte: { name: '服事', icon: '✨', primaryStat: 'int', hpMulti: 1.2, spMulti: 1.5, atkMulti: 0.9, defMulti: 1.1, isJob2: false, advClasses: ['priest', 'monk'] },
+    archer: { name: '弓箭手', icon: '🏹', primaryStat: 'dex', hpMulti: 0.9, spMulti: 1.0, atkMulti: 1.3, defMulti: 0.8, isJob2: false, advClasses: ['hunter', 'bard'] },
+    merchant: { name: '商人', icon: '💰', primaryStat: 'str', hpMulti: 1.3, spMulti: 0.8, atkMulti: 1.1, defMulti: 1.1, isJob2: false, advClasses: ['blacksmith', 'alchemist'] },
+    
+    // 傳統二轉 (2-1 Job)
+    knight: { name: '騎士', icon: '🏇', primaryStat: 'str', hpMulti: 2.5, spMulti: 0.8, atkMulti: 1.3, defMulti: 1.5, isJob2: true },
+    wizard: { name: '巫師', icon: '🧙', primaryStat: 'int', hpMulti: 1.0, spMulti: 2.5, atkMulti: 2.0, defMulti: 0.8, isJob2: true },
+    assassin: { name: '十字刺客', icon: '🥷', primaryStat: 'agi', hpMulti: 1.5, spMulti: 1.0, atkMulti: 1.5, defMulti: 1.0, isJob2: true },
+    priest: { name: '神官', icon: '⛪', primaryStat: 'int', hpMulti: 1.5, spMulti: 2.0, atkMulti: 1.0, defMulti: 1.3, isJob2: true },
+    hunter: { name: '神射手', icon: '🦅', primaryStat: 'dex', hpMulti: 1.2, spMulti: 1.2, atkMulti: 1.6, defMulti: 0.9, isJob2: true },
+    blacksmith: { name: '神工匠', icon: '🔨', primaryStat: 'str', hpMulti: 1.8, spMulti: 1.0, atkMulti: 1.3, defMulti: 1.2, isJob2: true },
+    
+    // 新二轉 (2-2 Job)
+    crusader: { name: '十字軍', icon: '🛡️', primaryStat: 'vit', hpMulti: 2.8, spMulti: 1.2, atkMulti: 1.1, defMulti: 1.8, isJob2: true },
+    sage: { name: '智者', icon: '📖', primaryStat: 'int', hpMulti: 1.2, spMulti: 2.2, atkMulti: 1.8, defMulti: 1.0, isJob2: true },
+    rogue: { name: '神行太保', icon: '🎭', primaryStat: 'agi', hpMulti: 1.6, spMulti: 1.2, atkMulti: 1.4, defMulti: 1.1, isJob2: true },
+    monk: { name: '武術宗師', icon: '👊', primaryStat: 'str', hpMulti: 1.6, spMulti: 1.5, atkMulti: 1.8, defMulti: 1.2, isJob2: true },
+    bard: { name: '吟遊詩人', icon: '🎸', primaryStat: 'dex', hpMulti: 1.3, spMulti: 1.5, atkMulti: 1.4, defMulti: 1.0, isJob2: true },
+    alchemist: { name: '鍊金術師', icon: '🧪', primaryStat: 'str', hpMulti: 1.7, spMulti: 1.2, atkMulti: 1.2, defMulti: 1.3, isJob2: true },
+  },
+
+  // ==========================================
+  // 2. 經典地圖資料 (18 張)
   // ==========================================
   MAPS: [
     { id: 'prt_fild08', name: '普隆德拉原野', minLevel: 1, bg: 'from-green-900 to-slate-900', emoji: '🍀' },
@@ -32,11 +64,11 @@ export const RO_DATABASE = {
   ],
 
   // ==========================================
-  // 3. 原汁原味魔物資料 (超過 100 隻)
+  // 3. 魔物資料 (超過 100 隻)
   // ==========================================
   MONSTERS: {
     'prt_fild08': [
-      { id: 1002, name: '波利', emoji: '💧', lv: 1, hp: 50, atk: 7, def: 0, hit: 10, flee: 5, baseExp: 200000, jobExp: 100000, gold: 5, dropRate: 0.1 },
+      { id: 1002, name: '波利', emoji: '💧', lv: 1, hp: 50, atk: 7, def: 0, hit: 10, flee: 5, baseExp: 2, jobExp: 1, gold: 5, dropRate: 0.1 },
       { id: 1063, name: '瘋兔', emoji: '🐇', lv: 2, hp: 60, atk: 11, def: 0, hit: 15, flee: 8, baseExp: 5, jobExp: 4, gold: 8, dropRate: 0.12 },
       { id: 1014, name: '綠棉蟲', emoji: '🐛', lv: 3, hp: 120, atk: 15, def: 5, hit: 20, flee: 12, baseExp: 9, jobExp: 7, gold: 12, dropRate: 0.15 },
       { id: 1049, name: '蒼蠅', emoji: '🪰', lv: 4, hp: 90, atk: 20, def: 2, hit: 25, flee: 25, baseExp: 11, jobExp: 9, gold: 10, dropRate: 0.15 },
@@ -145,183 +177,204 @@ export const RO_DATABASE = {
   },
 
   // ==========================================
-  // 4. 裝備資料庫 (嚴格職業綁定與專屬素質)
+  // 4. 裝備資料庫
   // ==========================================
   ITEMS: {
-    // --- 武器區 (Weapons) ---
     weapons: [
       { id: 'w_001', name: '笨拙短劍', type: 'weapon', reqLevel: 1, reqClass: ['all'], attr: { atk: 17 } },
       { id: 'w_002', name: '短劍', type: 'weapon', reqLevel: 12, reqClass: ['swordman', 'thief', 'magician', 'merchant', 'novice'], attr: { atk: 43 } },
-      { id: 'w_003', name: '大馬士革短劍', type: 'weapon', reqLevel: 24, reqClass: ['swordman', 'thief', 'magician', 'merchant'], attr: { atk: 118 } },
-      { id: 'w_004', name: '刺客匕首', type: 'weapon', reqLevel: 40, reqClass: ['thief'], attr: { atk: 140, flee: 10 } },
-      { id: 'w_005', name: '神聖之首', type: 'weapon', reqLevel: 60, reqClass: ['swordman', 'thief'], attr: { atk: 165, hit: 20 } },
-      { id: 'w_007', name: '月光匕首', type: 'weapon', reqLevel: 80, reqClass: ['magician', 'thief'], attr: { atk: 150, maxSp: 100, int: 3 } },
+      { id: 'w_003', name: '大馬士革短劍', type: 'weapon', reqLevel: 24, reqClass: ['swordman', 'thief', 'magician', 'merchant', 'assassin', 'rogue'], attr: { atk: 118 } },
+      { id: 'w_004', name: '刺客匕首', type: 'weapon', reqLevel: 40, reqClass: ['thief', 'assassin', 'rogue'], attr: { atk: 140, flee: 10 } },
+      { id: 'w_005', name: '神聖之首', type: 'weapon', reqLevel: 60, reqClass: ['swordman', 'thief', 'knight', 'crusader', 'assassin', 'rogue'], attr: { atk: 165, hit: 20 } },
+      { id: 'w_007', name: '月光匕首', type: 'weapon', reqLevel: 80, reqClass: ['magician', 'thief', 'wizard', 'sage', 'assassin', 'rogue'], attr: { atk: 150, maxSp: 100, int: 3 } },
 
-      { id: 'w_101', name: '長劍', type: 'weapon', reqLevel: 10, reqClass: ['swordman', 'merchant', 'thief'], attr: { atk: 45 } },
-      { id: 'w_102', name: '圓月彎刀', type: 'weapon', reqLevel: 20, reqClass: ['swordman', 'thief'], attr: { atk: 85 } },
-      { id: 'w_103', name: '海東劍', type: 'weapon', reqLevel: 35, reqClass: ['swordman', 'merchant'], attr: { atk: 120 } },
-      { id: 'w_104', name: '狂擊之劍', type: 'weapon', reqLevel: 50, reqClass: ['swordman'], attr: { atk: 150, str: 3 } },
-      { id: 'w_105', name: '雙手巨劍', type: 'weapon', reqLevel: 33, reqClass: ['swordman'], attr: { atk: 160, aspd: -5 } },
-      { id: 'w_107', name: '名刀 不知火', type: 'weapon', reqLevel: 75, reqClass: ['swordman'], attr: { atk: 250, crit: 20 } },
-      { id: 'w_108', name: '水紋劍', type: 'weapon', reqLevel: 85, reqClass: ['swordman'], attr: { atk: 280, hit: 30, maxHp: 500 } },
+      { id: 'w_101', name: '長劍', type: 'weapon', reqLevel: 10, reqClass: ['swordman', 'merchant', 'thief', 'knight', 'crusader', 'blacksmith', 'alchemist', 'assassin', 'rogue'], attr: { atk: 45 } },
+      { id: 'w_102', name: '圓月彎刀', type: 'weapon', reqLevel: 20, reqClass: ['swordman', 'thief', 'knight', 'crusader', 'assassin', 'rogue'], attr: { atk: 85 } },
+      { id: 'w_103', name: '海東劍', type: 'weapon', reqLevel: 35, reqClass: ['swordman', 'merchant', 'knight', 'crusader', 'blacksmith', 'alchemist'], attr: { atk: 120 } },
+      { id: 'w_104', name: '狂擊之劍', type: 'weapon', reqLevel: 50, reqClass: ['swordman', 'knight', 'crusader'], attr: { atk: 150, str: 3 } },
+      { id: 'w_105', name: '雙手巨劍', type: 'weapon', reqLevel: 33, reqClass: ['swordman', 'knight', 'crusader'], attr: { atk: 160, aspd: -5 } },
+      { id: 'w_107', name: '名刀 不知火', type: 'weapon', reqLevel: 75, reqClass: ['swordman', 'knight', 'crusader'], attr: { atk: 250, crit: 20 } },
+      { id: 'w_108', name: '水紋劍', type: 'weapon', reqLevel: 85, reqClass: ['swordman', 'knight', 'crusader'], attr: { atk: 280, hit: 30, maxHp: 500 } },
 
-      { id: 'w_201', name: '手斧', type: 'weapon', reqLevel: 10, reqClass: ['swordman', 'merchant'], attr: { atk: 50 } },
-      { id: 'w_202', name: '戰鬥斧', type: 'weapon', reqLevel: 30, reqClass: ['swordman', 'merchant'], attr: { atk: 130 } },
-      { id: 'w_204', name: '血斧', type: 'weapon', reqLevel: 70, reqClass: ['merchant'], attr: { atk: 250, str: 5 } },
-      { id: 'w_205', name: '毀滅之斧', type: 'weapon', reqLevel: 85, reqClass: ['merchant'], attr: { atk: 320, aspd: -10 } },
+      { id: 'w_201', name: '手斧', type: 'weapon', reqLevel: 10, reqClass: ['swordman', 'merchant', 'knight', 'crusader', 'blacksmith', 'alchemist'], attr: { atk: 50 } },
+      { id: 'w_202', name: '戰鬥斧', type: 'weapon', reqLevel: 30, reqClass: ['swordman', 'merchant', 'knight', 'crusader', 'blacksmith', 'alchemist'], attr: { atk: 130 } },
+      { id: 'w_204', name: '血斧', type: 'weapon', reqLevel: 70, reqClass: ['merchant', 'blacksmith', 'alchemist'], attr: { atk: 250, str: 5 } },
+      { id: 'w_205', name: '毀滅之斧', type: 'weapon', reqLevel: 85, reqClass: ['merchant', 'blacksmith', 'alchemist'], attr: { atk: 320, aspd: -10 } },
 
-      { id: 'w_301', name: '棍棒', type: 'weapon', reqLevel: 5, reqClass: ['swordman', 'merchant', 'acolyte'], attr: { atk: 23 } },
-      { id: 'w_302', name: '流星鎚', type: 'weapon', reqLevel: 15, reqClass: ['swordman', 'merchant', 'acolyte'], attr: { atk: 65 } },
-      { id: 'w_304', name: '十字架', type: 'weapon', reqLevel: 40, reqClass: ['acolyte'], attr: { atk: 110, matk: 40 } },
-      { id: 'w_305', name: '審判十字架', type: 'weapon', reqLevel: 65, reqClass: ['acolyte'], attr: { atk: 140, matk: 80, int: 3 } },
-      { id: 'w_306', name: '黃金之鎚', type: 'weapon', reqLevel: 80, reqClass: ['merchant', 'acolyte'], attr: { atk: 180, hit: 20 } },
+      { id: 'w_301', name: '棍棒', type: 'weapon', reqLevel: 5, reqClass: ['swordman', 'merchant', 'acolyte', 'knight', 'crusader', 'blacksmith', 'alchemist', 'priest', 'monk'], attr: { atk: 23 } },
+      { id: 'w_302', name: '流星鎚', type: 'weapon', reqLevel: 15, reqClass: ['swordman', 'merchant', 'acolyte', 'knight', 'crusader', 'blacksmith', 'alchemist', 'priest', 'monk'], attr: { atk: 65 } },
+      { id: 'w_304', name: '十字架', type: 'weapon', reqLevel: 40, reqClass: ['acolyte', 'priest', 'monk'], attr: { atk: 110, matk: 40 } },
+      { id: 'w_305', name: '審判十字架', type: 'weapon', reqLevel: 65, reqClass: ['acolyte', 'priest', 'monk', 'crusader'], attr: { atk: 140, matk: 80, int: 3 } },
+      { id: 'w_306', name: '黃金之鎚', type: 'weapon', reqLevel: 80, reqClass: ['merchant', 'acolyte', 'blacksmith', 'alchemist', 'priest', 'monk'], attr: { atk: 180, hit: 20 } },
 
-      { id: 'w_401', name: '木杖', type: 'weapon', reqLevel: 1, reqClass: ['magician', 'acolyte'], attr: { atk: 15, matk: 20 } },
-      { id: 'w_402', name: '言靈魔杖', type: 'weapon', reqLevel: 24, reqClass: ['magician', 'acolyte'], attr: { atk: 30, int: 3, matk: 70 } },
-      { id: 'w_403', name: '生存的魔杖', type: 'weapon', reqLevel: 40, reqClass: ['magician'], attr: { atk: 50, maxHp: 300, matk: 120 } },
-      { id: 'w_405', name: '巫術之杖', type: 'weapon', reqLevel: 70, reqClass: ['magician'], attr: { atk: 60, matk: 200, dex: 3 } },
-      { id: 'w_406', name: '聖職之杖', type: 'weapon', reqLevel: 70, reqClass: ['acolyte'], attr: { atk: 80, matk: 160, int: 5 } },
-      { id: 'w_407', name: '毀滅魔杖', type: 'weapon', reqLevel: 90, reqClass: ['magician'], attr: { atk: 100, matk: 280, int: 8 } },
+      { id: 'w_401', name: '木杖', type: 'weapon', reqLevel: 1, reqClass: ['magician', 'acolyte', 'wizard', 'sage', 'priest', 'monk'], attr: { atk: 15, matk: 20 } },
+      { id: 'w_402', name: '言靈魔杖', type: 'weapon', reqLevel: 24, reqClass: ['magician', 'acolyte', 'wizard', 'sage', 'priest', 'monk'], attr: { atk: 30, int: 3, matk: 70 } },
+      { id: 'w_403', name: '生存的魔杖', type: 'weapon', reqLevel: 40, reqClass: ['magician', 'wizard', 'sage'], attr: { atk: 50, maxHp: 300, matk: 120 } },
+      { id: 'w_405', name: '巫術之杖', type: 'weapon', reqLevel: 70, reqClass: ['magician', 'wizard', 'sage', 'priest'], attr: { atk: 60, matk: 200, dex: 3 } },
+      { id: 'w_406', name: '聖職之杖', type: 'weapon', reqLevel: 70, reqClass: ['acolyte', 'priest', 'monk'], attr: { atk: 80, matk: 160, int: 5 } },
+      { id: 'w_407', name: '毀滅魔杖', type: 'weapon', reqLevel: 90, reqClass: ['magician', 'wizard', 'sage'], attr: { atk: 100, matk: 280, int: 8 } },
 
-      { id: 'w_501', name: '弓', type: 'weapon', reqLevel: 1, reqClass: ['archer', 'thief'], attr: { atk: 15 } },
-      { id: 'w_502', name: '十字弓', type: 'weapon', reqLevel: 18, reqClass: ['archer', 'thief'], attr: { atk: 65, dex: 2 } },
-      { id: 'w_503', name: '角弓', type: 'weapon', reqLevel: 33, reqClass: ['archer'], attr: { atk: 100 } },
-      { id: 'w_504', name: '獵弓', type: 'weapon', reqLevel: 50, reqClass: ['archer'], attr: { atk: 125, hit: 10 } },
-      { id: 'w_505', name: '坎弓', type: 'weapon', reqLevel: 65, reqClass: ['archer'], attr: { atk: 150, dex: 3 } },
-      { id: 'w_506', name: '神射手之弓', type: 'weapon', reqLevel: 80, reqClass: ['archer'], attr: { atk: 180, crit: 10, dex: 5 } },
+      { id: 'w_501', name: '弓', type: 'weapon', reqLevel: 1, reqClass: ['archer', 'thief', 'hunter', 'bard', 'assassin', 'rogue'], attr: { atk: 15 } },
+      { id: 'w_502', name: '十字弓', type: 'weapon', reqLevel: 18, reqClass: ['archer', 'thief', 'hunter', 'bard', 'assassin', 'rogue'], attr: { atk: 65, dex: 2 } },
+      { id: 'w_503', name: '角弓', type: 'weapon', reqLevel: 33, reqClass: ['archer', 'hunter', 'bard'], attr: { atk: 100 } },
+      { id: 'w_504', name: '獵弓', type: 'weapon', reqLevel: 50, reqClass: ['archer', 'hunter', 'bard'], attr: { atk: 125, hit: 10 } },
+      { id: 'w_505', name: '坎弓', type: 'weapon', reqLevel: 65, reqClass: ['archer', 'hunter', 'bard'], attr: { atk: 150, dex: 3 } },
+      { id: 'w_506', name: '神射手之弓', type: 'weapon', reqLevel: 80, reqClass: ['archer', 'hunter', 'bard', 'rogue'], attr: { atk: 180, crit: 10, dex: 5 } },
 
-      { id: 'w_601', name: '拳刃', type: 'weapon', reqLevel: 40, reqClass: ['thief'], attr: { atk: 105, crit: 5 } },
-      { id: 'w_602', name: '卡塔勒拳刃', type: 'weapon', reqLevel: 55, reqClass: ['thief'], attr: { atk: 148, crit: 8 } },
-      { id: 'w_603', name: '刺客拳刃', type: 'weapon', reqLevel: 70, reqClass: ['thief'], attr: { atk: 180, crit: 15 } },
-      { id: 'w_604', name: '爆炎拳刃', type: 'weapon', reqLevel: 85, reqClass: ['thief'], attr: { atk: 210, crit: 10 } },
+      { id: 'w_601', name: '拳刃', type: 'weapon', reqLevel: 40, reqClass: ['thief', 'assassin'], attr: { atk: 105, crit: 5 } },
+      { id: 'w_602', name: '卡塔勒拳刃', type: 'weapon', reqLevel: 55, reqClass: ['thief', 'assassin'], attr: { atk: 148, crit: 8 } },
+      { id: 'w_603', name: '刺客拳刃', type: 'weapon', reqLevel: 70, reqClass: ['thief', 'assassin'], attr: { atk: 180, crit: 15 } },
+      { id: 'w_604', name: '爆炎拳刃', type: 'weapon', reqLevel: 85, reqClass: ['thief', 'assassin'], attr: { atk: 210, crit: 10 } },
+
+      { id: 'w_701', name: '賢者日記 (書)', type: 'weapon', reqLevel: 60, reqClass: ['sage', 'priest'], attr: { atk: 100, matk: 120, int: 3 } },
+      { id: 'w_801', name: '龍爪拳套', type: 'weapon', reqLevel: 60, reqClass: ['monk', 'priest'], attr: { atk: 160, str: 2 } },
+      { id: 'w_901', name: '琵琶 (樂器)', type: 'weapon', reqLevel: 60, reqClass: ['bard', 'hunter'], attr: { atk: 130, dex: 3, maxSp: 50 } },
     ],
-    
-    // --- 防具區 ---
     armors: [
-      // 頭飾 (Helm)
       { id: 'h_001', name: '髮圈', type: 'helm', reqLevel: 1, reqClass: ['all'], attr: { def: 1 } },
       { id: 'h_002', name: '頭巾', type: 'helm', reqLevel: 10, reqClass: ['all'], attr: { def: 2, maxHp: 15 } },
-      { id: 'h_003', name: '蘋果頭飾', type: 'helm', reqLevel: 25, reqClass: ['archer', 'thief'], attr: { def: 2, dex: 3 } },
-      { id: 'h_004', name: '亡者髮箍', type: 'helm', reqLevel: 30, reqClass: ['swordman', 'merchant'], attr: { def: 4, agi: 2 } },
-      { id: 'h_005', name: '魔法師帽', type: 'helm', reqLevel: 35, reqClass: ['magician'], attr: { def: 3, int: 2, maxSp: 50 } },
-      { id: 'h_006', name: '骨製頭盔', type: 'helm', reqLevel: 50, reqClass: ['swordman'], attr: { def: 7, vit: 2 } },
+      { id: 'h_003', name: '蘋果頭飾', type: 'helm', reqLevel: 25, reqClass: ['archer', 'hunter', 'bard', 'thief', 'assassin', 'rogue'], attr: { def: 2, dex: 3 } },
+      { id: 'h_004', name: '亡者髮箍', type: 'helm', reqLevel: 30, reqClass: ['swordman', 'merchant', 'knight', 'crusader', 'blacksmith', 'alchemist'], attr: { def: 4, agi: 2 } },
+      { id: 'h_005', name: '魔法師帽', type: 'helm', reqLevel: 35, reqClass: ['magician', 'wizard', 'sage'], attr: { def: 3, int: 2, maxSp: 50 } },
+      { id: 'h_006', name: '骨製頭盔', type: 'helm', reqLevel: 50, reqClass: ['swordman', 'knight', 'crusader'], attr: { def: 7, vit: 2 } },
       { id: 'h_007', name: '王冠', type: 'helm', reqLevel: 70, reqClass: ['all'], attr: { def: 5, int: 3, luk: 3 } },
       
-      // 鎧甲 (Body)
       { id: 'a_001', name: '棉襯衫', type: 'armor', reqLevel: 1, reqClass: ['all'], attr: { def: 1, maxHp: 10 } },
       { id: 'a_002', name: '皮甲', type: 'armor', reqLevel: 5, reqClass: ['all'], attr: { def: 2, maxHp: 25 } },
-      { id: 'a_003', name: '絲質外衣', type: 'armor', reqLevel: 10, reqClass: ['magician', 'acolyte'], attr: { def: 3, maxSp: 20, int: 1 } },
-      { id: 'a_004', name: '木製鎧甲', type: 'armor', reqLevel: 15, reqClass: ['swordman', 'merchant'], attr: { def: 7, maxHp: 100 } },
-      { id: 'a_005', name: '盜賊之衣', type: 'armor', reqLevel: 20, reqClass: ['thief'], attr: { def: 6, agi: 1, flee: 5 } },
-      { id: 'a_006', name: '緊身便衣', type: 'armor', reqLevel: 20, reqClass: ['archer'], attr: { def: 5, dex: 1 } },
-      { id: 'a_007', name: '鋼鐵鎧甲', type: 'armor', reqLevel: 40, reqClass: ['swordman', 'merchant'], attr: { def: 12, maxHp: 300, agi: -2 } },
-      { id: 'a_008', name: '聖職之衣', type: 'armor', reqLevel: 40, reqClass: ['acolyte'], attr: { def: 6, int: 2, maxSp: 50 } },
-      { id: 'a_009', name: '魔法外套', type: 'armor', reqLevel: 50, reqClass: ['magician'], attr: { def: 5, int: 3, maxSp: 100 } },
-      { id: 'a_010', name: '神射手之衣', type: 'armor', reqLevel: 65, reqClass: ['archer'], attr: { def: 8, dex: 3, flee: 10 } },
-      { id: 'a_011', name: '騎士鎧甲', type: 'armor', reqLevel: 70, reqClass: ['swordman'], attr: { def: 16, maxHp: 800, vit: 2 } },
-      { id: 'a_012', name: '暗殺者外衣', type: 'armor', reqLevel: 75, reqClass: ['thief'], attr: { def: 10, agi: 3, flee: 20 } },
+      { id: 'a_003', name: '絲質外衣', type: 'armor', reqLevel: 10, reqClass: ['magician', 'acolyte', 'wizard', 'sage', 'priest', 'monk'], attr: { def: 3, maxSp: 20, int: 1 } },
+      { id: 'a_004', name: '木製鎧甲', type: 'armor', reqLevel: 15, reqClass: ['swordman', 'merchant', 'knight', 'crusader', 'blacksmith', 'alchemist'], attr: { def: 7, maxHp: 100 } },
+      { id: 'a_005', name: '盜賊之衣', type: 'armor', reqLevel: 20, reqClass: ['thief', 'assassin', 'rogue'], attr: { def: 6, agi: 1, flee: 5 } },
+      { id: 'a_006', name: '緊身便衣', type: 'armor', reqLevel: 20, reqClass: ['archer', 'hunter', 'bard'], attr: { def: 5, dex: 1 } },
+      { id: 'a_007', name: '鋼鐵鎧甲', type: 'armor', reqLevel: 40, reqClass: ['swordman', 'merchant', 'knight', 'crusader', 'blacksmith', 'alchemist'], attr: { def: 12, maxHp: 300, agi: -2 } },
+      { id: 'a_008', name: '聖職之衣', type: 'armor', reqLevel: 40, reqClass: ['acolyte', 'priest', 'monk'], attr: { def: 6, int: 2, maxSp: 50 } },
+      { id: 'a_009', name: '魔法外套', type: 'armor', reqLevel: 50, reqClass: ['magician', 'wizard', 'sage'], attr: { def: 5, int: 3, maxSp: 100 } },
+      { id: 'a_010', name: '神射手之衣', type: 'armor', reqLevel: 65, reqClass: ['archer', 'hunter', 'bard'], attr: { def: 8, dex: 3, flee: 10 } },
+      { id: 'a_011', name: '騎士鎧甲', type: 'armor', reqLevel: 70, reqClass: ['swordman', 'knight', 'crusader'], attr: { def: 16, maxHp: 800, vit: 2 } },
+      { id: 'a_012', name: '暗殺者外衣', type: 'armor', reqLevel: 75, reqClass: ['thief', 'assassin', 'rogue'], attr: { def: 10, agi: 3, flee: 20 } },
       { id: 'a_014', name: '奧丁的祝福', type: 'armor', reqLevel: 90, reqClass: ['all'], attr: { def: 10, str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1 } },
 
-      // 披肩 (Garment)
       { id: 'g_001', name: '連帽披肩', type: 'garment', reqLevel: 1, reqClass: ['all'], attr: { def: 1, flee: 2 } },
       { id: 'g_002', name: '披風', type: 'garment', reqLevel: 15, reqClass: ['all'], attr: { def: 2, flee: 5 } },
       { id: 'g_003', name: '斗篷', type: 'garment', reqLevel: 30, reqClass: ['all'], attr: { def: 4, flee: 10 } },
-      { id: 'g_004', name: '生存的斗篷', type: 'garment', reqLevel: 50, reqClass: ['magician', 'acolyte'], attr: { def: 3, maxHp: 100 } },
-      { id: 'g_006', name: '暗影披風', type: 'garment', reqLevel: 65, reqClass: ['thief'], attr: { def: 4, flee: 20, agi: 2 } },
+      { id: 'g_004', name: '生存的斗篷', type: 'garment', reqLevel: 50, reqClass: ['magician', 'acolyte', 'wizard', 'sage', 'priest', 'monk'], attr: { def: 3, maxHp: 100 } },
+      { id: 'g_006', name: '暗影披風', type: 'garment', reqLevel: 65, reqClass: ['thief', 'assassin', 'rogue'], attr: { def: 4, flee: 20, agi: 2 } },
       { id: 'g_008', name: '巴風特之角(披風)', type: 'garment', reqLevel: 95, reqClass: ['all'], attr: { def: 5, crit: 5 } },
 
-      // 鞋靴 (Shoes)
       { id: 's_001', name: '涼鞋', type: 'shoes', reqLevel: 1, reqClass: ['all'], attr: { def: 1, maxHp: 10 } },
       { id: 's_002', name: '皮靴', type: 'shoes', reqLevel: 15, reqClass: ['all'], attr: { def: 2, maxHp: 30 } },
       { id: 's_003', name: '長靴', type: 'shoes', reqLevel: 30, reqClass: ['all'], attr: { def: 4, maxHp: 100 } },
-      { id: 's_004', name: '魔法師之靴', type: 'shoes', reqLevel: 45, reqClass: ['magician'], attr: { def: 2, maxSp: 80 } },
-      { id: 's_005', name: '戰士長靴', type: 'shoes', reqLevel: 50, reqClass: ['swordman', 'merchant'], attr: { def: 6, maxHp: 300 } },
-      { id: 's_006', name: '敏捷長靴', type: 'shoes', reqLevel: 65, reqClass: ['thief', 'archer'], attr: { def: 5, agi: 2, flee: 10 } },
+      { id: 's_004', name: '魔法師之靴', type: 'shoes', reqLevel: 45, reqClass: ['magician', 'wizard', 'sage'], attr: { def: 2, maxSp: 80 } },
+      { id: 's_005', name: '戰士長靴', type: 'shoes', reqLevel: 50, reqClass: ['swordman', 'merchant', 'knight', 'crusader', 'blacksmith', 'alchemist'], attr: { def: 6, maxHp: 300 } },
+      { id: 's_006', name: '敏捷長靴', type: 'shoes', reqLevel: 65, reqClass: ['thief', 'archer', 'assassin', 'rogue', 'hunter', 'bard'], attr: { def: 5, agi: 2, flee: 10 } },
 
-      // 盾牌 (Shields)
       { id: 'sh_001', name: '圓盾', type: 'shield', reqLevel: 10, reqClass: ['all'], attr: { def: 3 } },
-      { id: 'sh_002', name: '鐵盾', type: 'shield', reqLevel: 30, reqClass: ['swordman', 'merchant'], attr: { def: 6, agi: -1 } },
-      { id: 'sh_003', name: '魔法書', type: 'shield', reqLevel: 35, reqClass: ['magician'], attr: { def: 2, int: 2, matk: 10 } },
-      { id: 'sh_004', name: '鋼盾', type: 'shield', reqLevel: 50, reqClass: ['swordman', 'merchant'], attr: { def: 9, agi: -2 } },
-      { id: 'sh_005', name: '聖職之盾', type: 'shield', reqLevel: 55, reqClass: ['acolyte'], attr: { def: 5, maxSp: 50 } },
+      { id: 'sh_002', name: '鐵盾', type: 'shield', reqLevel: 30, reqClass: ['swordman', 'merchant', 'knight', 'crusader', 'blacksmith', 'alchemist'], attr: { def: 6, agi: -1 } },
+      { id: 'sh_003', name: '魔法書', type: 'shield', reqLevel: 35, reqClass: ['magician', 'wizard', 'sage'], attr: { def: 2, int: 2, matk: 10 } },
+      { id: 'sh_004', name: '鋼盾', type: 'shield', reqLevel: 50, reqClass: ['swordman', 'merchant', 'knight', 'crusader', 'blacksmith', 'alchemist'], attr: { def: 9, agi: -2 } },
+      { id: 'sh_005', name: '聖職之盾', type: 'shield', reqLevel: 55, reqClass: ['acolyte', 'priest', 'monk'], attr: { def: 5, maxSp: 50 } },
     ],
-
-    // --- 飾品 (Accessories) ---
     accessories: [
       { id: 'ac_001', name: '夾子', type: 'acc', reqLevel: 10, reqClass: ['all'], attr: { maxSp: 10 } },
-      { id: 'ac_002', name: '力量戒指', type: 'acc', reqLevel: 20, reqClass: ['swordman', 'merchant', 'thief'], attr: { atk: 15, str: 2 } },
-      { id: 'ac_003', name: '智力耳環', type: 'acc', reqLevel: 20, reqClass: ['magician', 'acolyte'], attr: { int: 2, maxSp: 50 } },
-      { id: 'ac_004', name: '敏捷胸針', type: 'acc', reqLevel: 20, reqClass: ['archer', 'thief'], attr: { flee: 5, agi: 2 } },
+      { id: 'ac_002', name: '力量戒指', type: 'acc', reqLevel: 20, reqClass: ['swordman', 'merchant', 'thief', 'knight', 'crusader', 'blacksmith', 'alchemist', 'assassin', 'rogue'], attr: { atk: 15, str: 2 } },
+      { id: 'ac_003', name: '智力耳環', type: 'acc', reqLevel: 20, reqClass: ['magician', 'acolyte', 'wizard', 'sage', 'priest', 'monk'], attr: { int: 2, maxSp: 50 } },
+      { id: 'ac_004', name: '敏捷胸針', type: 'acc', reqLevel: 20, reqClass: ['archer', 'thief', 'hunter', 'bard', 'assassin', 'rogue'], attr: { flee: 5, agi: 2 } },
       { id: 'ac_005', name: '幸運珠鍊', type: 'acc', reqLevel: 20, reqClass: ['all'], attr: { crit: 3, luk: 2 } },
-      { id: 'ac_006', name: '體力項鍊', type: 'acc', reqLevel: 20, reqClass: ['swordman', 'merchant'], attr: { maxHp: 100, vit: 2 } },
-      { id: 'ac_007', name: '靈巧手套', type: 'acc', reqLevel: 20, reqClass: ['archer'], attr: { hit: 10, dex: 2 } },
+      { id: 'ac_006', name: '體力項鍊', type: 'acc', reqLevel: 20, reqClass: ['swordman', 'merchant', 'knight', 'crusader', 'blacksmith', 'alchemist'], attr: { maxHp: 100, vit: 2 } },
+      { id: 'ac_007', name: '靈巧手套', type: 'acc', reqLevel: 20, reqClass: ['archer', 'hunter', 'bard'], attr: { hit: 10, dex: 2 } },
       { id: 'ac_008', name: '防禦手套', type: 'acc', reqLevel: 50, reqClass: ['all'], attr: { def: 2, maxHp: 150 } },
-      { id: 'ac_009', name: '盜賊戒指', type: 'acc', reqLevel: 70, reqClass: ['thief'], attr: { str: 1, agi: 1, crit: 5 } },
+      { id: 'ac_009', name: '盜賊戒指', type: 'acc', reqLevel: 70, reqClass: ['thief', 'assassin', 'rogue'], attr: { str: 1, agi: 1, crit: 5 } },
     ]
   },
 
   // ==========================================
-  // 5. 職業技能樹資料庫 (全新抽離)
+  // 5. 職業技能樹資料庫
   // ==========================================
   SKILLS: {
     novice: [
-      //{ id: 'n_bash', name: '重擊', icon: '💥', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${2+lv} SP，造成 ${110 + lv*10}% 傷害`, spCost: (lv) => 2+lv, dmgMulti: (lv) => 1.1 + lv*0.1 },
-      //{ id: 'n_playdead', name: '裝死', icon: '👻', type: 'active', maxLv: 1, reqJobLv: 5, desc: (lv) => `消耗 10 SP，瞬間回復 30% HP`, spCost: (lv) => 10, healHpPct: 0.3 },
       { id: 'n_basic', name: '基本技能', icon: '📖', type: 'passive', maxLv: 10, reqJobLv: 1, desc: (lv) => `全屬性微幅增加 ${lv}` }
-      //,{ id: 'n_regen', name: '快速回復', icon: '❤️', type: 'passive', maxLv: 10, reqJobLv: 3, desc: (lv) => `戰鬥中每 6 秒回復 ${lv*2} HP` }
     ],
     swordman: [
       { id: 's_bash', name: '狂擊', icon: '⚔️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${5+lv*2} SP，造成 ${150 + lv*30}% 物理傷害`, spCost: (lv) => 5+lv*2, dmgMulti: (lv) => 1.5 + lv*0.3 },
-      { id: 's_magnum', name: '怒爆', icon: '🌋', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 ${15+lv} SP，造成 ${200 + lv*20}% 火屬性傷害`, spCost: (lv) => 15+lv, dmgMulti: (lv) => 2.0 + lv*0.2 },
       { id: 's_regen', name: '快速回復', icon: '❤️', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `每 6 秒回復 ${lv*2}% 最大生命` },
-      { id: 's_mastery', name: '單手劍修練', icon: '🗡️', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `基礎攻擊力增加 ${lv*4}` },
-      { id: 's_provoke', name: '挑釁', icon: '💢', type: 'passive', maxLv: 10, reqJobLv: 20, desc: (lv) => `怪物防禦力下降 ${lv*5}%，自身攻擊力上升` }
     ],
     magician: [
-      { id: 'm_coldbolt', name: '冰箭術', icon: '❄️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${10+lv*2} SP，造成 ${150 + lv*20}% 冰屬性傷害`, spCost: (lv) => 10+lv*2, dmgMulti: (lv) => 1.5 + lv*0.2 },
-      { id: 'm_firebolt', name: '火箭術', icon: '🔥', type: 'active', maxLv: 10, reqJobLv: 10, desc: (lv) => `消耗 ${12+lv*2} SP，造成 ${180 + lv*30}% 火屬性傷害`, spCost: (lv) => 12+lv*2, dmgMulti: (lv) => 1.8 + lv*0.3 },
+      { id: 'm_coldbolt', name: '冰箭術', icon: '❄️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${10+lv*2} SP，造成 ${150 + lv*20}% 魔法傷害`, spCost: (lv) => 10+lv*2, dmgMulti: (lv) => 1.5 + lv*0.2 },
       { id: 'm_zen', name: '禪心', icon: '🧘', type: 'passive', maxLv: 10, reqJobLv: 15, desc: (lv) => `每 6 秒額外回復 ${lv*3} SP` },
-      { id: 'm_firewall', name: '火牆術', icon: '🧱', type: 'passive', maxLv: 10, reqJobLv: 20, desc: (lv) => `被攻擊時有 ${lv*3}% 機率阻擋傷害` }
     ],
     thief: [
       { id: 't_double', name: '二連刃', icon: '⚔️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${8+lv} SP，造成 ${120 + lv*20}% 傷害`, spCost: (lv) => 8+lv, dmgMulti: (lv) => 1.2 + lv*0.2 },
-      { id: 't_envenom', name: '施毒', icon: '☠️', type: 'active', maxLv: 10, reqJobLv: 10, desc: (lv) => `消耗 15 SP，造成 ${150 + lv*15}% 傷害並附加劇毒`, spCost: (lv) => 15, dmgMulti: (lv) => 1.5 + lv*0.15 },
-      { id: 't_flee', name: '殘影', icon: '💨', type: 'passive', maxLv: 10, reqJobLv: 15, desc: (lv) => `FLEE (迴避率) 額外提升 ${lv*4} 點` },
-      { id: 't_hide', name: '隱匿', icon: '🥷', type: 'passive', maxLv: 10, reqJobLv: 25, desc: (lv) => `暴擊機率 (CRI) 提升 ${lv}%` }
+      { id: 't_flee', name: '殘影', icon: '💨', type: 'passive', maxLv: 10, reqJobLv: 15, desc: (lv) => `FLEE 提升 ${lv*4} 點` },
     ],
     acolyte: [
-      { id: 'a_heal', name: '治癒術', icon: '✨', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${13+lv*3} SP，回復自身大量生命`, spCost: (lv) => 13+lv*3, healPower: (lv) => 150 + lv*50 },
-      { id: 'a_holylight', name: '神聖之光', icon: '🌟', type: 'active', maxLv: 1, reqJobLv: 10, desc: (lv) => `消耗 15 SP，造成 200% 聖屬性傷害`, spCost: (lv) => 15, dmgMulti: (lv) => 2.0 },
+      { id: 'a_heal', name: '治癒術', icon: '✨', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${13+lv*3} SP，回復生命`, spCost: (lv) => 13+lv*3, healPower: (lv) => 150 + lv*50 },
       { id: 'a_bless', name: '天使之賜福', icon: '👼', type: 'passive', maxLv: 10, reqJobLv: 15, desc: (lv) => `STR/INT/DEX 各提升 ${lv} 點` },
-      { id: 'a_agi', name: '加速術', icon: '🏃', type: 'passive', maxLv: 10, reqJobLv: 20, desc: (lv) => `AGI 提升 ${lv} 點，大幅增加攻速與迴避` }
     ],
     archer: [
       { id: 'ar_double', name: '二連矢', icon: '🏹', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${8+lv*2} SP，造成 ${130 + lv*25}% 傷害`, spCost: (lv) => 8+lv*2, dmgMulti: (lv) => 1.3 + lv*0.25 },
-      { id: 'ar_shower', name: '箭雨', icon: '🌧️', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 ${15+lv*3} SP，造成 ${150 + lv*20}% 範圍傷害`, spCost: (lv) => 15+lv*3, dmgMulti: (lv) => 1.5 + lv*0.2 },
       { id: 'ar_owl', name: '鴞梟之眼', icon: '🦉', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `DEX 額外提升 ${lv} 點` },
-      { id: 'ar_vulture', name: '蒼鷹之眼', icon: '🦅', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `HIT (命中率) 額外提升 ${lv*3} 點` }
     ],
     merchant: [
       { id: 'me_mammonite', name: '金錢攻擊', icon: '🪙', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${lv*15} Zeny，造成 ${250 + lv*50}% 無視防禦傷害`, zenyCost: (lv) => lv*15, dmgMulti: (lv) => 2.5 + lv*0.5 },
-      { id: 'me_cart', name: '手推車攻擊', icon: '🛒', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 ${10+lv*2} SP，造成 ${150 + lv*30}% 傷害`, spCost: (lv) => 10+lv*2, dmgMulti: (lv) => 1.5 + lv*0.3 },
-      { id: 'me_greed', name: '貪婪', icon: '💰', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `打怪獲得金幣增加 ${lv*5}%` },
-      { id: 'me_weight', name: '負重量上升', icon: '🎒', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `背包最大容量增加 ${lv*5} 格` }
-    ]
+      { id: 'me_greed', name: '貪婪', icon: '💰', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `打怪金幣增加 ${lv*5}%` },
+    ],
+    knight: [
+      { id: 'k_pierce', name: '連刺攻擊', icon: '🔱', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${10+lv} SP，造成最高 ${200 + lv*40}% 單體爆發`, spCost: (lv) => 10+lv, dmgMulti: (lv) => 2.0 + lv*0.4 },
+      { id: 'k_bowling', name: '怪物互擊', icon: '💥', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 ${15+lv*2} SP，造成 ${300 + lv*50}% 範圍傷害`, spCost: (lv) => 15+lv*2, dmgMulti: (lv) => 3.0 + lv*0.5 },
+    ],
+    wizard: [
+      { id: 'w_storm', name: '暴風雪', icon: '❄️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${40+lv*5} SP，造成 ${350 + lv*80}% 魔法傷害`, spCost: (lv) => 40+lv*5, dmgMulti: (lv) => 3.5 + lv*0.8 },
+      { id: 'w_amp', name: '魔力增幅', icon: '🔮', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `MATK 提升 ${lv*5}%` },
+    ],
+    assassin: [
+      { id: 'as_sonic', name: '音速投擲', icon: '🌪️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${25+lv*2} SP，八連擊造成 ${400 + lv*80}% 傷害`, spCost: (lv) => 25+lv*2, dmgMulti: (lv) => 4.0 + lv*0.8 },
+      { id: 'as_katar', name: '拳刃修練', icon: '🗡️', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `裝備拳刃時 ATK 提升 ${lv*4}` },
+    ],
+    priest: [
+      { id: 'pr_magnus', name: '十字驅魔', icon: '✝️', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 ${40+lv*5} SP，造成 ${400 + lv*100}% 聖屬性傷害`, spCost: (lv) => 40+lv*5, dmgMulti: (lv) => 4.0 + lv*1.0 },
+      { id: 'pr_mace', name: '鈍器修練', icon: '🔨', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `裝備鈍器時 ATK 提升 ${lv*4}` },
+    ],
+    hunter: [
+      { id: 'ht_blitz', name: '閃電衝擊', icon: '🦅', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${15+lv} SP，獵鷹造成無視防禦 ${250 + lv*50}% 傷害`, spCost: (lv) => 15+lv, dmgMulti: (lv) => 2.5 + lv*0.5 },
+      { id: 'ht_falcon', name: '獵鷹尋笛', icon: '🦉', type: 'passive', maxLv: 1, reqJobLv: 10, desc: (lv) => `允許攜帶獵鷹，提升爆擊機率` },
+    ],
+    blacksmith: [
+      { id: 'bs_cart', name: '手推車終結技', icon: '🛒', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 ${20+lv*2} SP，造成 ${300 + lv*100}% 金錢屬性傷害`, spCost: (lv) => 20+lv*2, dmgMulti: (lv) => 3.0 + lv*1.0 },
+      { id: 'bs_adrenalin', name: '速度激發', icon: '⚡', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `裝備斧頭時，攻擊頻率大幅提升` },
+    ],
+    crusader: [
+      { id: 'cr_cross', name: '十字審判', icon: '✨', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗自身 HP 與 ${20+lv*3} SP，造成 ${350 + lv*70}% 爆發`, spCost: (lv) => 20+lv*3, dmgMulti: (lv) => 3.5 + lv*0.7 },
+      { id: 'cr_guard', name: '自動防禦', icon: '🛡️', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `受擊時有 ${lv*3}% 機率完全格擋傷害` },
+    ],
+    sage: [
+      { id: 'sa_spell', name: '魔法懲罰', icon: '📖', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${15+lv*2} SP，造成 ${200 + lv*50}% 魔法傷害`, spCost: (lv) => 15+lv*2, dmgMulti: (lv) => 2.0 + lv*0.5 },
+      { id: 'sa_auto', name: '自動念咒', icon: '🔥', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `普攻時附加額外魔法傷害` },
+    ],
+    rogue: [
+      { id: 'rg_raid', name: '背刺', icon: '🔪', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${12+lv*2} SP，無視部分防禦造成 ${250 + lv*50}% 傷害`, spCost: (lv) => 12+lv*2, dmgMulti: (lv) => 2.5 + lv*0.5 },
+      { id: 'rg_snatch', name: '強奪', icon: '💰', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `掉寶率與金幣獲取提升 ${lv*3}%` },
+    ],
+    monk: [
+      { id: 'mo_ashura', name: '阿修羅霸凰拳', icon: '👊', type: 'active', maxLv: 5, reqJobLv: 25, desc: (lv) => `消耗 100 SP，造成 ${800 + lv*200}% 終極真實傷害`, spCost: (lv) => 100, dmgMulti: (lv) => 8.0 + lv*2.0 },
+      { id: 'mo_iron', name: '鐵布衫', icon: '🥋', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `防禦力與最大生命提升` },
+    ],
+    bard: [
+      { id: 'bd_vulcan', name: '奧義箭亂舞', icon: '🎸', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${25+lv*3} SP，發出多重箭矢造成 ${300 + lv*60}% 傷害`, spCost: (lv) => 25+lv*3, dmgMulti: (lv) => 3.0 + lv*0.6 },
+      { id: 'bd_bragi', name: '布萊奇之詩', icon: '🎵', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `大幅減少全體技能延遲與 SP 消耗` },
+    ],
+    alchemist: [
+      { id: 'al_demo', name: '火煙瓶投擲', icon: '🧪', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${15+lv*2} SP，引發火災造成 ${200 + lv*40}% 持續傷害`, spCost: (lv) => 15+lv*2, dmgMulti: (lv) => 2.0 + lv*0.4 },
+      { id: 'al_homun', name: '生命體呼喚', icon: '🐥', type: 'passive', maxLv: 5, reqJobLv: 15, desc: (lv) => `召喚生命體協助攻擊，普攻傷害提升` },
+    ],
   },
 
   // ==========================================
   // 6. RO 底層核心素質公式
   // ==========================================
   FORMULAS: {
-    // 狀態升級花費: 經典 RO 公式 (當前數值-1)/10 取整 + 2
     getStatCost: (currentStat) => Math.floor((currentStat - 1) / 10) + 2,
-
-    // Base 經驗值公式 (三次方程模擬 RO 後期地獄)
     getBaseExpReq: (lv) => Math.floor(Math.pow(lv, 3) * 2.5 + lv * 150 + 100),
-    
-    // Job 經驗值公式
     getJobExpReq: (jobLv, isJob2) => {
-      if (isJob2) return Math.floor(Math.pow(jobLv, 3.2) * 3 + jobLv * 300); // 二轉更難練
+      if (isJob2) return Math.floor(Math.pow(jobLv, 3.2) * 3 + jobLv * 300);
       return Math.floor(Math.pow(jobLv, 2.8) * 2 + jobLv * 100);
     }
   }
