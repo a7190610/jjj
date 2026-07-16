@@ -249,7 +249,7 @@ export const RO_DATABASE = {
     // --- 飾品 (Accessories) ---
     accessories: [
       { id: 'ac_001', name: '夾子', type: 'acc', reqLevel: 10, reqClass: ['all'], attr: { maxSp: 10 } },
-      { id: 'ac_002', name: '力量戒指', type: 'acc', reqLevel: 20, reqClass: ['swordman', 'merchant', 'thief'], attr: { atk: 15, str: 2 } },
+      { id: 'ac_002', name: '力量戒指', type: 'acc', reqLevel: 20, reqClass: ['swordman', 'merchant', 'thief'], attr: { atk: 1500, str: 200 } },
       { id: 'ac_003', name: '智力耳環', type: 'acc', reqLevel: 20, reqClass: ['magician', 'acolyte'], attr: { int: 2, maxSp: 50 } },
       { id: 'ac_004', name: '敏捷胸針', type: 'acc', reqLevel: 20, reqClass: ['archer', 'thief'], attr: { flee: 5, agi: 2 } },
       { id: 'ac_005', name: '幸運珠鍊', type: 'acc', reqLevel: 20, reqClass: ['all'], attr: { crit: 3, luk: 2 } },
