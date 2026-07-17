@@ -261,53 +261,305 @@ export const RO_DATABASE = {
   },
 
   // ==========================================
-  // 5. 職業技能樹資料庫 (全新抽離)
+  // 1. 職業樹與素質成長資料庫 (包含 2-1 與 2-2 轉)
+  // ==========================================
+  CLASSES: {
+    // 【初心者】
+    novice: { name: '初心者', icon: '🥚', primaryStat: 'str', hpMulti: 1.0, spMulti: 1.0, atkMulti: 1.0, defMulti: 1.0, isJob2: false, maxJob: 10, reqBaseLv: 1, reqJobLv: 1, advClasses: ['swordman', 'magician', 'thief', 'acolyte', 'archer', 'merchant'] },
+    
+    // 【一轉職業】(1st Job) - 條件: 初心者 Job 10
+    swordman: { name: '劍士', icon: '🛡️', primaryStat: 'str', hpMulti: 1.5, spMulti: 0.8, atkMulti: 1.0, defMulti: 1.2, isJob2: false, maxJob: 50, reqBaseLv: 1, reqJobLv: 10, advClasses: ['knight', 'crusader'] },
+    magician: { name: '魔法師', icon: '🔮', primaryStat: 'int', hpMulti: 0.8, spMulti: 2.0, atkMulti: 1.5, defMulti: 0.7, isJob2: false, maxJob: 50, reqBaseLv: 1, reqJobLv: 10, advClasses: ['wizard', 'sage'] },
+    thief: { name: '盜賊', icon: '🗡️', primaryStat: 'agi', hpMulti: 1.0, spMulti: 1.0, atkMulti: 1.2, defMulti: 0.9, isJob2: false, maxJob: 50, reqBaseLv: 1, reqJobLv: 10, advClasses: ['assassin', 'rogue'] },
+    acolyte: { name: '服事', icon: '✨', primaryStat: 'int', hpMulti: 1.2, spMulti: 1.5, atkMulti: 0.9, defMulti: 1.1, isJob2: false, maxJob: 50, reqBaseLv: 1, reqJobLv: 10, advClasses: ['priest', 'monk'] },
+    archer: { name: '弓箭手', icon: '🏹', primaryStat: 'dex', hpMulti: 0.9, spMulti: 1.0, atkMulti: 1.3, defMulti: 0.8, isJob2: false, maxJob: 50, reqBaseLv: 1, reqJobLv: 10, advClasses: ['hunter', 'bard'] },
+    merchant: { name: '商人', icon: '💰', primaryStat: 'str', hpMulti: 1.3, spMulti: 0.8, atkMulti: 1.1, defMulti: 1.1, isJob2: false, maxJob: 50, reqBaseLv: 1, reqJobLv: 10, advClasses: ['blacksmith', 'alchemist'] },
+    
+    // 【二轉 2-1】 - 條件: 一轉 Job 40
+    knight: { name: '騎士', icon: '🏇', primaryStat: 'str', hpMulti: 2.5, spMulti: 0.8, atkMulti: 1.3, defMulti: 1.5, isJob2: true, maxJob: 70, reqBaseLv: 1, reqJobLv: 40, advClasses: ['rune_knight'] },
+    wizard: { name: '巫師', icon: '🧙', primaryStat: 'int', hpMulti: 1.0, spMulti: 2.5, atkMulti: 2.0, defMulti: 0.8, isJob2: true, maxJob: 70, reqBaseLv: 1, reqJobLv: 40, advClasses: ['warlock'] },
+    assassin: { name: '十字刺客', icon: '🥷', primaryStat: 'agi', hpMulti: 1.5, spMulti: 1.0, atkMulti: 1.5, defMulti: 1.0, isJob2: true, maxJob: 70, reqBaseLv: 1, reqJobLv: 40, advClasses: ['guillotine_cross'] },
+    priest: { name: '神官', icon: '⛪', primaryStat: 'int', hpMulti: 1.5, spMulti: 2.0, atkMulti: 1.0, defMulti: 1.3, isJob2: true, maxJob: 70, reqBaseLv: 1, reqJobLv: 40, advClasses: ['arch_bishop'] },
+    hunter: { name: '神射手', icon: '🦅', primaryStat: 'dex', hpMulti: 1.2, spMulti: 1.2, atkMulti: 1.6, defMulti: 0.9, isJob2: true, maxJob: 70, reqBaseLv: 1, reqJobLv: 40, advClasses: ['ranger'] },
+    blacksmith: { name: '神工匠', icon: '🔨', primaryStat: 'str', hpMulti: 1.8, spMulti: 1.0, atkMulti: 1.3, defMulti: 1.2, isJob2: true, maxJob: 70, reqBaseLv: 1, reqJobLv: 40, advClasses: ['mechanic'] },
+    
+    // 【二轉 2-2】 - 條件: 一轉 Job 40
+    crusader: { name: '十字軍', icon: '🛡️', primaryStat: 'vit', hpMulti: 2.8, spMulti: 1.2, atkMulti: 1.1, defMulti: 1.8, isJob2: true, maxJob: 70, reqBaseLv: 1, reqJobLv: 40, advClasses: ['royal_guard'] },
+    sage: { name: '智者', icon: '📖', primaryStat: 'int', hpMulti: 1.2, spMulti: 2.2, atkMulti: 1.8, defMulti: 1.0, isJob2: true, maxJob: 70, reqBaseLv: 1, reqJobLv: 40, advClasses: ['sorcerer'] },
+    rogue: { name: '神行太保', icon: '🎭', primaryStat: 'agi', hpMulti: 1.6, spMulti: 1.2, atkMulti: 1.4, defMulti: 1.1, isJob2: true, maxJob: 70, reqBaseLv: 1, reqJobLv: 40, advClasses: ['shadow_chaser'] },
+    monk: { name: '武術宗師', icon: '👊', primaryStat: 'str', hpMulti: 1.6, spMulti: 1.5, atkMulti: 1.8, defMulti: 1.2, isJob2: true, maxJob: 70, reqBaseLv: 1, reqJobLv: 40, advClasses: ['sura'] },
+    bard: { name: '吟遊詩人', icon: '🎸', primaryStat: 'dex', hpMulti: 1.3, spMulti: 1.5, atkMulti: 1.4, defMulti: 1.0, isJob2: true, maxJob: 70, reqBaseLv: 1, reqJobLv: 40, advClasses: ['minstrel_wanderer'] },
+    alchemist: { name: '鍊金術師', icon: '🧪', primaryStat: 'str', hpMulti: 1.7, spMulti: 1.2, atkMulti: 1.2, defMulti: 1.3, isJob2: true, maxJob: 70, reqBaseLv: 1, reqJobLv: 40, advClasses: ['genetic'] },
+
+    // 【三轉】 - 條件: 二轉 Base 90, Job 50
+    rune_knight: { name: '盧恩騎士', icon: '🐉', primaryStat: 'str', hpMulti: 3.5, spMulti: 1.0, atkMulti: 1.5, defMulti: 1.8, isJob2: true, maxJob: 70, reqBaseLv: 90, reqJobLv: 50, advClasses: ['dragon_knight'] },
+    warlock: { name: '咒術士', icon: '☄️', primaryStat: 'int', hpMulti: 1.5, spMulti: 3.5, atkMulti: 2.5, defMulti: 1.0, isJob2: true, maxJob: 70, reqBaseLv: 90, reqJobLv: 50, advClasses: ['arch_mage'] },
+    guillotine_cross: { name: '十字斬首者', icon: '🔪', primaryStat: 'agi', hpMulti: 2.0, spMulti: 1.2, atkMulti: 2.0, defMulti: 1.2, isJob2: true, maxJob: 70, reqBaseLv: 90, reqJobLv: 50, advClasses: ['shadow_cross'] },
+    arch_bishop: { name: '大主教', icon: '✝️', primaryStat: 'int', hpMulti: 2.0, spMulti: 2.8, atkMulti: 1.2, defMulti: 1.5, isJob2: true, maxJob: 70, reqBaseLv: 90, reqJobLv: 50, advClasses: ['cardinal'] },
+    ranger: { name: '遊俠', icon: '🐺', primaryStat: 'dex', hpMulti: 1.8, spMulti: 1.5, atkMulti: 2.2, defMulti: 1.0, isJob2: true, maxJob: 70, reqBaseLv: 90, reqJobLv: 50, advClasses: ['windhawk'] },
+    mechanic: { name: '機械工匠', icon: '🤖', primaryStat: 'str', hpMulti: 2.8, spMulti: 1.5, atkMulti: 1.8, defMulti: 1.8, isJob2: true, maxJob: 70, reqBaseLv: 90, reqJobLv: 50, advClasses: ['meister'] },
+    royal_guard: { name: '皇家禁衛隊', icon: '🛡️', primaryStat: 'vit', hpMulti: 4.0, spMulti: 1.5, atkMulti: 1.4, defMulti: 2.5, isJob2: true, maxJob: 70, reqBaseLv: 90, reqJobLv: 50, advClasses: ['imperial_guard'] },
+    sorcerer: { name: '妖術師', icon: '🌌', primaryStat: 'int', hpMulti: 1.8, spMulti: 3.0, atkMulti: 2.2, defMulti: 1.2, isJob2: true, maxJob: 70, reqBaseLv: 90, reqJobLv: 50, advClasses: ['elemental_master'] },
+    shadow_chaser: { name: '魅影追蹤者', icon: '🎭', primaryStat: 'agi', hpMulti: 2.2, spMulti: 1.5, atkMulti: 1.8, defMulti: 1.5, isJob2: true, maxJob: 70, reqBaseLv: 90, reqJobLv: 50, advClasses: ['abyss_chaser'] },
+    sura: { name: '修羅', icon: '🔥', primaryStat: 'str', hpMulti: 2.5, spMulti: 2.0, atkMulti: 2.5, defMulti: 1.5, isJob2: true, maxJob: 70, reqBaseLv: 90, reqJobLv: 50, advClasses: ['inquisitor'] },
+    minstrel_wanderer: { name: '宮廷樂師', icon: '🎻', primaryStat: 'dex', hpMulti: 2.0, spMulti: 2.2, atkMulti: 1.8, defMulti: 1.2, isJob2: true, maxJob: 70, reqBaseLv: 90, reqJobLv: 50, advClasses: ['troubadour_trouvere'] },
+    genetic: { name: '基因學者', icon: '🧬', primaryStat: 'str', hpMulti: 2.4, spMulti: 1.8, atkMulti: 1.6, defMulti: 1.6, isJob2: true, maxJob: 70, reqBaseLv: 90, reqJobLv: 50, advClasses: ['biolo'] },
+
+    // 【四轉】 - 條件: 三轉 Base 200, Job 70
+    dragon_knight: { name: '龍騎士', icon: '🐲', primaryStat: 'str', hpMulti: 5.0, spMulti: 1.5, atkMulti: 2.5, defMulti: 2.5, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
+    warlock: { name: '禁咒魔導士', icon: '☄️', primaryStat: 'int', hpMulti: 2.5, spMulti: 5.0, atkMulti: 4.0, defMulti: 1.5, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
+    shadow_cross: { name: '十字影武', icon: '💀', primaryStat: 'agi', hpMulti: 3.0, spMulti: 1.8, atkMulti: 3.5, defMulti: 1.8, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
+    cardinal: { name: '樞機主教', icon: '⚖️', primaryStat: 'int', hpMulti: 3.0, spMulti: 4.0, atkMulti: 1.8, defMulti: 2.0, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
+    windhawk: { name: '風鷹狩獵者', icon: '🌪️', primaryStat: 'dex', hpMulti: 2.8, spMulti: 2.0, atkMulti: 3.8, defMulti: 1.5, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
+    meister: { name: '機甲神匠', icon: '⚙️', primaryStat: 'str', hpMulti: 4.0, spMulti: 2.2, atkMulti: 3.0, defMulti: 2.5, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
+    imperial_guard: { name: '帝國聖衛軍', icon: '🏰', primaryStat: 'vit', hpMulti: 6.0, spMulti: 2.0, atkMulti: 2.2, defMulti: 3.5, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
+    elemental_master: { name: '元素支配者', icon: '🌌', primaryStat: 'int', hpMulti: 2.8, spMulti: 4.5, atkMulti: 3.5, defMulti: 1.8, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
+    abyss_chaser: { name: '深淵追跡者', icon: '🌑', primaryStat: 'agi', hpMulti: 3.5, spMulti: 2.2, atkMulti: 3.0, defMulti: 2.2, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
+    inquisitor: { name: '審判者', icon: '🔥', primaryStat: 'str', hpMulti: 4.0, spMulti: 2.8, atkMulti: 4.0, defMulti: 2.2, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
+    troubadour_trouvere: { name: '樂之絃音', icon: '🎼', primaryStat: 'dex', hpMulti: 3.0, spMulti: 3.0, atkMulti: 2.8, defMulti: 1.8, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
+    biolo: { name: '生命締造者', icon: '🧬', primaryStat: 'str', hpMulti: 3.5, spMulti: 2.5, atkMulti: 2.5, defMulti: 2.5, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
+  },
+// ... existing code ...
+  // ==========================================
+  // 5. 職業技能樹資料庫 (實裝官方被動素質與多段攻擊邏輯)
   // ==========================================
   SKILLS: {
+    // 【初心者】
     novice: [
-      //{ id: 'n_bash', name: '重擊', icon: '💥', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${2+lv} SP，造成 ${110 + lv*10}% 傷害`, spCost: (lv) => 2+lv, dmgMulti: (lv) => 1.1 + lv*0.1 },
-      //{ id: 'n_playdead', name: '裝死', icon: '👻', type: 'active', maxLv: 1, reqJobLv: 5, desc: (lv) => `消耗 10 SP，瞬間回復 30% HP`, spCost: (lv) => 10, healHpPct: 0.3 },
-      { id: 'n_basic', name: '基本技能', icon: '📖', type: 'passive', maxLv: 10, reqJobLv: 1, desc: (lv) => `全屬性微幅增加 ${lv}` }
-      //,{ id: 'n_regen', name: '快速回復', icon: '❤️', type: 'passive', maxLv: 10, reqJobLv: 3, desc: (lv) => `戰鬥中每 6 秒回復 ${lv*2} HP` }
+      { id: 'n_basic', name: '基本技能', icon: '📖', type: 'passive', maxLv: 10, reqJobLv: 1, desc: (lv) => `全屬性微幅增加 ${lv}`, passiveAttr: (lv) => ({ str: lv, agi: lv, vit: lv, int: lv, dex: lv, luk: lv }) },
+      { id: 'n_playdead', name: '裝死', icon: '👻', type: 'active', maxLv: 1, reqJobLv: 5, desc: (lv) => `消耗 10 SP，瞬間回復 20% HP 脫離險境`, spCost: (lv) => 10, healHpPct: 0.2 },
+      { id: 'n_firstaid', name: '急救', icon: '🩹', type: 'active', maxLv: 1, reqJobLv: 8, desc: (lv) => `消耗 3 SP，回復 15 HP`, spCost: (lv) => 3, healPower: (lv) => 15 }
     ],
+
+    // 【一轉職業】
     swordman: [
-      { id: 's_bash', name: '狂擊', icon: '⚔️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${5+lv*2} SP，造成 ${150 + lv*30}% 物理傷害`, spCost: (lv) => 5+lv*2, dmgMulti: (lv) => 1.5 + lv*0.3 },
-      { id: 's_magnum', name: '怒爆', icon: '🌋', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 ${15+lv} SP，造成 ${200 + lv*20}% 火屬性傷害`, spCost: (lv) => 15+lv, dmgMulti: (lv) => 2.0 + lv*0.2 },
-      { id: 's_regen', name: '快速回復', icon: '❤️', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `每 6 秒回復 ${lv*2}% 最大生命` },
-      { id: 's_mastery', name: '單手劍修練', icon: '🗡️', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `基礎攻擊力增加 ${lv*4}` },
-      { id: 's_provoke', name: '挑釁', icon: '💢', type: 'passive', maxLv: 10, reqJobLv: 20, desc: (lv) => `怪物防禦力下降 ${lv*5}%，自身攻擊力上升` }
+      { id: 's_bash', name: '狂擊', icon: '⚔️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${5+lv*2} SP，造成 ${150 + lv*30}% 物理傷害`, spCost: (lv) => 5+lv*2, dmgMulti: (lv) => 1.5 + lv*0.3, hits: 1 },
+      { id: 's_magnum', name: '怒爆', icon: '🌋', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 ${15+lv} SP，造成 ${200 + lv*20}% 火屬性傷害，並附加火屬性攻擊`, spCost: (lv) => 15+lv, dmgMulti: (lv) => 2.0 + lv*0.2, hits: 1 },
+      { id: 's_regen', name: '快速回復', icon: '❤️', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `每 6 秒回復 ${lv*2}% 最大生命`, passiveAttr: (lv) => ({ hpRegen: lv*2 }) },
+      { id: 's_mastery', name: '單手劍修練', icon: '🗡️', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `裝備單手劍時攻擊力增加 ${lv*4}`, passiveAttr: (lv) => ({ skAtk: lv*4 }) }, // 簡化為直接加 ATK
+      { id: 's_provoke', name: '挑釁', icon: '💢', type: 'active', maxLv: 10, reqJobLv: 20, desc: (lv) => `怪物防禦力下降 ${lv*5}%，自身攻擊力上升` }
     ],
     magician: [
-      { id: 'm_coldbolt', name: '冰箭術', icon: '❄️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${10+lv*2} SP，造成 ${150 + lv*20}% 冰屬性傷害`, spCost: (lv) => 10+lv*2, dmgMulti: (lv) => 1.5 + lv*0.2 },
-      { id: 'm_firebolt', name: '火箭術', icon: '🔥', type: 'active', maxLv: 10, reqJobLv: 10, desc: (lv) => `消耗 ${12+lv*2} SP，造成 ${180 + lv*30}% 火屬性傷害`, spCost: (lv) => 12+lv*2, dmgMulti: (lv) => 1.8 + lv*0.3 },
-      { id: 'm_zen', name: '禪心', icon: '🧘', type: 'passive', maxLv: 10, reqJobLv: 15, desc: (lv) => `每 6 秒額外回復 ${lv*3} SP` },
-      { id: 'm_firewall', name: '火牆術', icon: '🧱', type: 'passive', maxLv: 10, reqJobLv: 20, desc: (lv) => `被攻擊時有 ${lv*3}% 機率阻擋傷害` }
+      { id: 'm_coldbolt', name: '冰箭術', icon: '❄️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${10+lv*2} SP，造成 ${lv} 段 ${100}% 冰屬性傷害`, spCost: (lv) => 10+lv*2, dmgMulti: (lv) => 1.0, hits: (lv) => lv },
+      { id: 'm_firebolt', name: '火箭術', icon: '🔥', type: 'active', maxLv: 10, reqJobLv: 10, desc: (lv) => `消耗 ${12+lv*2} SP，造成 ${lv} 段 ${100}% 火屬性傷害`, spCost: (lv) => 12+lv*2, dmgMulti: (lv) => 1.0, hits: (lv) => lv },
+      { id: 'm_zen', name: '禪心', icon: '🧘', type: 'passive', maxLv: 10, reqJobLv: 15, desc: (lv) => `每 6 秒額外回復 ${lv*3} SP`, passiveAttr: (lv) => ({ spRegen: lv*3 }) },
+      { id: 'm_firewall', name: '火牆術', icon: '🧱', type: 'passive', maxLv: 10, reqJobLv: 20, desc: (lv) => `遭受攻擊時有 ${lv*3}% 機率阻擋傷害` }
     ],
     thief: [
-      { id: 't_double', name: '二連刃', icon: '⚔️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${8+lv} SP，造成 ${120 + lv*20}% 傷害`, spCost: (lv) => 8+lv, dmgMulti: (lv) => 1.2 + lv*0.2 },
-      { id: 't_envenom', name: '施毒', icon: '☠️', type: 'active', maxLv: 10, reqJobLv: 10, desc: (lv) => `消耗 15 SP，造成 ${150 + lv*15}% 傷害並附加劇毒`, spCost: (lv) => 15, dmgMulti: (lv) => 1.5 + lv*0.15 },
-      { id: 't_flee', name: '殘影', icon: '💨', type: 'passive', maxLv: 10, reqJobLv: 15, desc: (lv) => `FLEE (迴避率) 額外提升 ${lv*4} 點` },
-      { id: 't_hide', name: '隱匿', icon: '🥷', type: 'passive', maxLv: 10, reqJobLv: 25, desc: (lv) => `暴擊機率 (CRI) 提升 ${lv}%` }
+      { id: 't_double', name: '二刀連擊', icon: '⚔️', type: 'passive', maxLv: 10, reqJobLv: 1, desc: (lv) => `裝備短劍時，有 ${lv*5}% 機率造成雙倍傷害`, passiveAttr: (lv) => ({ doubleHitChance: lv*5 }) },
+      { id: 't_envenom', name: '施毒', icon: '☠️', type: 'active', maxLv: 10, reqJobLv: 10, desc: (lv) => `消耗 15 SP，造成 ${150 + lv*15}% 傷害並機率附加劇毒`, spCost: (lv) => 15, dmgMulti: (lv) => 1.5 + lv*0.15, hits: 1 },
+      { id: 't_flee', name: '殘影', icon: '💨', type: 'passive', maxLv: 10, reqJobLv: 15, desc: (lv) => `FLEE (迴避率) 額外提升 ${lv*3} 點`, passiveAttr: (lv) => ({ flee: lv*3 }) },
+      { id: 't_hide', name: '隱匿', icon: '🥷', type: 'passive', maxLv: 10, reqJobLv: 25, desc: (lv) => `提升暴擊機率 ${lv} 點`, passiveAttr: (lv) => ({ crit: lv }) }
     ],
     acolyte: [
-      { id: 'a_heal', name: '治癒術', icon: '✨', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${13+lv*3} SP，回復自身大量生命`, spCost: (lv) => 13+lv*3, healPower: (lv) => 150 + lv*50 },
-      { id: 'a_holylight', name: '神聖之光', icon: '🌟', type: 'active', maxLv: 1, reqJobLv: 10, desc: (lv) => `消耗 15 SP，造成 200% 聖屬性傷害`, spCost: (lv) => 15, dmgMulti: (lv) => 2.0 },
-      { id: 'a_bless', name: '天使之賜福', icon: '👼', type: 'passive', maxLv: 10, reqJobLv: 15, desc: (lv) => `STR/INT/DEX 各提升 ${lv} 點` },
-      { id: 'a_agi', name: '加速術', icon: '🏃', type: 'passive', maxLv: 10, reqJobLv: 20, desc: (lv) => `AGI 提升 ${lv} 點，大幅增加攻速與迴避` }
+      { id: 'a_heal', name: '治癒術', icon: '✨', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${13+lv*3} SP，回復生命 (看INT與等級)`, spCost: (lv) => 13+lv*3, healPower: (lv) => 150 + lv*50 },
+      { id: 'a_bless', name: '天使之賜福', icon: '👼', type: 'passive', maxLv: 10, reqJobLv: 15, desc: (lv) => `常駐 STR/INT/DEX 各提升 ${lv} 點`, passiveAttr: (lv) => ({ str: lv, int: lv, dex: lv }) },
+      { id: 'a_agi', name: '加速術', icon: '🏃', type: 'passive', maxLv: 10, reqJobLv: 20, desc: (lv) => `常駐 AGI 提升 ${lv} 點，FLEE 提升 ${lv*2}`, passiveAttr: (lv) => ({ agi: lv, flee: lv*2 }) },
+      { id: 'a_holy', name: '神聖之光', icon: '🌟', type: 'active', maxLv: 1, reqJobLv: 5, desc: (lv) => `消耗 15 SP，造成 200% 聖屬性傷害`, spCost: (lv) => 15, dmgMulti: (lv) => 2.0, hits: 1 }
     ],
     archer: [
-      { id: 'ar_double', name: '二連矢', icon: '🏹', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${8+lv*2} SP，造成 ${130 + lv*25}% 傷害`, spCost: (lv) => 8+lv*2, dmgMulti: (lv) => 1.3 + lv*0.25 },
-      { id: 'ar_shower', name: '箭雨', icon: '🌧️', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 ${15+lv*3} SP，造成 ${150 + lv*20}% 範圍傷害`, spCost: (lv) => 15+lv*3, dmgMulti: (lv) => 1.5 + lv*0.2 },
-      { id: 'ar_owl', name: '鴞梟之眼', icon: '🦉', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `DEX 額外提升 ${lv} 點` },
-      { id: 'ar_vulture', name: '蒼鷹之眼', icon: '🦅', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `HIT (命中率) 額外提升 ${lv*3} 點` }
+      { id: 'ar_double', name: '二連矢', icon: '🏹', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${8+lv*2} SP，連續射出兩箭，單下 ${100 + lv*10}% 傷害`, spCost: (lv) => 8+lv*2, dmgMulti: (lv) => 1.0 + lv*0.1, hits: 2 },
+      { id: 'ar_owl', name: '鴞梟之眼', icon: '🦉', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `DEX 額外提升 ${lv} 點`, passiveAttr: (lv) => ({ dex: lv }) },
+      { id: 'ar_vulture', name: '蒼鷹之眼', icon: '🦅', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `HIT (命中率) 額外提升 ${lv*3} 點`, passiveAttr: (lv) => ({ hit: lv*3 }) },
+      { id: 'ar_shower', name: '箭雨', icon: '🌧️', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 ${15+lv*3} SP，對範圍造成 ${150+lv*20}% 傷害`, spCost: (lv) => 15+lv*3, dmgMulti: (lv) => 1.5 + lv*0.2, hits: 1 }
     ],
     merchant: [
-      { id: 'me_mammonite', name: '金錢攻擊', icon: '🪙', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${lv*15} Zeny，造成 ${250 + lv*50}% 無視防禦傷害`, zenyCost: (lv) => lv*15, dmgMulti: (lv) => 2.5 + lv*0.5 },
-      { id: 'me_cart', name: '手推車攻擊', icon: '🛒', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 ${10+lv*2} SP，造成 ${150 + lv*30}% 傷害`, spCost: (lv) => 10+lv*2, dmgMulti: (lv) => 1.5 + lv*0.3 },
-      { id: 'me_greed', name: '貪婪', icon: '💰', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `打怪獲得金幣增加 ${lv*5}%` },
-      { id: 'me_weight', name: '負重量上升', icon: '🎒', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `背包最大容量增加 ${lv*5} 格` }
+      { id: 'me_mammonite', name: '金錢攻擊', icon: '🪙', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${lv*15} Zeny，造成 ${250 + lv*50}% 強力傷害`, zenyCost: (lv) => lv*15, dmgMulti: (lv) => 2.5 + lv*0.5, hits: 1 },
+      { id: 'me_greed', name: '貪婪', icon: '💰', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `打怪獲得金幣增加 ${lv*5}%`, passiveAttr: (lv) => ({ goldBonus: lv*5 }) },
+      { id: 'me_weight', name: '負重量上升', icon: '🎒', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `最大背包容量增加 ${lv*5} 格` }, // 前端可轉換為背包格數
+      { id: 'me_cart', name: '手推車攻擊', icon: '🛒', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 ${10+lv*2} SP，造成 ${150 + lv*30}% 傷害`, spCost: (lv) => 10+lv*2, dmgMulti: (lv) => 1.5 + lv*0.3, hits: 1 }
+    ],
+
+    // 【二轉 2-1】
+    knight: [
+      { id: 'k_pierce', name: '連刺攻擊', icon: '🔱', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 7 SP，對中大型造成多段 ${150 + lv*10}% 傷害`, spCost: (lv) => 7, dmgMulti: (lv) => 1.5 + lv*0.1, hits: 3 }, // 簡化為3段
+      { id: 'k_bowling', name: '怪物互擊', icon: '💥', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 ${15+lv*2} SP，造成 ${200 + lv*50}% 範圍爆擊`, spCost: (lv) => 15+lv*2, dmgMulti: (lv) => 2.0 + lv*0.5, hits: 1 },
+      { id: 'k_quicken', name: '雙手劍增壓', icon: '⚡', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `裝備雙手劍時大幅提升 ASPD`, passiveAttr: (lv) => ({ aspdBonus: lv*30 }) }, // 數值越大攻速越快
+      { id: 'k_pecopeco', name: '騎乘術', icon: '🦤', type: 'passive', maxLv: 1, reqJobLv: 20, desc: (lv) => `可騎乘大嘴鳥，大幅增加移動速度與負重量` }
+    ],
+    wizard: [
+      { id: 'w_storm', name: '暴風雪', icon: '❄️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${40+lv*5} SP，造成 10 段 ${140 + lv*40}% 魔法傷害`, spCost: (lv) => 40+lv*5, dmgMulti: (lv) => 1.4 + lv*0.4, hits: 10 },
+      { id: 'w_amp', name: '魔力增幅', icon: '🔮', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `下一次魔法攻擊提升 ${lv*5}% MATK`, passiveAttr: (lv) => ({ matkBonusPct: lv*5 }) },
+      { id: 'w_meteor', name: '隕石術', icon: '☄️', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 ${30+lv*5} SP，降下隕石造成多段火屬性傷害`, spCost: (lv) => 30+lv*5, dmgMulti: (lv) => 1.0 + lv*0.2, hits: (lv) => Math.floor(lv/2)+2 }
+    ],
+    assassin: [
+      { id: 'as_sonic', name: '音速投擲', icon: '🌪️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 34 SP，瞬間八連擊，總共 ${300 + lv*60}% 傷害`, spCost: (lv) => 34, dmgMulti: (lv) => 0.5 + lv*0.075, hits: 8 },
+      { id: 'as_katar', name: '拳刃修練', icon: '🗡️', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `裝備拳刃時 ATK 提升 ${lv*3}，CRI 倍增`, passiveAttr: (lv) => ({ skAtk: lv*3, critMulti: 2 }) },
+      { id: 'as_cloak', name: '偽裝', icon: '🥷', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `提升暴擊傷害 ${lv*5}%`, passiveAttr: (lv) => ({ critDmgPct: lv*5 }) }
+    ],
+    priest: [
+      { id: 'pr_magnus', name: '十字驅魔', icon: '✝️', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 ${40+lv*5} SP，對不死/惡魔造成 ${lv} 段毀滅傷害`, spCost: (lv) => 40+lv*5, dmgMulti: (lv) => 1.0, hits: (lv) => lv },
+      { id: 'pr_magni', name: '聖母之頌歌', icon: '🎵', type: 'passive', maxLv: 5, reqJobLv: 5, desc: (lv) => `SP 自然回復速度加倍`, passiveAttr: (lv) => ({ spRegenMulti: 2.0 }) },
+      { id: 'pr_kyrie', name: '霸邪之陣', icon: '🛡️', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `防禦力增加 ${lv*3}，並有低機率格擋攻擊`, passiveAttr: (lv) => ({ def: lv*3 }) }
+    ],
+    hunter: [
+      { id: 'ht_blitz', name: '閃電衝擊', icon: '🦅', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${10+lv} SP，老鷹造成無視防禦 ${lv} 段傷害`, spCost: (lv) => 10+lv, dmgMulti: (lv) => 1.0, hits: (lv) => lv, ignoreDef: true },
+      { id: 'ht_falcon', name: '獵鷹尋笛', icon: '🦉', type: 'passive', maxLv: 1, reqJobLv: 10, desc: (lv) => `普攻時機率自動觸發閃電衝擊`, passiveAttr: (lv) => ({ autoBlitzChance: 10 }) },
+      { id: 'ht_focus', name: '心神凝聚', icon: '🎯', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `AGI 與 DEX 各提升 ${lv}%`, passiveAttr: (lv) => ({ agiPct: lv, dexPct: lv }) }
+    ],
+    blacksmith: [
+      { id: 'bs_cart', name: '手推車終結技', icon: '🛒', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 1500Zeny，造成 ${150 + lv*150}% 強制無屬性傷害`, zenyCost: (lv) => 1500, spCost: (lv) => 15, dmgMulti: (lv) => 1.5 + lv*1.5, hits: 1 },
+      { id: 'bs_adrenalin', name: '速度激發', icon: '⚡', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `裝備斧類時 ASPD 提升 30%`, passiveAttr: (lv) => ({ aspdBonusPct: 30 }) },
+      { id: 'bs_weapon', name: '武器研究', icon: '🔨', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `基礎攻擊力與命中率各提升 ${lv*2}`, passiveAttr: (lv) => ({ skAtk: lv*2, hit: lv*2 }) }
+    ],
+
+    // 【二轉 2-2】
+    crusader: [
+      { id: 'cr_cross', name: '聖十字審判', icon: '✨', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗自身 HP/SP，造成 ${100 + lv*40}% 物理+魔法混合傷害 3 段`, spCost: (lv) => 20+lv*3, dmgMulti: (lv) => 1.0 + lv*0.4, hits: 3 },
+      { id: 'cr_faith', name: '信任', icon: '🛡️', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `最大 HP 增加 ${lv*200}，神聖抗性增加`, passiveAttr: (lv) => ({ maxHpBonus: lv*200 }) },
+      { id: 'cr_guard', name: '自動防禦', icon: '🛡️', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `受擊時有 ${lv*3}% 機率完全格擋傷害`, passiveAttr: (lv) => ({ blockChance: lv*3 }) }
+    ],
+    sage: [
+      { id: 'sa_spell', name: '魔法懲罰', icon: '📖', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${15+lv*2} SP，吸收敵方魔法並轉為自身 HP`, spCost: (lv) => 15+lv*2, dmgMulti: (lv) => 1.5, hits: 1 },
+      { id: 'sa_auto', name: '自動念咒', icon: '🔥', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `普攻時有 ${lv*2}% 機率觸發設定的元素箭`, passiveAttr: (lv) => ({ autoSpellChance: lv*2 }) },
+      { id: 'sa_free', name: '自由施法', icon: '🏃', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `施法期間可以移動且攻擊速度增加`, passiveAttr: (lv) => ({ aspdBonusPct: lv*2 }) }
+    ],
+    rogue: [
+      { id: 'rg_raid', name: '背刺', icon: '🔪', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${12+lv*2} SP，必定命中造成 ${300 + lv*40}% 傷害`, spCost: (lv) => 12+lv*2, dmgMulti: (lv) => 3.0 + lv*0.4, hits: 1, ignoreFlee: true },
+      { id: 'rg_snatch', name: '強奪', icon: '💰', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `掉寶率額外提升 ${lv*2}%`, passiveAttr: (lv) => ({ dropBonus: lv*2 }) },
+      { id: 'rg_tunnel', name: '潛遁', icon: '🥷', type: 'passive', maxLv: 5, reqJobLv: 5, desc: (lv) => `FLEE 增加 ${lv*5} 點，並提高暴擊率`, passiveAttr: (lv) => ({ flee: lv*5, crit: lv }) }
+    ],
+    monk: [
+      { id: 'mo_ashura', name: '阿修羅霸凰拳', icon: '👊', type: 'active', maxLv: 5, reqJobLv: 25, desc: (lv) => `消耗剩餘所有SP(至少100)，造成毀滅性真實傷害`, spCost: (lv) => 100, dmgMulti: (lv) => 10.0 + lv*5.0, hits: 1, ignoreDef: true },
+      { id: 'mo_dodge', name: '移花接木', icon: '🍃', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `FLEE 提升 ${lv*1.5}，受擊機率減免`, passiveAttr: (lv) => ({ flee: lv*2 }) },
+      { id: 'mo_invest', name: '浸透勁', icon: '💥', type: 'active', maxLv: 5, reqJobLv: 10, desc: (lv) => `消耗 20 SP，無視防禦造成 ${100+lv*50}% 傷害`, spCost: (lv) => 20, dmgMulti: (lv) => 1.0 + lv*0.5, hits: 1, ignoreDef: true }
+    ],
+    bard: [
+      { id: 'bd_vulcan', name: '奧義箭亂舞', icon: '🎸', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${25+lv*3} SP，對目標發出 9 段傷害`, spCost: (lv) => 25+lv*3, dmgMulti: (lv) => 0.5 + lv*0.1, hits: 9 },
+      { id: 'bd_bragi', name: '布萊奇之詩', icon: '🎵', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `技能冷卻與施法時間減少 ${lv*3}%`, passiveAttr: (lv) => ({ cdrPct: lv*3 }) },
+      { id: 'bd_music', name: '樂器修練', icon: '🎺', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `裝備樂器時，基礎攻擊力增加 ${lv*3}`, passiveAttr: (lv) => ({ skAtk: lv*3 }) }
+    ],
+    alchemist: [
+      { id: 'al_demo', name: '火煙瓶投擲', icon: '🧪', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 ${15+lv*2} SP，引發火災造成多段持續傷害`, spCost: (lv) => 15+lv*2, dmgMulti: (lv) => 1.0 + lv*0.2, hits: 5 },
+      { id: 'al_potion', name: '知識藥水', icon: '💊', type: 'passive', maxLv: 10, reqJobLv: 5, desc: (lv) => `藥水回復量提升 ${lv*5}%`, passiveAttr: (lv) => ({ potionEff: lv*5 }) },
+      { id: 'al_homun', name: '生命體呼喚', icon: '🐥', type: 'passive', maxLv: 5, reqJobLv: 15, desc: (lv) => `召喚生命體協助攻擊，普攻時有 ${lv*5}% 機率追加傷害`, passiveAttr: (lv) => ({ autoSpellChance: lv*5 }) }
+    ],
+
+    // 【三轉】
+    rune_knight: [
+      { id: 'rk_spear', name: '百矛穿刺', icon: '☄️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 60 SP，造成 ${800 + lv*120}% 爆發傷害`, spCost: (lv) => 60, dmgMulti: (lv) => 8.0 + lv*1.2, hits: 1 },
+      { id: 'rk_rune', name: '盧恩精熟', icon: '🪨', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `全屬性 +${lv*2}，解鎖盧恩石力量`, passiveAttr: (lv) => ({ str: lv*2, agi: lv*2, vit: lv*2, int: lv*2, dex: lv*2, luk: lv*2 }) },
+      { id: 'rk_breath', name: '龍之吐息', icon: '🔥', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `消耗 50 SP，根據目前 HP 與 SP 造成巨大火屬性傷害`, spCost: (lv) => 50, dmgMulti: (lv) => 10.0 + lv*1.0, hits: 1 }
+    ],
+    warlock: [
+      { id: 'wl_crimson', name: '碧血隕石', icon: '☄️', type: 'active', maxLv: 5, reqJobLv: 1, desc: (lv) => `消耗 80 SP，造成大範圍 ${1300 + lv*700}% 火屬魔法`, spCost: (lv) => 80, dmgMulti: (lv) => 13.0 + lv*7.0, hits: 1 },
+      { id: 'wl_chain', name: '連鎖電擊', icon: '⚡', type: 'active', maxLv: 5, reqJobLv: 10, desc: (lv) => `消耗 60 SP，造成多段連鎖風屬性傷害`, spCost: (lv) => 60, dmgMulti: (lv) => 5.0 + lv*1.0, hits: 5 },
+      { id: 'wl_reading', name: '讀取魔咒', icon: '📖', type: 'passive', maxLv: 5, reqJobLv: 5, desc: (lv) => `最大 SP 增加 ${lv*5}%，MATK 提升`, passiveAttr: (lv) => ({ maxSpPct: lv*5, matkBonusPct: lv*3 }) }
+    ],
+    guillotine_cross: [
+      { id: 'gx_cross', name: '十字斬', icon: '❌', type: 'active', maxLv: 5, reqJobLv: 1, desc: (lv) => `消耗 25 SP，造成 ${1200 + lv*300}% 物理傷害`, spCost: (lv) => 25, dmgMulti: (lv) => 12.0 + lv*3.0, hits: 2 },
+      { id: 'gx_rolling', name: '迴旋刃', icon: '🌪️', type: 'active', maxLv: 5, reqJobLv: 5, desc: (lv) => `消耗 30 SP，對周圍造成 ${300 + lv*100}% 傷害並累積次數`, spCost: (lv) => 30, dmgMulti: (lv) => 3.0 + lv*1.0, hits: 1 },
+      { id: 'gx_research', name: '新毒研究', icon: '🧪', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `攻擊時有 ${lv}% 機率賦予劇毒，毒屬性耐性增加`, passiveAttr: (lv) => ({ poisonChance: lv }) }
+    ],
+    arch_bishop: [
+      { id: 'ab_judex', name: '審判', icon: '⚔️', type: 'active', maxLv: 5, reqJobLv: 1, desc: (lv) => `消耗 40 SP，造成 ${300 + lv*70}% 聖屬魔法`, spCost: (lv) => 40, dmgMulti: (lv) => 3.0 + lv*0.7, hits: 3 },
+      { id: 'ab_highheal', name: '高階治癒術', icon: '✨', type: 'active', maxLv: 5, reqJobLv: 5, desc: (lv) => `消耗 70 SP，極大幅度恢復單體生命`, spCost: (lv) => 70, healPower: (lv) => 800 + lv*200 },
+      { id: 'ab_sacra', name: '聖典', icon: '📜', type: 'passive', maxLv: 5, reqJobLv: 10, desc: (lv) => `受到治癒術效果提升 ${lv*4}%`, passiveAttr: (lv) => ({ healRecvPct: lv*4 }) }
+    ],
+    ranger: [
+      { id: 'ra_storm', name: '箭風暴', icon: '🌪️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 40 SP，造成 ${1000 + lv*80}% 範圍傷害`, spCost: (lv) => 40, dmgMulti: (lv) => 10.0 + lv*0.8, hits: 1 },
+      { id: 'ra_aim', name: '瞄準標靶', icon: '🎯', type: 'active', maxLv: 10, reqJobLv: 10, desc: (lv) => `消耗 50 SP，對大型魔物造成極大傷害`, spCost: (lv) => 50, dmgMulti: (lv) => 5.0 + lv*1.0, hits: 1 }, // 簡化
+      { id: 'ra_warg', name: '狼突擊', icon: '🐺', type: 'passive', maxLv: 5, reqJobLv: 5, desc: (lv) => `普攻時機率召喚狼協同攻擊，傷害視LUK而定`, passiveAttr: (lv) => ({ autoBlitzChance: lv*2 }) }
+    ],
+    mechanic: [
+      { id: 'mc_cannon', name: '加農砲', icon: '💣', type: 'active', maxLv: 5, reqJobLv: 1, desc: (lv) => `消耗 50 SP，裝甲發射造成 ${700 + lv*300}% 傷害`, spCost: (lv) => 50, dmgMulti: (lv) => 7.0 + lv*3.0, hits: 1 },
+      { id: 'mc_axe', name: '斧頭迴旋風暴', icon: '🪓', type: 'active', maxLv: 5, reqJobLv: 5, desc: (lv) => `消耗 40 SP，裝備斧頭時對周圍造成 ${300 + lv*100}% 傷害`, spCost: (lv) => 40, dmgMulti: (lv) => 3.0 + lv*1.0, hits: 6 },
+      { id: 'mc_license', name: '魔導甲執照', icon: '🤖', type: 'passive', maxLv: 5, reqJobLv: 10, desc: (lv) => `裝備魔導甲時，攻擊力與防禦力大幅提升`, passiveAttr: (lv) => ({ skAtk: lv*10, def: lv*10 }) }
+    ],
+    royal_guard: [
+      { id: 'rg_ray', name: '創世之光', icon: '🌟', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 80 SP，造成極大聖屬性魔法傷害`, spCost: (lv) => 80, dmgMulti: (lv) => 8.0 + lv*2.0, hits: 1 },
+      { id: 'rg_vanish', name: '大地毀滅', icon: '💥', type: 'active', maxLv: 5, reqJobLv: 5, desc: (lv) => `消耗 60 SP，造成 ${500 + lv*100}% 物理傷害並降低敵人防禦`, spCost: (lv) => 60, dmgMulti: (lv) => 5.0 + lv*1.0, hits: 1 },
+      { id: 'rg_shield', name: '先鋒部隊', icon: '🛡️', type: 'passive', maxLv: 5, reqJobLv: 10, desc: (lv) => `最大 HP 增加 ${lv*5}%，並增加仇恨值`, passiveAttr: (lv) => ({ maxHpPct: lv*5 }) }
+    ],
+    sorcerer: [
+      { id: 'so_diamond', name: '鑽石星塵', icon: '❄️', type: 'active', maxLv: 5, reqJobLv: 1, desc: (lv) => `消耗 60 SP，造成範圍水屬性傷害並結冰`, spCost: (lv) => 60, dmgMulti: (lv) => 10.0 + lv*2.0, hits: 1 },
+      { id: 'so_earth', name: '大地墳場', icon: '⛰️', type: 'active', maxLv: 5, reqJobLv: 5, desc: (lv) => `消耗 65 SP，造成範圍地屬性傷害並降低防禦`, spCost: (lv) => 65, dmgMulti: (lv) => 10.0 + lv*2.0, hits: 1 },
+      { id: 'so_spirit', name: '精靈控制', icon: '🌌', type: 'passive', maxLv: 5, reqJobLv: 10, desc: (lv) => `增加召喚精靈時的各種素質加成`, passiveAttr: (lv) => ({ matkBonusPct: lv*2, spRegenMulti: 1.0+lv*0.1 }) }
+    ],
+    shadow_chaser: [
+      { id: 'sc_fatal', name: '致命威脅', icon: '🔪', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 40 SP，瞬間逼近造成 ${600 + lv*150}% 傷害`, spCost: (lv) => 40, dmgMulti: (lv) => 6.0 + lv*1.5, hits: 1 },
+      { id: 'sc_triangle', name: '三角射擊', icon: '🏹', type: 'active', maxLv: 10, reqJobLv: 5, desc: (lv) => `消耗 50 SP，射出三發箭矢共造成 ${300 + lv*100}% 傷害`, spCost: (lv) => 50, dmgMulti: (lv) => 3.0 + lv*1.0, hits: 3 },
+      { id: 'sc_shadow', name: '魅影形態', icon: '🎭', type: 'passive', maxLv: 5, reqJobLv: 10, desc: (lv) => `FLEE 增加 ${lv*10}，受魔法傷害降低`, passiveAttr: (lv) => ({ flee: lv*10, mdef: lv*5 }) }
+    ],
+    sura: [
+      { id: 'su_hell', name: '羅剎破凰擊', icon: '🔥', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗大量 HP/SP，HP 越低傷害越高`, spCost: (lv) => 100, dmgMulti: (lv) => 15.0 + lv*3.0, hits: 1, ignoreDef: true },
+      { id: 'su_tiger', name: '虎砲', icon: '🐯', type: 'active', maxLv: 10, reqJobLv: 5, desc: (lv) => `消耗 50 SP，根據消耗的 HP 造成巨大傷害`, spCost: (lv) => 50, dmgMulti: (lv) => 10.0 + lv*2.0, hits: 1 },
+      { id: 'su_zen', name: '潛龍昇天', icon: '🐉', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `MaxHP 增加 ${lv*2}%，MaxSP 增加 ${lv*2}%`, passiveAttr: (lv) => ({ maxHpPct: lv*2, maxSpPct: lv*2 }) }
+    ],
+    minstrel_wanderer: [
+      { id: 'mw_rain', name: '大暴雨', icon: '🌧️', type: 'active', maxLv: 5, reqJobLv: 1, desc: (lv) => `消耗 70 SP，降下箭雨造成 ${lv * 12} 段傷害`, spCost: (lv) => 70, dmgMulti: (lv) => 1.0, hits: (lv) => lv*12 },
+      { id: 'mw_voice', name: '絕望之歌', icon: '🎤', type: 'active', maxLv: 5, reqJobLv: 5, desc: (lv) => `消耗 80 SP，造成範圍魔法傷害並機率恐懼`, spCost: (lv) => 80, dmgMulti: (lv) => 8.0 + lv*2.0, hits: 1 },
+      { id: 'mw_lesson', name: '聲樂課程', icon: '📖', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `增加所有歌曲/舞蹈的持續時間與效果`, passiveAttr: (lv) => ({ maxSp: lv*30 }) }
+    ],
+    genetic: [
+      { id: 'ge_tornado', name: '手推車龍捲風', icon: '🌪️', type: 'active', maxLv: 5, reqJobLv: 1, desc: (lv) => `消耗 40 SP，造成 ${500 + lv*100}% 物理傷害`, spCost: (lv) => 40, dmgMulti: (lv) => 5.0 + lv*1.0, hits: 1 },
+      { id: 'ge_cannon', name: '手推車加農砲', icon: '💣', type: 'active', maxLv: 5, reqJobLv: 5, desc: (lv) => `消耗 50 SP，造成極大遠程物理傷害`, spCost: (lv) => 50, dmgMulti: (lv) => 8.0 + lv*1.5, hits: 1 },
+      { id: 'ge_sword', name: '劍術修練', icon: '🗡️', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `裝備單手劍或短劍時，攻擊力提升 ${lv*5}`, passiveAttr: (lv) => ({ skAtk: lv*5 }) }
+    ],
+
+    // 【四轉】
+    dragon_knight: [
+      { id: 'dk_madness', name: '狂暴斬擊', icon: '🐉', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 80 SP，發揮龍之力量造成 ${2000 + lv*500}% 物理爆發`, spCost: (lv) => 80, dmgMulti: (lv) => 20.0 + lv*5.0, hits: 1 },
+      { id: 'dk_hack', name: '橫掃斬', icon: '⚔️', type: 'active', maxLv: 10, reqJobLv: 5, desc: (lv) => `消耗 70 SP，範圍劈砍造成 ${1500 + lv*300}% 傷害`, spCost: (lv) => 70, dmgMulti: (lv) => 15.0 + lv*3.0, hits: 2 },
+      { id: 'dk_aura', name: '龍之光環', icon: '✨', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `全屬性超幅提升`, passiveAttr: (lv) => ({ atkPct: lv*2, str: lv*3 }) }
+    ],
+    imperial_guard: [
+      { id: 'ig_crossrain', name: '聖十字雨', icon: '🌧️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 70 SP，降下聖光造成 ${1500 + lv*300}% 混合傷害`, spCost: (lv) => 70, dmgMulti: (lv) => 15.0 + lv*3.0, hits: 5 },
+      { id: 'ig_judgment', name: '末日審判', icon: '⚖️', type: 'active', maxLv: 10, reqJobLv: 5, desc: (lv) => `消耗 100 SP，造成 ${2500 + lv*500}% 單體聖屬性制裁`, spCost: (lv) => 100, dmgMulti: (lv) => 25.0 + lv*5.0, hits: 1 },
+      { id: 'ig_shield', name: '神聖護盾', icon: '🛡️', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `受到傷害減少 ${lv*2}%，防禦力倍增`, passiveAttr: (lv) => ({ defPct: lv*3, mdefPct: lv*3 }) }
+    ],
+    arch_mage: [
+      { id: 'am_hurricane', name: '毀滅風暴', icon: '🌪️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 120 SP，極大範圍造成 ${3000 + lv*500}% 魔法傷害`, spCost: (lv) => 120, dmgMulti: (lv) => 30.0 + lv*5.0, hits: 1 },
+      { id: 'am_comet', name: '隕石連擊', icon: '☄️', type: 'active', maxLv: 10, reqJobLv: 5, desc: (lv) => `消耗 150 SP，召喚彗星造成多段極大傷害`, spCost: (lv) => 150, dmgMulti: (lv) => 20.0 + lv*3.0, hits: 5 },
+      { id: 'am_magic', name: '魔力極限', icon: '🔮', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `MATK 提升 ${lv*5}%，無視部分魔法防禦`, passiveAttr: (lv) => ({ matkBonusPct: lv*5, ignoreMdef: lv*3 }) }
+    ],
+    elemental_master: [
+      { id: 'em_domain', name: '元素領域', icon: '🔮', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 100 SP，持續造成對應屬性的毀滅魔法傷害`, spCost: (lv) => 100, dmgMulti: (lv) => 25.0 + lv*3.0, hits: 3 },
+      { id: 'em_spear', name: '元素爆破', icon: '💥', type: 'active', maxLv: 10, reqJobLv: 5, desc: (lv) => `消耗 90 SP，引爆元素造成 ${2800 + lv*400}% 傷害`, spCost: (lv) => 90, dmgMulti: (lv) => 28.0 + lv*4.0, hits: 1 },
+      { id: 'em_mastery', name: '精靈大師', icon: '🌌', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `元素魔法傷害提升 ${lv*3}%`, passiveAttr: (lv) => ({ elementDmgPct: lv*3 }) }
+    ],
+    shadow_cross: [
+      { id: 'sc_savage', name: '猛毒血刃', icon: '🩸', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 60 SP，暴擊時造成 ${1800 + lv*400}% 致命傷害`, spCost: (lv) => 60, dmgMulti: (lv) => 18.0 + lv*4.0, hits: 1 },
+      { id: 'sc_impact', name: '影舞衝擊', icon: '💥', type: 'active', maxLv: 10, reqJobLv: 5, desc: (lv) => `消耗 80 SP，範圍斬擊造成 ${2000 + lv*350}% 傷害`, spCost: (lv) => 80, dmgMulti: (lv) => 20.0 + lv*3.5, hits: 3 },
+      { id: 'sc_shadow', name: '無盡暗影', icon: '🌑', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `暴擊傷害提升 ${lv*10}%，無視體型`, passiveAttr: (lv) => ({ critDmgPct: lv*10 }) }
+    ],
+    abyss_chaser: [
+      { id: 'ac_dagger', name: '深淵短劍', icon: '🗡️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 50 SP，從陰影中造成 ${2200 + lv*300}% 物理傷害`, spCost: (lv) => 50, dmgMulti: (lv) => 22.0 + lv*3.0, hits: 1 },
+      { id: 'ac_abyss', name: '深淵爆發', icon: '🌌', type: 'active', maxLv: 10, reqJobLv: 5, desc: (lv) => `消耗 70 SP，範圍魔法傷害 ${1500 + lv*250}%`, spCost: (lv) => 70, dmgMulti: (lv) => 15.0 + lv*2.5, hits: 1 },
+      { id: 'ac_eyes', name: '深淵之眼', icon: '👁️', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `物理與魔法傷害皆提升 ${lv*3}%`, passiveAttr: (lv) => ({ atkPct: lv*3, matkBonusPct: lv*3 }) }
+    ],
+    cardinal: [
+      { id: 'ca_arbitrium', name: '仲裁聖光', icon: '⚖️', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 90 SP，對目標及其周圍造成巨大聖屬魔法傷害`, spCost: (lv) => 90, dmgMulti: (lv) => 20.0 + lv*4.0, hits: 1 },
+      { id: 'ca_heal', name: '神聖治癒', icon: '💖', type: 'active', maxLv: 10, reqJobLv: 5, desc: (lv) => `消耗 120 SP，全體究極恢復`, spCost: (lv) => 120, healPower: (lv) => 2000 + lv*500 },
+      { id: 'ca_faith', name: '絕對信仰', icon: '⛪', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `聖屬性魔法傷害提升 ${lv*5}%`, passiveAttr: (lv) => ({ holyDmgPct: lv*5 }) }
+    ],
+    inquisitor: [
+      { id: 'iq_oleum', name: '聖油洗禮', icon: '🏺', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 80 SP，引爆聖火造成多段物理傷害`, spCost: (lv) => 80, dmgMulti: (lv) => 5.0 + lv*2.0, hits: 5 },
+      { id: 'iq_judge', name: '終極審判', icon: '🔥', type: 'active', maxLv: 10, reqJobLv: 5, desc: (lv) => `消耗 150 SP，以阿修羅之勢造成 ${3000 + lv*500}% 真實傷害`, spCost: (lv) => 150, dmgMulti: (lv) => 30.0 + lv*5.0, hits: 1, ignoreDef: true },
+      { id: 'iq_body', name: '金剛不壞', icon: '🥋', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `受到傷害極大幅度降低`, passiveAttr: (lv) => ({ defPct: lv*5 }) }
+    ],
+    windhawk: [
+      { id: 'wh_gale', name: '狂野飛行', icon: '🦅', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 70 SP，與獵鷹合一造成 ${1500 + lv*350}% 遠程傷害`, spCost: (lv) => 70, dmgMulti: (lv) => 15.0 + lv*3.5, hits: 1 },
+      { id: 'wh_storm', name: '無限風暴', icon: '🌪️', type: 'active', maxLv: 10, reqJobLv: 5, desc: (lv) => `消耗 100 SP，連續射擊造成 10 段傷害`, spCost: (lv) => 100, dmgMulti: (lv) => 2.0 + lv*0.5, hits: 10 },
+      { id: 'wh_nature', name: '自然親和', icon: '🍃', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `遠程物理傷害提升 ${lv*4}%`, passiveAttr: (lv) => ({ rangeDmgPct: lv*4 }) }
+    ],
+    troubadour_trouvere: [
+      { id: 'tt_rose', name: '玫瑰花箭', icon: '🌹', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 60 SP，射出玫瑰造成範圍爆炸 ${1600 + lv*200}% 傷害`, spCost: (lv) => 60, dmgMulti: (lv) => 16.0 + lv*2.0, hits: 2 },
+      { id: 'tt_symphony', name: '毀滅交響曲', icon: '🎼', type: 'active', maxLv: 10, reqJobLv: 5, desc: (lv) => `消耗 90 SP，音波造成極大範圍 ${2500 + lv*300}% 魔法傷害`, spCost: (lv) => 90, dmgMulti: (lv) => 25.0 + lv*3.0, hits: 1 },
+      { id: 'tt_stage', name: '終極舞台', icon: '🎭', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `技能 SP 消耗減少 ${lv*2}%，效能提升`, passiveAttr: (lv) => ({ spCostReduction: lv*2 }) }
+    ],
+    meister: [
+      { id: 'ms_stomp', name: '戰斧踏伐', icon: '🪓', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 80 SP，巨斧重擊地面造成 ${2500 + lv*400}% 範圍傷害`, spCost: (lv) => 80, dmgMulti: (lv) => 25.0 + lv*4.0, hits: 1 },
+      { id: 'ms_spark', name: '火花衝擊', icon: '💥', type: 'active', maxLv: 10, reqJobLv: 5, desc: (lv) => `消耗 100 SP，魔導甲全開造成 ${3000 + lv*500}% 傷害`, spCost: (lv) => 100, dmgMulti: (lv) => 30.0 + lv*5.0, hits: 1 },
+      { id: 'ms_upgrade', name: '機甲升級', icon: '⚙️', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `提升所有機甲技能傷害 ${lv*3}%`, passiveAttr: (lv) => ({ mechDmgPct: lv*3 }) }
+    ],
+    biolo: [
+      { id: 'bi_creeper', name: '爆炸藤蔓', icon: '🌿', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `消耗 75 SP，召喚藤蔓引爆造成 ${2000 + lv*300}% 物理傷害`, spCost: (lv) => 75, dmgMulti: (lv) => 20.0 + lv*3.0, hits: 1 },
+      { id: 'bi_acid', name: '究極強酸', icon: '🧪', type: 'active', maxLv: 10, reqJobLv: 5, desc: (lv) => `消耗 120 SP，無視防禦造成 ${2500 + lv*400}% 混合傷害`, spCost: (lv) => 120, dmgMulti: (lv) => 25.0 + lv*4.0, hits: 1, ignoreDef: true },
+      { id: 'bi_gene', name: '基因突變', icon: '🧬', type: 'passive', maxLv: 10, reqJobLv: 10, desc: (lv) => `全屬性增加，生命體能力大幅強化`, passiveAttr: (lv) => ({ allStat: lv*2 }) }
     ]
   },
+
 
   // ==========================================
   // 6. RO 底層核心素質公式
