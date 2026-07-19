@@ -583,7 +583,7 @@ export const RO_DATABASE = {
         { id: 'ac_029', name: '刺客手銬', type: 'acc', reqLevel: 85, reqClass: ['thief'], attr: { agi: 2, str: 2, crit: 5 } },
         { id: 'ac_030', name: '弓箭手面甲', type: 'acc', reqLevel: 70, reqClass: ['archer'], attr: { dex: 3, hit: 20 } },
       ],
-    },
+    //////},
 
 // --- 消耗品 (Consumables) - 商城與一般道具 ---
   consumables: [
@@ -775,7 +775,7 @@ export const RO_DATABASE = {
   
       // 【四轉】 - 條件: 三轉 Base 200, Job 70
       dragon_knight: { name: '龍騎士', icon: '🐲', primaryStat: 'str', hpMulti: 5.0, spMulti: 1.5, atkMulti: 2.5, defMulti: 2.5, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
-      warlock: { name: '禁咒魔導士', icon: '☄️', primaryStat: 'int', hpMulti: 2.5, spMulti: 5.0, atkMulti: 4.0, defMulti: 1.5, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
+      arch_mage: { name: '禁咒魔導士', icon: '☄️', primaryStat: 'int', hpMulti: 2.5, spMulti: 5.0, atkMulti: 4.0, defMulti: 1.5, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
       shadow_cross: { name: '十字影武', icon: '💀', primaryStat: 'agi', hpMulti: 3.0, spMulti: 1.8, atkMulti: 3.5, defMulti: 1.8, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
       cardinal: { name: '樞機主教', icon: '⚖️', primaryStat: 'int', hpMulti: 3.0, spMulti: 4.0, atkMulti: 1.8, defMulti: 2.0, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
       windhawk: { name: '風鷹狩獵者', icon: '🌪️', primaryStat: 'dex', hpMulti: 2.8, spMulti: 2.0, atkMulti: 3.8, defMulti: 1.5, isJob2: true, maxJob: 60, reqBaseLv: 200, reqJobLv: 70, advClasses: [] },
@@ -951,7 +951,7 @@ export const RO_DATABASE = {
         { id: 'mo_combo2', name: '連環全身掌', icon: '🤜', type: 'active', maxLv: 5, reqJobLv: 15, desc: (lv) => `接在六合拳之後施放，造成 4 段傷害` },
         { id: 'mo_combo3', name: '猛龍誇強', icon: '🐉', type: 'active', maxLv: 5, reqJobLv: 20, desc: (lv) => `接在連環全身掌之後，造成巨大傷害並擊退` }
       ],
-      bard_dancer: [ 
+      bard: [ 
         { id: 'bd_vulcan', name: '奧義箭亂舞', icon: '🎸', type: 'active', maxLv: 10, reqJobLv: 1, desc: (lv) => `裝備樂器/鞭子，發出 9 段共 ${300+lv*100}% 物理傷害`, dmgMulti: (lv) => (3.0+lv*1.0)/9, hits: 9 },
         { id: 'bd_bragi', name: '布萊奇之詩', icon: '🎵', type: 'active', maxLv: 10, reqJobLv: 10, desc: (lv) => `全隊技能冷卻時間與詠唱減少 (受INT/DEX加成)` },
         { id: 'bd_apple', name: '伊登的蘋果', icon: '🍎', type: 'active', maxLv: 10, reqJobLv: 15, desc: (lv) => `全隊 MaxHP 提升 ${lv*2}% 並每秒大幅恢復生命` },
