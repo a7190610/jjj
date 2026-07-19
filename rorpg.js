@@ -583,7 +583,6 @@ export const RO_DATABASE = {
         { id: 'ac_029', name: '刺客手銬', type: 'acc', reqLevel: 85, reqClass: ['thief'], attr: { agi: 2, str: 2, crit: 5 } },
         { id: 'ac_030', name: '弓箭手面甲', type: 'acc', reqLevel: 70, reqClass: ['archer'], attr: { dex: 3, hit: 20 } },
       ],
-    //////},
 
 // --- 消耗品 (Consumables) - 商城與一般道具 ---
   consumables: [
