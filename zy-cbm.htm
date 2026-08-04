@@ -21,8 +21,8 @@
         
         /* 🌟 儲存格留白：因應字體放大，垂直高度加高，並微調左右間距以防擠壓換行 */
         th, td { 
-            padding: 16px 2px !important; 
-            line-height: 1.4;
+             padding: 16px 2px !important; 
+             line-height: 1.4;
             color: #000000 !important;
         }
     </style>
@@ -31,7 +31,7 @@
     <div id="root" class="h-full w-full"></div>
 
     <script type="text/babel">
-        const { useState, useMemo, useEffect } = React;
+        const { useState, useMemo, useEffect, useRef } = React;
 
         const USER_FIREBASE_CONFIG = {
             apiKey: "AIzaSyCa0s6Xuxa9Pm3VD7I_WJG_zPjfloZv8D8",
@@ -73,13 +73,18 @@
             const [isLoadingData, setIsLoadingData] = useState(true);
             const [syncStatus, setSyncStatus] = useState('☁️ 連線中...');
 
-            // 記憶選擇的年月
+            // ⚠️ 請在這裡填入你的 Google Apps Script Web App URL
+            const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyF_em3qc5rMwC3xpYLwR4Ev-naWhyFNiouw2VfkhPjGYfz8IPH87SLXzj00bI8EJhq/exec"; 
+
+            const prevRowsRef = useRef(null);
+            const isInitialLoadRef = useRef(true);
+
             useEffect(() => {
                 localStorage.setItem('zy_view_year', year.toString());
                 localStorage.setItem('zy_view_month', month.toString());
             }, [year, month]);
 
-            // 初始化 Firebase 並自動登入
+            // 初始化 Firebase
             useEffect(() => {
                 let isMounted = true;
                 const initFirebase = async () => {
@@ -87,7 +92,8 @@
                         const loadModule = (url) => new Function(`return import("${url}")`)();
                         const { initializeApp } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js');
                         const { getAuth, signInWithEmailAndPassword, onAuthStateChanged } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
-                        const { getFirestore, doc, getDoc } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+                        // 🌟 這裡新增載入 onSnapshot
+                        const { getFirestore, doc, onSnapshot } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
                         
                         const app = initializeApp(USER_FIREBASE_CONFIG);
                         const auth = getAuth(app);
@@ -95,16 +101,16 @@
                         
                         window.db = db;
                         window.doc = doc;
-                        window.getDoc = getDoc;
+                        window.onSnapshot = onSnapshot;
 
                         try {
                             await signInWithEmailAndPassword(auth, 'joe623@zy.com', 'joe0623');
                         } catch (authErr) {
                             if (isMounted) { 
-                                setFirebaseReady(true); 
-                                setIsLoadingData(false); 
-                                setSyncStatus('⚠️ 權限驗證失敗'); 
-                            }
+                                 setFirebaseReady(true);
+                                 setIsLoadingData(false);
+                                 setSyncStatus('⚠️ 權限驗證失敗'); 
+                             }
                             return;
                         }
 
@@ -125,32 +131,119 @@
                 return () => { isMounted = false; };
             }, []);
 
-            // 讀取當月資料
+            // 組合並發送 LINE 訊息的函數
+            const sendLineNotification = async (changedRow, allProcessedRows) => {
+                if (!GAS_WEBHOOK_URL) return;
+
+                const dateObj = new Date(year, month - 1, changedRow.date);
+                const dayOfWeek = dateObj.getDay();
+                const weekStr = ['日','一','二','三','四','五','六'][dayOfWeek];
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(changedRow.date).padStart(2, '0')}`;
+
+                // 找本週起點與終點 (星期一 ~ 星期日)
+                let currentWeekStart = changedRow.date;
+                while (currentWeekStart > 1 && new Date(year, month - 1, currentWeekStart).getDay() !== 1) {
+                    currentWeekStart--;
+                }
+                let currentWeekEnd = changedRow.date;
+                while (currentWeekEnd < allProcessedRows.length && new Date(year, month - 1, currentWeekEnd).getDay() !== 0) {
+                    currentWeekEnd++;
+                }
+
+                // 找上週起點與終點
+                let prevWeekStart = -1, prevWeekEnd = -1;
+                if (currentWeekStart > 1) {
+                    prevWeekEnd = currentWeekStart - 1;
+                    prevWeekStart = prevWeekEnd;
+                    while (prevWeekStart > 1 && new Date(year, month - 1, prevWeekStart).getDay() !== 1) {
+                        prevWeekStart--;
+                    }
+                }
+
+                let weekTotal = 0, prevWeekTotal = 0, monthTotal = 0;
+                allProcessedRows.forEach(r => {
+                    monthTotal += r.dailyTotal;
+                    if (r.date >= currentWeekStart && r.date <= currentWeekEnd) weekTotal += r.dailyTotal;
+                    if (prevWeekStart !== -1 && r.date >= prevWeekStart && r.date <= prevWeekEnd) prevWeekTotal += r.dailyTotal;
+                });
+
+                const formatNum = (num) => num > 0 ? Number(num.toFixed(2)).toLocaleString() : '-';
+                const formatInput = (val) => (val && val !== '') ? val : '-';
+
+                // 🌟 嚴格遵守無圖示純文字格式
+                let msg = `生產日報表更新\n`;
+                msg += `日期：${dateStr} (${weekStr})\n\n`;
+                msg += `第一組：${formatInput(changedRow.g1)}\n`;
+                msg += `第二組：${formatInput(changedRow.g2)}\n`;
+                msg += `第三組：${formatInput(changedRow.g3)}\n`;
+                msg += `本日小計：${formatInput(changedRow.dailyTotal)}\n`;
+                msg += `【本週累計】：${formatNum(weekTotal)}\n`;
+                msg += `【上週總計】：${formatNum(prevWeekTotal)}\n`;
+                msg += `【本月總計】：${formatNum(monthTotal)}`;
+
+                try {
+                    await fetch(GAS_WEBHOOK_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ message: msg })
+                    });
+                } catch (e) {
+                    console.error("發送通知失敗", e);
+                }
+            };
+
+            // 🌟 讀取並即時監聽當月資料 (改用 onSnapshot)
             useEffect(() => {
                 if (!user || !firebaseReady || !window.db) return;
                 
                 setIsLoadingData(true);
                 setSyncStatus('☁️ 載入中...');
+                isInitialLoadRef.current = true; // 切換月份時重置
 
                 const docId = `report_${year}_${month}`;
                 const docPath = window.doc(window.db, 'users', user.uid, 'app_data', docId);
 
-                window.getDoc(docPath).then(snap => {
+                const unsubscribe = window.onSnapshot(docPath, (snap) => {
+                    let newDataRows = generateEmptyRows(year, month);
                     if (snap.exists()) {
                         const data = snap.data();
-                        setReportRows(data.reportRows || generateEmptyRows(year, month));
-                    } else {
-                        setReportRows(generateEmptyRows(year, month));
+                        if(data.reportRows) newDataRows = data.reportRows;
                     }
+
+                    // 預先計算好每日總和方便比對
+                    const getNum = (val) => parseFloat(val) || 0;
+                    const processedNewRows = newDataRows.map(row => ({
+                        ...row,
+                        dailyTotal: getNum(row.g1) + getNum(row.g2) + getNum(row.g3)
+                    }));
+
+                    // 如果不是第一次載入，代表是後台有新資料輸入，進行比對
+                    if (!isInitialLoadRef.current && prevRowsRef.current) {
+                        const changedRow = processedNewRows.find((r, idx) => {
+                            const oldR = prevRowsRef.current[idx];
+                            // 只要當天任何一組的數字與前次不同，就視為被修改
+                            return r.g1 !== oldR.g1 || r.g2 !== oldR.g2 || r.g3 !== oldR.g3;
+                        });
+
+                        // 若有修改且小計大於 0 才發送通知
+                        if (changedRow && changedRow.dailyTotal > 0) {
+                            sendLineNotification(changedRow, processedNewRows);
+                        }
+                    }
+
+                    prevRowsRef.current = processedNewRows;
+                    isInitialLoadRef.current = false;
+
+                    setReportRows(newDataRows);
                     setIsLoadingData(false);
-                    setSyncStatus('✅ 資料已更新');
-                }).catch(e => {
+                    setSyncStatus('✅ 資料已更新 (即時監控中)');
+                }, (error) => {
                     setIsLoadingData(false);
                     setSyncStatus('⚠️ 讀取失敗');
                 });
+
+                return () => unsubscribe(); // 離開時取消監聽
             }, [user, firebaseReady, year, month]);
 
-            // 計算相關工具函數
             const getDayInfo = (dateNum) => {
                 const dateObj = new Date(year, month - 1, dateNum);
                 const dayOfWeek = dateObj.getDay();
@@ -197,7 +290,6 @@
             return (
                 <div className="flex flex-col h-full bg-slate-200 w-full max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
                     
-                    {/* 頂部導覽列：年份與月份下拉式選單各佔一半，移除其餘標題與圖示 */}
                     <div className="bg-slate-800 p-3 shadow-md z-20 flex-shrink-0 flex gap-3 w-full">
                         <div className="flex-1">
                             <select value={year} onChange={(e) => setYear(parseInt(e.target.value))} className="w-full text-center bg-slate-700 text-white border-2 border-slate-600 rounded-lg py-3 text-xl font-black outline-none">
@@ -212,14 +304,12 @@
                         </div>
                     </div>
 
-                    {/* 狀態列 */}
-                    {syncStatus !== '✅ 資料已更新' && (
+                    {syncStatus !== '✅ 資料已更新 (即時監控中)' && (
                         <div className={`text-sm py-2 text-center font-bold shadow-inner ${syncStatus.includes('⚠️') ? 'bg-red-100 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
                             {syncStatus}
                         </div>
                     )}
 
-                    {/* 🌟 報表表格區域：修改為 w-full 滿版呈現 */}
                     <div className="flex-1 overflow-auto py-2 px-0 no-scrollbar bg-slate-200 flex justify-center">
                         {isLoadingData ? (
                             <div className="flex flex-col items-center justify-center bg-transparent w-full h-48">
@@ -230,9 +320,7 @@
                             <div className="w-full bg-white p-1 shadow-lg border-b border-black h-fit">
                                 <table className="w-full border-collapse table-fixed select-none">
                                     <thead className="bg-[#E6E6E6] text-black">
-                                        {/* 🌟 表頭字體放大到 text-base sm:text-lg */}
                                         <tr className="font-extrabold text-base sm:text-lg">
-                                            {/* 🌟 欄位寬度分配 */}
                                             <th className="w-[18%] py-3.5 align-middle border-r border-black">日期</th>
                                             <th className="w-[20%] py-3.5 align-middle border-r border-black">第一組</th>
                                             <th className="w-[20%] py-3.5 align-middle border-r border-black">第二組</th>
@@ -245,7 +333,6 @@
                                             if (r.type === 'week_total') {
                                                 return (
                                                     <tr key={r.key} className="bg-[#F2F2F2] font-black">
-                                                        {/* 🌟 小計行字體放大到 text-sm sm:text-base */}
                                                         <td className="text-center bg-[#D9D9D9] py-3.5 align-middle text-sm sm:text-base border-r border-black font-extrabold">{r.label}</td>
                                                         <td className="border-r border-black"></td>
                                                         <td className="border-r border-black"></td>
@@ -260,7 +347,6 @@
                                             if (r.type === 'month_total') {
                                                 return (
                                                     <tr key={r.key} className="bg-[#E6E6E6] font-black border-t-2 border-double border-black">
-                                                        {/* 🌟 當月總計字體放大到 text-sm sm:text-base / 數據更清晰 */}
                                                         <td className="text-center bg-[#D9D9D9] py-4 align-middle border-r border-black font-extrabold tracking-wider text-sm sm:text-base">{r.label}</td>
                                                         <td className="text-center align-middle font-mono font-black text-black border-r border-black py-4 text-sm sm:text-base">{r.g1 > 0 ? Number(r.g1.toFixed(2)).toLocaleString() : '-'}</td>
                                                         <td className="text-center align-middle font-mono font-black text-black border-r border-black py-4 text-xs sm:text-sm">{r.g2 > 0 ? Number(r.g2.toFixed(2)).toLocaleString() : '-'}</td>
@@ -275,7 +361,6 @@
                                             const dayInfo = getDayInfo(r.date);
                                             return (
                                             <tr key={`day-${r.date}`} className="bg-white hover:bg-slate-50 transition-colors">
-                                                {/* 🌟 每日日期與數據字體放大到 text-sm sm:text-base，滿足大字體需求 */}
                                                 <td className={`text-center font-extrabold bg-[#F2F2F2] py-4 align-middle border-r border-black text-sm sm:text-base ${dayInfo.isHoliday ? 'text-red-600' : 'text-black'}`}>
                                                     {dayInfo.label}
                                                 </td>
