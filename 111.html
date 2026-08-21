@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>兆級倖存者</title>
+    <title>兆級倖存者：效能極限版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #1a202c; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
@@ -15,45 +15,15 @@
             0% { transform: translateY(0) scale(1); opacity: 1; }
             100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
         }
-        .dmg-text {
-            position: absolute;
-            color: #ff3333;
-            font-weight: bold;
-            font-size: 1.2rem;
-            text-shadow: 1px 1px 2px black, -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black;
-            animation: floatUp 0.8s ease-out forwards;
-            pointer-events: none;
-            z-index: 10;
-        }
-        .crit-text { 
-            position: absolute;
-            color: #ffcc00; 
-            font-size: 1.5rem; 
-            font-weight: bold;
-            text-shadow: 1px 1px 2px black, -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black;
-            animation: floatUp 0.8s ease-out forwards;
-            pointer-events: none;
-            z-index: 11;
-        }
         .heal-text { 
-            position: absolute;
-            color: #33ff33; 
-            font-weight: bold;
-            font-size: 1.2rem;
+            position: absolute; color: #33ff33; font-weight: bold; font-size: 1.2rem;
             text-shadow: 1px 1px 2px black, -1px -1px 2px black;
-            animation: floatUp 1s ease-out forwards; 
-            pointer-events: none;
-            z-index: 10;
+            animation: floatUp 1s ease-out forwards; pointer-events: none; z-index: 10;
         }
         .player-dmg-text { 
-            position: absolute;
-            color: #ff0000;
-            font-weight: 900;
-            font-size: 1.8rem;
+            position: absolute; color: #ff0000; font-weight: 900; font-size: 1.8rem;
             text-shadow: 0 0 10px white, 2px 2px 0 black;
-            animation: floatUp 0.8s ease-out forwards;
-            pointer-events: none;
-            z-index: 20;
+            animation: floatUp 0.8s ease-out forwards; pointer-events: none; z-index: 20;
         }
         
         .modal-bg { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); }
@@ -101,7 +71,7 @@
                     <div class="text-red-400">生命值: <span id="uiHp">50</span> / <span id="uiMaxHp">50</span></div>
                     <div class="text-yellow-400">擊殺數: <span id="uiKills">0</span></div>
                     <div class="text-orange-400">基礎攻擊力: <span id="uiDamage">1</span></div>
-                    <div class="text-gray-400">時間: <span id="uiTime">00:00</span></div>
+                    <div class="text-gray-400 font-mono text-lg">時間: <span id="uiTime">00:00</span></div>
                     <div class="text-purple-400">難度: <span id="uiDiffText">普通 (x5)</span></div>
                 </div>
             </div>
@@ -118,10 +88,10 @@
     <!-- Start Screen -->
     <div id="startScreen" class="absolute inset-0 modal-bg flex flex-col items-center justify-center z-50 pointer-events-auto">
         <h1 class="text-6xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-yellow-500 tracking-wider" style="-webkit-text-stroke: 1px white;">兆級倖存者</h1>
-        <p class="text-xl text-gray-300 mb-8">擊殺BOSS奪取世界難度控制權！(終極版)</p>
+        <p class="text-xl text-gray-300 mb-8">擊殺 1兆隻怪物，挑戰裝置的極限！</p>
         
         <button id="startBtn" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-4 px-12 rounded-full text-2xl shadow-[0_0_20px_rgba(79,70,229,0.5)] transition transform hover:scale-105">
-            開始生存
+            開始極限生存
         </button>
     </div>
 
@@ -163,13 +133,11 @@
         <h2 class="text-4xl font-bold text-white mb-6 tracking-widest">遊戲暫停</h2>
         
         <div class="flex flex-col md:flex-row gap-6 w-full max-w-6xl px-4">
-            <!-- Weapon Effects Column -->
             <div class="bg-gray-800 p-6 rounded-lg border border-gray-600 flex-1">
                 <h3 class="text-lg font-bold mb-4 text-gray-200 text-center">已裝備武器 & 特效</h3>
                 <div id="pauseWeaponsList" class="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-2"></div>
             </div>
             
-            <!-- Skills Column -->
             <div class="bg-gray-800 p-6 rounded-lg border border-gray-600 flex-1">
                 <h3 class="text-lg font-bold mb-4 text-gray-200 text-center">已獲得技能</h3>
                 <div id="acquiredSkillsList" class="flex flex-col gap-2 max-h-[60vh] overflow-y-auto pr-2"></div>
@@ -186,10 +154,11 @@
         <h2 class="text-6xl font-bold text-red-500 mb-4">你已陣亡</h2>
         <div class="text-2xl text-white mb-2">最終等級: <span id="goLevel" class="text-blue-400 font-bold"></span></div>
         <div class="text-2xl text-white mb-8">總擊殺數: <span id="goKills" class="text-yellow-400 font-bold"></span></div>
-        <button id="restartBtn" class="bg-white text-black hover:bg-gray-200 font-bold py-3 px-8 rounded-full text-xl transition">重新挑戰</button>
+        <button id="restartBtn" class="bg-white text-black hover:bg-gray-200 font-bold py-3 px-8 rounded-full text-xl transition">重新極限挑戰</button>
     </div>
 
     <script>
+        // --- Utility ---
         function formatNum(num) {
             if (!isFinite(num)) return "∞"; 
             if (num >= 1e15) return num.toExponential(2); 
@@ -197,6 +166,12 @@
             if (num >= 1e8) return (num / 1e8).toFixed(2) + '億';
             if (num >= 1e4) return (num / 1e4).toFixed(2) + '萬';
             return Math.floor(Math.max(0, num)).toString();
+        }
+
+        // Fast integer coordinate check
+        function inView(x, y, padding) {
+            return (x > camera.x - padding && x < camera.x + width/ZOOM + padding &&
+                    y > camera.y - padding && y < camera.y + height/ZOOM + padding);
         }
 
         const canvas = document.getElementById('gameCanvas');
@@ -208,23 +183,24 @@
         const ZOOM = 0.65; 
 
         window.addEventListener('resize', () => {
-            width = window.innerWidth;
-            height = window.innerHeight;
-            canvas.width = width;
-            canvas.height = height;
+            width = window.innerWidth; height = window.innerHeight;
+            canvas.width = width; canvas.height = height;
         });
 
+        // --- Game State ---
         let gameState = 'start'; 
         let lastTime = 0;
         let gameTime = 0; 
-        let difficulty = 5; // Default normal
+        let difficulty = 5; 
         let levelUpQueue = 0;
         let gameLoopId = null; 
         let bossActive = false;
         let nextBossTime = 300; 
+        let bossPhase2Triggered = false;
+        let currentBoss = null;
 
         const camera = { x: 0, y: 0 };
-        const mapSize = { width: 6000, height: 6000 };
+        const mapSize = { width: 8000, height: 8000 };
 
         const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
         const joystick = { active: false, startX: 0, startY: 0, deltaX: 0, deltaY: 0 };
@@ -275,12 +251,15 @@
         window.addEventListener('touchcancel', () => { handleJoystickEnd(); });
         window.addEventListener('blur', () => { if (gameState === 'playing') openPauseMenu(); });
 
+        // --- Data ---
         const weaponsDb = [
             { id: 'pistol', name: '手槍', type: 'single', color: '#a0aec0', baseDmg: 1, cooldown: 30, speed: 12, pierce: 1, desc: '單發高頻射擊' },
             { id: 'bow', name: '長弓', type: 'pierce', color: '#d69e2e', baseDmg: 1, cooldown: 50, speed: 18, pierce: 3, desc: '基礎高穿透' },
             { id: 'boomerang', name: '迴力鏢', type: 'return', color: '#38b2ac', baseDmg: 1, cooldown: 70, speed: 10, pierce: 99, desc: '飛出後折返' },
             { id: 'shotgun', name: '散彈槍', type: 'single', color: '#e53e3e', baseDmg: 1, cooldown: 60, speed: 18, pierce: 0, desc: '近距離大範圍強擊退散射' },
-            { id: 'wand', name: '魔法杖', type: 'homing', color: '#9f7aea', baseDmg: 1, cooldown: 55, speed: 8, pierce: 0, desc: '發射自動追蹤的魔法球' }
+            { id: 'wand', name: '魔法杖', type: 'homing', color: '#9f7aea', baseDmg: 1, cooldown: 55, speed: 8, pierce: 0, desc: '發射自動追蹤的魔法球' },
+            { id: 'shuriken', name: '飛鏢', type: 'ricochet', color: '#718096', baseDmg: 1, cooldown: 45, speed: 14, pierce: 0, desc: '穿透並在敵人中彈跳' },
+            { id: 'missile', name: '追蹤導彈', type: 'explosive', color: '#ed8936', baseDmg: 1, cooldown: 90, speed: 6, pierce: 0, desc: '速度慢但必定追蹤並爆炸' }
         ];
 
         function getWeaponEffectsDesc(wepId, lv) {
@@ -292,6 +271,7 @@
                 if(lv>=15) desc += "<br>Lv15: 破片散射";
                 if(lv>=20) desc += "<br>Lv20: 五連發格林機槍";
                 if(lv>=25) desc += "<br>Lv25: 核爆彈(極大範圍)";
+                if(lv>=50) desc += "<br>Lv50: 毀滅彈幕";
             } else if (wepId === 'bow') {
                 if(lv>=3) desc += "<br>Lv3: 命中向後分裂";
                 if(lv>=5) desc += "<br>Lv5: 無限穿透";
@@ -299,19 +279,22 @@
                 if(lv>=15) desc += "<br>Lv15: 命中降下天雷箭雨";
                 if(lv>=20) desc += "<br>Lv20: 幻影分身箭(飛行中增殖)";
                 if(lv>=25) desc += "<br>Lv25: 審判雷擊(延遲天雷)";
+                if(lv>=50) desc += "<br>Lv50: 萬箭齊發";
             } else if (wepId === 'boomerang') {
                 if(lv>=3) desc += "<br>Lv3: 雙向迴旋";
                 if(lv>=10) desc += "<br>Lv10: 微型引力(吸引怪物)";
                 if(lv>=15) desc += "<br>Lv15: 頂點滯空絞殺";
                 if(lv>=20) desc += "<br>Lv20: 十字飛刃(四向齊發)";
                 if(lv>=25) desc += "<br>Lv25: 奇異點(秒殺殘血)";
+                if(lv>=50) desc += "<br>Lv50: 風暴之眼";
             } else if (wepId === 'shotgun') {
                 if(lv>=3) desc += "<br>Lv3: 彈片增加";
                 if(lv>=5) desc += "<br>Lv5: 擊退力大幅提升";
                 if(lv>=10) desc += "<br>Lv10: 獲得穿透力";
                 if(lv>=15) desc += "<br>Lv15: 爆破霰彈(命中引爆)";
                 if(lv>=20) desc += "<br>Lv20: 射速倍增";
-                if(lv>=25) desc += "<br>Lv25: 毀滅衝擊波(無限穿透/巨型)";
+                if(lv>=25) desc += "<br>Lv25: 毀滅衝擊波(巨型)";
+                if(lv>=50) desc += "<br>Lv50: 清道夫(全螢幕擊退)";
             } else if (wepId === 'wand') {
                 if(lv>=3) desc += "<br>Lv3: 魔法球分裂(+2)";
                 if(lv>=5) desc += "<br>Lv5: 飛行加速";
@@ -319,6 +302,23 @@
                 if(lv>=15) desc += "<br>Lv15: 命中二次分裂";
                 if(lv>=20) desc += "<br>Lv20: 觸發隕石打擊";
                 if(lv>=25) desc += "<br>Lv25: 命中觸發黑洞";
+                if(lv>=50) desc += "<br>Lv50: 魔法洪流";
+            } else if (wepId === 'shuriken') {
+                if(lv>=3) desc += "<br>Lv3: 彈跳次數增加";
+                if(lv>=5) desc += "<br>Lv5: 附帶毒素";
+                if(lv>=10) desc += "<br>Lv10: 殘影連擊(機率丟三把)";
+                if(lv>=15) desc += "<br>Lv15: 體積增大";
+                if(lv>=20) desc += "<br>Lv20: 致命暴擊率提升";
+                if(lv>=25) desc += "<br>Lv25: 迴旋切割(命中停留)";
+                if(lv>=50) desc += "<br>Lv50: 八岐大蛇(八向發射無限穿透)";
+            } else if (wepId === 'missile') {
+                if(lv>=3) desc += "<br>Lv3: 爆炸範圍增大";
+                if(lv>=5) desc += "<br>Lv5: 速度提升";
+                if(lv>=10) desc += "<br>Lv10: 子母彈(命中分裂3顆)";
+                if(lv>=15) desc += "<br>Lv15: 極限追蹤";
+                if(lv>=20) desc += "<br>Lv20: 彈頭數量+1";
+                if(lv>=25) desc += "<br>Lv25: 燃燒彈頭(留下火海)";
+                if(lv>=50) desc += "<br>Lv50: 天基動能打擊(觸發十字光束)";
             }
             return desc === "" ? "尚未解鎖特殊效果" : desc;
         }
@@ -334,41 +334,39 @@
             { id: 'pierce_up', name: '穿透強化', desc: '所有武器穿透力增加', maxLv: 10, getEffect: (lv)=>`穿透次數 +${lv*2}` },
             { id: 'cooldown', name: '攻速強化', desc: '減少武器基礎冷卻時間', maxLv: 10, getEffect: (lv)=>`冷卻減少 ${lv*8}%` },
             { id: 'bullet_speed', name: '音速飛行', desc: '增加投射物飛行速度', maxLv: 10, getEffect: (lv)=>`飛行速度 +${lv*20}%` },
-            { id: 'bullet_size', name: '巨大化', desc: '發射物體積變大，更容易命中', maxLv: 10, getEffect: (lv)=>`體積 +${lv*40}%` },
-            { id: 'crit_rate', name: '致命一擊', desc: '增加暴擊機率', maxLv: 10, getEffect: (lv)=>`暴擊率 +${lv*10}%` },
-            { id: 'crit_dmg', name: '暴傷強化', desc: '增加暴擊時的傷害倍率', maxLv: 10, getEffect: (lv)=>`暴擊傷害 +${lv*40}%` },
+            { id: 'bullet_size', name: '巨大化', desc: '發射物體積變大', maxLv: 10, getEffect: (lv)=>`體積 +${lv*40}%` },
             { id: 'knockback', name: '衝擊波', desc: '大幅增加發射物擊退力', maxLv: 10, getEffect: (lv)=>`擊退力 +${lv*100}%` },
-            { id: 'fire_ench', name: '附魔:烈焰', desc: '命中附加燃燒，每2秒造成傷害', maxLv: 10, getEffect: (lv)=>`燃燒傷害(攻的 ${lv*2}%)` },
-            { id: 'poison_ench', name: '附魔:劇毒', desc: '命中附加中毒，每2秒50%機率爆發', maxLv: 10, getEffect: (lv)=>`毒發傷害(攻的 ${lv*2}%)` },
+            { id: 'fire_ench', name: '附魔:烈焰', desc: '命中附加燃燒', maxLv: 10, getEffect: (lv)=>`燃燒傷害(攻的 ${lv*2}%)` },
+            { id: 'poison_ench', name: '附魔:劇毒', desc: '命中附加中毒', maxLv: 10, getEffect: (lv)=>`毒發傷害(攻的 ${lv*2}%)` },
             { id: 'ice_ench', name: '附魔:寒霜', desc: '命中使敵人大幅減速', maxLv: 10, getEffect: (lv)=>`緩速持續 ${lv*1} 秒` },
-            { id: 'wood_ench', name: '附魔:森之靈', desc: '額外增加暴擊率，且暴擊傷害再提升', maxLv: 10, getEffect: (lv)=>`暴率+${lv*2}%, 暴傷+40%` },
+            { id: 'wood_ench', name: '附魔:森之靈', desc: '賦予專屬暴擊', maxLv: 10, getEffect: (lv)=>`暴率+${lv*2}%, 暴傷+40%` },
             { id: 'lightning_ench', name: '附魔:雷電', desc: '命中產生連鎖閃電', maxLv: 10, getEffect: (lv)=>`連鎖次數 ${lv*4}` },
-            { id: 'execution', name: '死神鐮刀', desc: '攻擊有機率秒殺血量低於10%的怪物', maxLv: 10, getEffect: (lv)=>`處決機率 ${lv*4}%` },
-            { id: 'fire_orb', name: '火之寶珠', desc: '雙火球環繞(範圍隨等級擴大)', maxLv: 10, getEffect: (lv)=>`半徑+${lv*20}, 傷害+${lv*20}%` },
-            { id: 'poison_orb', name: '毒之寶珠', desc: '雙毒球環繞(範圍隨等級擴大)', maxLv: 10, getEffect: (lv)=>`半徑+${lv*20}, 傷害+${lv*20}%` },
-            { id: 'ice_orb', name: '冰之寶珠', desc: '雙冰球環繞(範圍隨等級擴大)', maxLv: 10, getEffect: (lv)=>`半徑+${lv*20}, 緩速加強` },
-            { id: 'wood_orb', name: '木之寶珠', desc: '雙木球環繞(範圍隨等級擴大)', maxLv: 10, getEffect: (lv)=>`半徑+${lv*20}, 傷害+${lv*20}%` },
-            { id: 'lightning_orb', name: '電之寶珠', desc: '雙電球環繞(範圍隨等級擴大)', maxLv: 10, getEffect: (lv)=>`半徑+${lv*20}, 傷害+${lv*20}%` },
-            { id: 'meteor', name: '隕石召喚', desc: '定時砸下毀滅隕石(範圍隨等級增加)', maxLv: 10, getEffect: (lv)=>`數量 ${Math.ceil(lv/2)}, 範圍 +${lv*20}` },
-            { id: 'laser', name: '高能射線', desc: '定時發射貫穿雷射(雷射隨等級變粗)', maxLv: 10, getEffect: (lv)=>`雷射寬度 +${lv*30}` },
-            { id: 'frost_nova', name: '冰霜新星', desc: '定時爆發冰環(冷卻隨等級極大減少)', maxLv: 10, getEffect: (lv)=>`冷卻時間 ${Math.max(3, 15 - lv)}秒` },
-            { id: 'black_hole', name: '黑洞發生器', desc: '生成黑洞吸附敵人(範圍引力隨等級增加)', maxLv: 10, getEffect: (lv)=>`黑洞範圍 +${lv*40}, 引力強化` },
-            { id: 'death_bloom', name: '死亡綻放', desc: '擊殺敵人時，向八方射出飛刀', maxLv: 10, getEffect: (lv)=>`觸發機率 ${lv*10}%` },
+            { id: 'execution', name: '死神鐮刀', desc: '有機率秒殺血量低於10%怪物', maxLv: 10, getEffect: (lv)=>`處決機率 ${lv*4}%` },
+            { id: 'fire_orb', name: '火之寶珠', desc: '雙火球環繞', maxLv: 10, getEffect: (lv)=>`半徑+${lv*20}` },
+            { id: 'poison_orb', name: '毒之寶珠', desc: '雙毒球環繞', maxLv: 10, getEffect: (lv)=>`半徑+${lv*20}` },
+            { id: 'ice_orb', name: '冰之寶珠', desc: '雙冰球環繞', maxLv: 10, getEffect: (lv)=>`半徑+${lv*20}` },
+            { id: 'wood_orb', name: '木之寶珠', desc: '雙木球環繞', maxLv: 10, getEffect: (lv)=>`半徑+${lv*20}` },
+            { id: 'lightning_orb', name: '電之寶珠', desc: '雙電球環繞', maxLv: 10, getEffect: (lv)=>`半徑+${lv*20}` },
+            { id: 'meteor', name: '隕石召喚', desc: '定時砸下毀滅隕石', maxLv: 10, getEffect: (lv)=>`數量 ${Math.ceil(lv/2)}, 範圍 +${lv*20}` },
+            { id: 'laser', name: '高能射線', desc: '定時發射貫穿雷射', maxLv: 10, getEffect: (lv)=>`雷射寬度 +${lv*30}` },
+            { id: 'frost_nova', name: '冰霜新星', desc: '定時爆發冰環', maxLv: 10, getEffect: (lv)=>`冷卻時間 ${Math.max(3, 15 - lv)}秒` },
+            { id: 'black_hole', name: '黑洞發生器', desc: '生成黑洞吸附敵人', maxLv: 10, getEffect: (lv)=>`黑洞範圍 +${lv*40}` },
+            { id: 'death_bloom', name: '死亡綻放', desc: '擊殺時向八方射出飛刀', maxLv: 10, getEffect: (lv)=>`觸發機率 ${lv*10}%` },
             { id: 'time_freeze', name: '時光凝滯', desc: '每15秒凍結全場敵人', maxLv: 10, getEffect: (lv)=>`凍結時間 ${2 + lv*0.4}秒` },
-            { id: 'blood_sac', name: '血肉祭典', desc: '受傷時爆發鮮血新星，對周圍造成巨量傷害', maxLv: 10, getEffect: (lv)=>`爆發範圍 +${lv*30}` },
-            { id: 'toxic_aura', name: '毒霧瀰漫', desc: '走過的地方會留下毒氣雲', maxLv: 10, getEffect: (lv)=>`毒雲持續 ${lv*0.5}秒` },
-            { id: 'frost_armor', name: '冰霜護甲', desc: '受傷時瞬間大範圍凍結敵人', maxLv: 10, getEffect: (lv)=>`凍結半徑 ${200 + lv*20}` },
-            { id: 'coin_bomb', name: '金幣炸彈', desc: '拾取經驗與道具時有機率引爆周圍', maxLv: 10, getEffect: (lv)=>`引爆機率 ${lv*5}%` },
-            { id: 'storm_spirit', name: '風暴精靈', desc: '召喚會自動電擊敵人的小精靈', maxLv: 10, getEffect: (lv)=>`電擊頻率加快` },
-            { id: 'grav_collapse', name: '引力坍縮', desc: '造成擊退時，根據擊退距離附加額外傷害', maxLv: 10, getEffect: (lv)=>`坍縮傷害倍率 ${lv*50}%` },
-            { id: 'lucky_roulette', name: '幸運轉盤', desc: '每10秒獲得3秒隨機超強Buff', maxLv: 10, getEffect: (lv)=>`Buff效果提升` },
-            { id: 'berserk', name: '狂戰士之血', desc: '血量越低，武器冷卻越快', maxLv: 10, getEffect: (lv)=>`最大冷卻縮減 ${lv*10}%` },
-            { id: 'holy_aura', name: '神聖光環', desc: '每3秒將周圍敵人強制推開', maxLv: 10, getEffect: (lv)=>`推開距離 ${50 + lv*15}` },
-            { id: 'mirage_clone', name: '幻影分身', desc: '觸發閃避時，在原地留下一個向外射擊的分身', maxLv: 10, getEffect: (lv)=>`分身子彈傷害 ${lv*10}%` },
-            { id: 'blizzard', name: '暴風雪', desc: '永久降低畫面內所有怪物的移動速度', maxLv: 10, getEffect: (lv)=>`全域減速 ${lv*5}%` },
-            { id: 'shield', name: '能量護盾', desc: '定時生成無敵護盾擋下一次傷害', maxLv: 10, getEffect: (lv)=>`護盾冷卻 ${Math.max(5, 25-lv*2)} 秒` },
-            { id: 'thorns', name: '荊棘裝甲', desc: '被碰撞時反彈高額傷害', maxLv: 10, getEffect: (lv)=>`反彈傷害 ${lv*100}%` },
-            { id: 'level_heal', name: '升級恢復', desc: '每次升級時恢復生命', maxLv: 10, getEffect: (lv)=>`升級補血 ${lv*10}% 最大生命` },
+            { id: 'blood_sac', name: '血肉祭典', desc: '受傷時爆發鮮血新星', maxLv: 10, getEffect: (lv)=>`爆發範圍 +${lv*30}` },
+            { id: 'toxic_aura', name: '毒霧瀰漫', desc: '走過的地方會留下毒雲', maxLv: 10, getEffect: (lv)=>`毒雲持續 ${lv*0.5}秒` },
+            { id: 'frost_armor', name: '冰霜護甲', desc: '受傷時瞬間大範圍凍結', maxLv: 10, getEffect: (lv)=>`凍結半徑 ${200 + lv*20}` },
+            { id: 'coin_bomb', name: '金幣炸彈', desc: '拾取時有機率引爆周圍', maxLv: 10, getEffect: (lv)=>`引爆機率 ${lv*5}%` },
+            { id: 'storm_spirit', name: '風暴精靈', desc: '召喚電擊小精靈', maxLv: 10, getEffect: (lv)=>`頻率加快` },
+            { id: 'grav_collapse', name: '引力坍縮', desc: '擊退附加額外傷害', maxLv: 10, getEffect: (lv)=>`坍縮傷害倍率 ${lv*50}%` },
+            { id: 'lucky_roulette', name: '幸運轉盤', desc: '每10秒獲得3秒強Buff', maxLv: 10, getEffect: (lv)=>`Buff效果提升` },
+            { id: 'berserk', name: '狂戰士之血', desc: '血低時武器冷卻加快', maxLv: 10, getEffect: (lv)=>`最大冷卻縮減 ${lv*10}%` },
+            { id: 'holy_aura', name: '神聖光環', desc: '定時強制推開周圍敵人', maxLv: 10, getEffect: (lv)=>`推開距離 ${50 + lv*15}` },
+            { id: 'mirage_clone', name: '幻影分身', desc: '閃避時留下向外射擊分身', maxLv: 10, getEffect: (lv)=>`分身子彈傷害 ${lv*10}%` },
+            { id: 'blizzard', name: '暴風雪', desc: '永久降低怪物移速', maxLv: 10, getEffect: (lv)=>`全域減速 ${lv*5}%` },
+            { id: 'shield', name: '能量護盾', desc: '定時生成護盾擋一次傷害', maxLv: 10, getEffect: (lv)=>`護盾冷卻 ${Math.max(5, 25-lv*2)} 秒` },
+            { id: 'thorns', name: '荊棘裝甲', desc: '被碰時反彈傷害', maxLv: 10, getEffect: (lv)=>`反彈傷害 ${lv*100}%` },
+            { id: 'level_heal', name: '升級恢復', desc: '升級時恢復生命', maxLv: 10, getEffect: (lv)=>`升級補血 ${lv*10}% 最大生命` },
             { id: 'spd_up', name: '疾風步', desc: '增加移動速度', maxLv: 10, getEffect: (lv)=>`跑速 +${lv*10}%` },
             { id: 'hp_up', name: '強壯體魄', desc: '增加最大生命值', maxLv: 10, getEffect: (lv)=>`最大血量 +${lv*30}%` },
             { id: 'regen', name: '治癒術', desc: '每秒恢復生命值', maxLv: 10, getEffect: (lv)=>`秒回 +${lv*4} 點` },
@@ -377,10 +375,11 @@
             { id: 'evade', name: '幻影迴避', desc: '增加閃避機率', maxLv: 10, getEffect: (lv)=>`閃避率 +${lv*6}% (上限60%)` }, 
             { id: 'armor', name: '鋼鐵護甲', desc: '減少受到的傷害', maxLv: 10, getEffect: (lv)=>`減傷 +${lv*8}% (上限80%)` },
             { id: 'size_down', name: '侏儒體質', desc: '體型變小', maxLv: 10, getEffect: (lv)=>`體型縮小 ${lv*2} 單位` },
-            { id: 'vampire', name: '吸血鬼', desc: '擊殺敵人有機率恢復生命', maxLv: 10, getEffect: (lv)=>`吸血機率 ${lv*4}%` },
-            { id: 'gold_digger', name: '幸運兒', desc: '增加裝備與道具掉落率', maxLv: 10, getEffect: (lv)=>`掉落率增加 ${lv*40}%` }
+            { id: 'vampire', name: '吸血鬼', desc: '擊殺有機率恢復生命', maxLv: 10, getEffect: (lv)=>`吸血機率 ${lv*4}%` },
+            { id: 'gold_digger', name: '幸運兒', desc: '增加裝備道具掉落率', maxLv: 10, getEffect: (lv)=>`掉落率增加 ${lv*40}%` }
         ];
 
+        // --- Classes ---
         class Player {
             constructor() {
                 this.x = mapSize.width / 2;
@@ -481,9 +480,12 @@
                         let count = Math.ceil(this.getStat('meteor') / 2);
                         for(let i=0; i<count; i++) {
                             if (enemies.length > 0) {
-                                let target = enemies[Math.floor(Math.random() * enemies.length)];
-                                let mRadius = 120 + this.getStat('meteor') * 20;
-                                visualEffects.push({ type: 'meteor', x: target.x, y: target.y, timer: 30, radius: mRadius, dmg: this.damage * 2, player: this });
+                                let inViewE = enemies.filter(e => inView(e.x, e.y, 200));
+                                if(inViewE.length > 0) {
+                                    let target = inViewE[Math.floor(Math.random() * inViewE.length)];
+                                    let mRadius = 120 + this.getStat('meteor') * 20;
+                                    visualEffects.push({ type: 'meteor', x: target.x, y: target.y, timer: 30, radius: mRadius, dmg: this.damage * 2, player: this });
+                                }
                             }
                         }
                         this.meteorTimer = 0;
@@ -493,10 +495,13 @@
                     this.laserTimer++;
                     if (this.laserTimer >= 420) { 
                         if (enemies.length > 0) {
-                            let target = enemies[Math.floor(Math.random() * enemies.length)];
-                            let angle = Math.atan2(target.y - this.y, target.x - this.x);
-                            let lWidth = 60 + this.getStat('laser') * 30;
-                            visualEffects.push({ type: 'laser', x: this.x, y: this.y, angle: angle, timer: 20, width: lWidth, dmg: this.damage * 3, player: this });
+                            let inViewE = enemies.filter(e => inView(e.x, e.y, 200));
+                            if(inViewE.length > 0) {
+                                let target = inViewE[Math.floor(Math.random() * inViewE.length)];
+                                let angle = Math.atan2(target.y - this.y, target.x - this.x);
+                                let lWidth = 60 + this.getStat('laser') * 30;
+                                visualEffects.push({ type: 'laser', x: this.x, y: this.y, angle: angle, timer: 20, width: lWidth, dmg: this.damage * 3, player: this });
+                            }
                         }
                         this.laserTimer = 0;
                     }
@@ -514,9 +519,12 @@
                     this.blackHoleTimer++;
                     if (this.blackHoleTimer >= 360) { 
                         if (enemies.length > 0) {
-                            let target = enemies[Math.floor(Math.random() * enemies.length)];
-                            let bhRadius = 150 + this.getStat('black_hole') * 40;
-                            visualEffects.push({ type: 'blackhole', x: target.x, y: target.y, timer: 180, radius: bhRadius, pullForce: 3 + this.getStat('black_hole')*0.5, dmg: this.damage * 0.5, player: this, drawSize: 30 + this.getStat('black_hole')*5 });
+                            let inViewE = enemies.filter(e => inView(e.x, e.y, 200));
+                            if(inViewE.length > 0) {
+                                let target = inViewE[Math.floor(Math.random() * inViewE.length)];
+                                let bhRadius = 150 + this.getStat('black_hole') * 40;
+                                visualEffects.push({ type: 'blackhole', x: target.x, y: target.y, timer: 180, radius: bhRadius, pullForce: 3 + this.getStat('black_hole')*0.5, dmg: this.damage * 0.5, player: this, drawSize: 30 + this.getStat('black_hole')*5 });
+                            }
                         }
                         this.blackHoleTimer = 0;
                     }
@@ -525,8 +533,8 @@
                     this.timeFreezeTimer++;
                     if (this.timeFreezeTimer >= 900) { 
                         let freezeTicks = (2 + this.getStat('time_freeze') * 0.4) * 60;
-                        for (let e of enemies) e.frozenTimer = freezeTicks;
-                        showFloatingText(this.x, this.y - 40, "❄️ 時光凝滯 ❄️", 'text-cyan-300 font-bold text-2xl');
+                        for (let e of enemies) if(inView(e.x, e.y, 200)) e.frozenTimer = freezeTicks;
+                        visualEffects.push({type: 'text', x: this.x, y: this.y - 40, text: "❄️ 時光凝滯 ❄️", css: 'text-cyan-300 font-bold text-2xl'});
                         this.timeFreezeTimer = 0;
                     }
                 }
@@ -543,6 +551,7 @@
                         let pushDist = 50 + this.getStat('holy_aura') * 15;
                         visualEffects.push({ type: 'holy_nova', x: this.x, y: this.y, timer: 15, radius: 200 });
                         for (let e of enemies) {
+                            if(!inView(e.x, e.y, 100)) continue;
                             let d = Math.hypot(e.x - this.x, e.y - this.y);
                             if (d < 200) {
                                 let a = Math.atan2(e.y - this.y, e.x - this.x);
@@ -557,7 +566,7 @@
                     if (this.rouletteTimer >= 600) {
                         let buffs = ['speed', 'rapid', 'giant'];
                         this.currentBuff = buffs[Math.floor(Math.random() * buffs.length)];
-                        showFloatingText(this.x, this.y - 40, `幸運: ${this.currentBuff.toUpperCase()}!`, 'text-pink-400 font-bold text-2xl');
+                        visualEffects.push({type: 'text', x: this.x, y: this.y - 40, text: `幸運: ${this.currentBuff.toUpperCase()}!`, css: 'text-pink-400 font-bold text-2xl'});
                         setTimeout(() => { this.currentBuff = null; }, 3000);
                         this.rouletteTimer = 0;
                     }
@@ -567,10 +576,13 @@
                     let req = Math.max(20, 120 - this.getStat('storm_spirit') * 10);
                     if (this.spiritTimer >= req) {
                         if(enemies.length > 0) {
-                            let target = enemies[Math.floor(Math.random() * enemies.length)];
-                            if(Math.hypot(target.x - this.x, target.y - this.y) < 400) {
-                                visualEffects.push({ type: 'lightning', x1: this.x - 30, y1: this.y - 30, x2: target.x, y2: target.y, timer: 10 });
-                                target.takeDamage(this.damage, this, false, true);
+                            let inViewE = enemies.filter(e => inView(e.x, e.y, 100));
+                            if(inViewE.length > 0) {
+                                let target = inViewE[Math.floor(Math.random() * inViewE.length)];
+                                if(Math.hypot(target.x - this.x, target.y - this.y) < 400) {
+                                    visualEffects.push({ type: 'lightning', x1: this.x - 30, y1: this.y - 30, x2: target.x, y2: target.y, timer: 10 });
+                                    target.takeDamage(this.damage, this, false, true);
+                                }
                             }
                         }
                         this.spiritTimer = 0;
@@ -589,6 +601,7 @@
                         orbAngles.forEach(ang => {
                             let ox = this.x + Math.cos(ang) * baseRadius; let oy = this.y + Math.sin(ang) * baseRadius;
                             for (let e of enemies) {
+                                if(!inView(e.x, e.y, 50)) continue;
                                 if (Math.hypot(e.x - ox, e.y - oy) < e.radius + 15) {
                                     if (!e.orbCooldowns) e.orbCooldowns = {};
                                     if (!e.orbCooldowns[type] || e.orbCooldowns[type] <= 0) {
@@ -611,6 +624,7 @@
                 let nearest = null; let minDist = Infinity;
                 let viewPad = Math.max(width, height) / ZOOM / 2; 
                 for (let e of enemies) {
+                    if(!inView(e.x, e.y, 100)) continue; 
                     let dist = Math.hypot(e.x - this.x, e.y - this.y);
                     if (dist < minDist && dist < viewPad) { minDist = dist; nearest = e; }
                 }
@@ -623,16 +637,21 @@
                 const wepLv = this.weapons[this.currentWeaponIdx].level;
                 
                 if (wep.id === 'pistol') {
-                    if (wepLv >= 5) q += 2; // Burst 3
-                    if (wepLv >= 20) q += 2; // Burst 5
+                    if (wepLv >= 5) q += 2; 
+                    if (wepLv >= 20) q += 2; 
+                    if (wepLv >= 50) q += 5;
+                }
+                if (wep.id === 'shuriken') {
+                    if (wepLv >= 10 && Math.random() < 0.3) q += 2;
                 }
                 this.attackQueue = q; this.burstTimer = 0; 
             }
 
             fireVolley() {
-                if (!this.target || this.target.hp <= 0) {
+                if (!this.target || this.target.hp <= 0 || !inView(this.target.x, this.target.y, 100)) {
                     let nearest = null; let minDist = Infinity; let viewPad = Math.max(width, height) / ZOOM / 2; 
                     for (let e of enemies) {
+                        if(!inView(e.x, e.y, 100)) continue;
                         let dist = Math.hypot(e.x - this.x, e.y - this.y);
                         if (dist < minDist && dist < viewPad) { minDist = dist; nearest = e; }
                     }
@@ -642,21 +661,27 @@
                 let baseAngle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
                 let angles = [];
 
-                let frontCount = 1 + this.getStat('front_arrow');
-                for(let i=0; i<frontCount; i++) angles.push(baseAngle + (frontCount > 1 ? (i - (frontCount-1)/2) * 0.15 : 0));
-                
-                let diagCount = this.getStat('diag_arrow');
-                for(let i=0; i<diagCount; i++) { angles.push(baseAngle - 0.5 - i*0.1); angles.push(baseAngle + 0.5 + i*0.1); }
-                
-                let sideCount = this.getStat('side_arrow');
-                for(let i=0; i<sideCount; i++) { angles.push(baseAngle - Math.PI/2 - i*0.1); angles.push(baseAngle + Math.PI/2 + i*0.1); }
-                
-                let rearCount = this.getStat('rear_arrow');
-                for(let i=0; i<rearCount; i++) angles.push(baseAngle + Math.PI + (rearCount > 1 ? (i - (rearCount-1)/2) * 0.15 : 0));
-
                 const wepDb = weaponsDb.find(w => w.id === this.weapons[this.currentWeaponIdx].id);
                 const wepLv = this.weapons[this.currentWeaponIdx].level;
-                
+
+                if (wepDb.id === 'shuriken' && wepLv >= 50) {
+                    for(let i=0; i<8; i++) angles.push((Math.PI/4)*i);
+                } else if (wepDb.id === 'missile' && wepLv >= 50 && this.attackQueue === 1) {
+                    angles.push(baseAngle); 
+                } else {
+                    let frontCount = 1 + this.getStat('front_arrow');
+                    for(let i=0; i<frontCount; i++) angles.push(baseAngle + (frontCount > 1 ? (i - (frontCount-1)/2) * 0.15 : 0));
+                    
+                    let diagCount = this.getStat('diag_arrow');
+                    for(let i=0; i<diagCount; i++) { angles.push(baseAngle - 0.5 - i*0.1); angles.push(baseAngle + 0.5 + i*0.1); }
+                    
+                    let sideCount = this.getStat('side_arrow');
+                    for(let i=0; i<sideCount; i++) { angles.push(baseAngle - Math.PI/2 - i*0.1); angles.push(baseAngle + Math.PI/2 + i*0.1); }
+                    
+                    let rearCount = this.getStat('rear_arrow');
+                    for(let i=0; i<rearCount; i++) angles.push(baseAngle + Math.PI + (rearCount > 1 ? (i - (rearCount-1)/2) * 0.15 : 0));
+                }
+
                 let dmg = this.damage; 
                 let pSpeed = wepDb.speed * (1 + (this.getStat('bullet_speed') * 0.2));
                 let pierceCount = wepDb.pierce + (this.getStat('pierce_up') * 2); 
@@ -668,37 +693,50 @@
 
                 if (wepDb.id === 'pistol') {
                     if (wepLv >= 3) bounceCount += 3;
+                    if (wepLv >= 50) { pierceCount += 5; projSize *= 1.5; }
                 }
                 if (wepDb.id === 'bow') {
                     if (wepLv >= 5) pierceCount = 999;
+                }
+                if (wepDb.id === 'shuriken') {
+                    if (wepLv >= 3) ricochetCount += 3;
+                    if (wepLv >= 15) projSize *= 1.5;
+                    if (wepLv >= 50) pierceCount = 999;
+                }
+                if (wepDb.id === 'missile') {
+                    if (wepLv >= 5) pSpeed *= 1.5;
+                    if (wepLv >= 50) pSpeed *= 3;
                 }
                 
                 let baseAngles = [...angles];
                 if (wepDb.id === 'boomerang') {
                     if (wepLv >= 3) { for(let a of baseAngles) angles.push(a + Math.PI); }
                     if (wepLv >= 20) { for(let a of baseAngles) { angles.push(a + Math.PI/2); angles.push(a - Math.PI/2); } }
+                    if (wepLv >= 50) { for(let a of baseAngles) { angles.push(a + Math.PI/4); angles.push(a - Math.PI/4); } }
                     if (wepLv >= 10) projSize += 1; 
                 }
                 if (wepDb.id === 'shotgun') {
-                    let pellets = 3 + (wepLv >= 3 ? 2 : 0);
+                    let pellets = 3 + (wepLv >= 3 ? 2 : 0) + (wepLv >= 50 ? 5 : 0);
                     let newAngles = [];
                     for(let a of baseAngles) {
-                        for(let i=0; i<pellets; i++) newAngles.push(a + (i - (pellets-1)/2)*0.2);
+                        let spread = wepLv >= 50 ? 0.4 : 0.2;
+                        for(let i=0; i<pellets; i++) newAngles.push(a + (i - (pellets-1)/2)*spread);
                     }
                     angles = newAngles;
                     if(wepLv >= 10) pierceCount += 2;
-                    if(wepLv >= 20) {
-                        let selfKb = 1; this.x -= Math.cos(baseAngle)*selfKb; this.y -= Math.sin(baseAngle)*selfKb;
-                    }
+                    if(wepLv >= 20) { let selfKb = 1; this.x -= Math.cos(baseAngle)*selfKb; this.y -= Math.sin(baseAngle)*selfKb; }
                     if(wepLv >= 25) { projSize *= 3; pierceCount = 999; }
+                    if(wepLv >= 50) { projSize *= 2; }
                 }
                 if (wepDb.id === 'wand') {
                     if (wepLv >= 3) { for(let a of baseAngles) { angles.push(a + 0.3); angles.push(a - 0.3); } }
+                    if (wepLv >= 50) { for(let a of baseAngles) { angles.push(a + 0.6); angles.push(a - 0.6); } pierceCount += 2; }
                 }
 
                 let baseCritRate = this.getStat('crit_rate') * 0.10;
                 let woodLv = this.getStat('wood_ench');
                 if(woodLv > 0) baseCritRate += Math.min(0.2, woodLv * 0.02);
+                if(wepDb.id === 'shuriken' && wepLv >= 20) baseCritRate += 0.3;
                 
                 let critDmgMult = 1.5 + (this.getStat('crit_dmg') * 0.4);
                 if(woodLv > 0) critDmgMult += 0.4;
@@ -721,7 +759,7 @@
             heal(amt) {
                 if(this.hp < this.maxHp) {
                     this.hp = Math.min(this.maxHp, this.hp + amt);
-                    showFloatingText(this.x, this.y - 20, "+" + formatNum(amt), 'heal-text');
+                    visualEffects.push({type: 'text', x: this.x, y: this.y - 20, text: "+" + formatNum(amt), css: 'heal-text'});
                 }
             }
 
@@ -730,14 +768,14 @@
                 
                 if (this.hasShield) {
                     this.hasShield = false;
-                    showFloatingText(this.x, this.y - 20, "護盾抵擋", 'text-blue-300 text-xl font-bold');
+                    visualEffects.push({type: 'text', x: this.x, y: this.y - 20, text: "護盾抵擋", css: 'text-blue-300 text-xl font-bold'});
                     this.invulnTimer = 60;
                     return;
                 }
 
                 let evadeRate = Math.min(0.6, this.getStat('evade') * 0.06);
                 if (Math.random() < evadeRate) {
-                    showFloatingText(this.x, this.y - 20, "MISS", 'text-gray-300');
+                    visualEffects.push({type: 'text', x: this.x, y: this.y - 20, text: "MISS", css: 'text-gray-300'});
                     this.invulnTimer = 20; 
                     
                     if (this.getStat('mirage_clone') > 0) {
@@ -755,27 +793,29 @@
                 this.hp -= amt;
                 this.invulnTimer = 120; 
                 
-                showFloatingText(this.x, this.y - 40, "-" + formatNum(amt), 'player-dmg-text');
+                visualEffects.push({type: 'text', x: this.x, y: this.y - 40, text: "-" + formatNum(amt), css: 'player-dmg-text'});
                 document.getElementById('uiHp').parentElement.classList.add('animate-pulse');
                 setTimeout(()=>document.getElementById('uiHp').parentElement.classList.remove('animate-pulse'), 500);
 
                 if (this.getStat('thorns') > 0) {
                     let refDmg = amt * (this.getStat('thorns') * 1.0);
                     for(let e of enemies) {
-                        if (Math.hypot(e.x - this.x, e.y - this.y) < 150) e.takeDamage(refDmg, this, false);
+                        if(inView(e.x, e.y, 100)) {
+                            if (Math.hypot(e.x - this.x, e.y - this.y) < 150) e.takeDamage(refDmg, this, false);
+                        }
                     }
                 }
                 
                 if (this.getStat('blood_sac') > 0) {
                     let r = 150 + this.getStat('blood_sac') * 30;
                     visualEffects.push({ type: 'blood_nova', x: this.x, y: this.y, timer: 20, radius: r });
-                    for(let e of enemies) { if(Math.hypot(e.x - this.x, e.y - this.y) < r) e.takeDamage(this.damage * 3, this, false); }
+                    for(let e of enemies) { if(inView(e.x, e.y, r) && Math.hypot(e.x - this.x, e.y - this.y) < r) e.takeDamage(this.damage * 3, this, false); }
                 }
 
                 if (this.getStat('frost_armor') > 0) {
                     let r = 200 + this.getStat('frost_armor') * 20;
                     visualEffects.push({ type: 'frost_armor_nova', x: this.x, y: this.y, timer: 15, radius: r });
-                    for(let e of enemies) { if(Math.hypot(e.x - this.x, e.y - this.y) < r) e.frozenTimer = 120; }
+                    for(let e of enemies) { if(inView(e.x, e.y, r) && Math.hypot(e.x - this.x, e.y - this.y) < r) e.frozenTimer = 120; }
                 }
 
                 if (this.hp <= 0) { this.hp = 0; triggerGameOver(); }
@@ -786,21 +826,21 @@
                 if (this.currentBuff === 'giant') currentRadius *= 1.5;
 
                 ctx.save();
-                ctx.translate(this.x, this.y); 
+                ctx.translate(Math.round(this.x), Math.round(this.y)); 
                 
                 if (this.invulnTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) ctx.globalAlpha = 0.5;
 
-                ctx.beginPath(); ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
+                ctx.beginPath(); ctx.arc(0, 0, Math.round(currentRadius), 0, Math.PI * 2);
                 ctx.fillStyle = '#4299e1'; ctx.fill();
                 ctx.lineWidth = 2; ctx.strokeStyle = '#2b6cb0'; ctx.stroke();
                 
                 if (this.hasShield) {
-                    ctx.beginPath(); ctx.arc(0, 0, currentRadius + 10, 0, Math.PI*2);
+                    ctx.beginPath(); ctx.arc(0, 0, Math.round(currentRadius + 10), 0, Math.PI*2);
                     ctx.strokeStyle = '#63b3ed'; ctx.lineWidth = 3; ctx.setLineDash([5, 5]); ctx.stroke();
                     ctx.setLineDash([]);
                 }
                 if (this.getStat('storm_spirit') > 0) {
-                    ctx.beginPath(); ctx.arc(-25, -25, 6 + Math.sin(Date.now()/200)*3, 0, Math.PI*2);
+                    ctx.beginPath(); ctx.arc(-25, -25, Math.max(1, Math.round(6 + Math.sin(Date.now()/200)*3)), 0, Math.PI*2);
                     ctx.fillStyle = '#ecc94b'; ctx.fill();
                 }
 
@@ -813,9 +853,8 @@
                         let baseRadius = 60 + (idx * 30) + (lv * 20);
                         let orbAngles = [orbitTime * 3 + (idx), orbitTime * 3 + (idx) + Math.PI];
                         orbAngles.forEach(ang => {
-                            ctx.beginPath(); ctx.arc(Math.cos(ang) * baseRadius, Math.sin(ang) * baseRadius, 8, 0, Math.PI*2);
-                            ctx.fillStyle = colors[type]; ctx.fill(); ctx.shadowBlur = 10; ctx.shadowColor = colors[type];
-                            ctx.stroke(); ctx.shadowBlur = 0;
+                            ctx.beginPath(); ctx.arc(Math.round(Math.cos(ang) * baseRadius), Math.round(Math.sin(ang) * baseRadius), 8, 0, Math.PI*2);
+                            ctx.fillStyle = colors[type]; ctx.fill(); 
                         });
                     }
                 });
@@ -823,7 +862,7 @@
                 let screenCx = width / 2; let screenCy = height / 2;
                 let angle = Math.atan2(mouse.y - screenCy, mouse.x - screenCx);
                 ctx.beginPath(); ctx.moveTo(0,0);
-                ctx.lineTo(Math.cos(angle) * (currentRadius+15), Math.sin(angle) * (currentRadius+15));
+                ctx.lineTo(Math.round(Math.cos(angle) * (currentRadius+15)), Math.round(Math.sin(angle) * (currentRadius+15)));
                 ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2; ctx.stroke();
 
                 ctx.restore();
@@ -837,7 +876,7 @@
                 let scale = 0.5 + Math.random(); 
                 let hpGrowth = 1; let dmgGrowth = 1;
                 
-                if (type === 'boss') { scale = 3.5; hpGrowth = 8 * diff; dmgGrowth = Math.sqrt(diff) * 2; }
+                if (type === 'boss') { scale = 4.0; hpGrowth = 10 * diff; dmgGrowth = Math.sqrt(diff) * 2; }
                 else { hpGrowth = Math.max(1, gameTime / 60) * diff; dmgGrowth = Math.max(1, Math.sqrt(gameTime/60)) * Math.sqrt(diff); }
 
                 switch(type) {
@@ -854,7 +893,7 @@
                     case 'golem': this.baseHp = 80; this.speed = 0.8; this.dmg = 40; this.radius = 28; this.color = `hsl(30, 40%, 40%)`; this.xp = 60; scale = Math.max(1.0, scale); break;
                     case 'teleporter': this.baseHp = 12; this.speed = 2.5; this.dmg = 15; this.radius = 10; this.color = '#2b6cb0'; this.xp = 25; this.tpCooldown = 180; break;
                     case 'spawner': this.baseHp = 60; this.speed = 1.0; this.dmg = 20; this.radius = 25; this.color = '#276749'; this.xp = 40; this.spawnCooldown = 120; break;
-                    case 'boss': this.baseHp = 3000; this.speed = 1.5; this.dmg = 100; this.radius = 60; this.color = '#9b2c2c'; this.xp = 1000; this.isBoss = true; scale = 1; break;
+                    case 'boss': this.baseHp = 5000; this.speed = 1.8; this.dmg = 150; this.radius = 60; this.color = '#9b2c2c'; this.xp = 1000; this.isBoss = true; scale = 1; break;
                     default: this.baseHp = 5; this.speed = 2; this.dmg = 10; this.radius = 12; this.color = `hsl(140, 60%, 50%)`; this.xp = 10;
                 }
 
@@ -878,15 +917,13 @@
 
             takeDamage(dmg, srcPlayer, isCrit, bypassExec = false) {
                 this.hp -= dmg;
-                let txtClass = isCrit ? 'crit-text' : 'dmg-text';
-                showFloatingText(this.x, this.y, formatNum(dmg), txtClass);
 
                 if (!bypassExec && !this.isBoss && srcPlayer && srcPlayer.getStat('execution') > 0) {
                     if ((this.hp / this.maxHp) <= 0.10) {
                         let execChance = srcPlayer.getStat('execution') * 0.04;
                         if (Math.random() < execChance) {
                             this.hp = 0;
-                            showFloatingText(this.x, this.y - 20, "處決!", 'text-purple-500 font-black text-2xl');
+                            if(inView(this.x, this.y, 50)) visualEffects.push({type:'text', x:this.x, y:this.y-20, text:"處決!", css:'text-purple-500 font-black text-2xl'});
                         }
                     }
                 }
@@ -896,6 +933,10 @@
 
             update(player, diffMult) {
                 if (this.hp <= 0) return;
+                
+                // Sleep if too far
+                if (!inView(this.x, this.y, 1000)) return;
+
                 if (this.orbCooldowns) { for(let k in this.orbCooldowns) if(this.orbCooldowns[k] > 0) this.orbCooldowns[k]--; }
 
                 for (let type in this.statusEffects) {
@@ -912,7 +953,7 @@
                 if (this.judgementTimer > 0) {
                     this.judgementTimer--;
                     if(this.judgementTimer === 0) {
-                        visualEffects.push({ type: 'lightning_strike', x: this.x, y: this.y, timer: 15 });
+                        if(inView(this.x, this.y, 100)) visualEffects.push({ type: 'lightning_strike', x: this.x, y: this.y, timer: 15 });
                         this.takeDamage(player.damage * 10, player, true, true);
                     }
                 }
@@ -920,7 +961,7 @@
                 let distToPlayer = Math.hypot(this.x - player.x, this.y - player.y);
 
                 if (this.type === 'bomber' && distToPlayer < this.radius + player.radius + 20) {
-                    visualEffects.push({ type: 'explosion', x: this.x, y: this.y, radius: 100, timer: 15 });
+                    if(inView(this.x, this.y, 100)) visualEffects.push({ type: 'explosion', x: this.x, y: this.y, radius: 100, timer: 15 });
                     player.takeDamage(this.dmg);
                     for(let e of enemies) if (e !== this && Math.hypot(e.x - this.x, e.y - this.y) < 100) e.takeDamage(this.dmg*3, null, false, true);
                     this.hp = 0; return;
@@ -941,7 +982,7 @@
                         this.x = player.x + Math.cos(a) * 150;
                         this.y = player.y + Math.sin(a) * 150;
                         this.tpCooldown = 240;
-                        visualEffects.push({ type: 'explosion', x: this.x, y: this.y, radius: 40, timer: 10 });
+                        if(inView(this.x, this.y, 50)) visualEffects.push({ type: 'explosion', x: this.x, y: this.y, radius: 40, timer: 10 });
                     }
                 }
                 if (this.type === 'spawner' && this.frozenTimer <= 0) {
@@ -974,7 +1015,9 @@
             }
 
             draw(ctx) {
-                ctx.save(); ctx.translate(this.x, this.y);
+                if (!inView(this.x, this.y, this.radius + 10)) return;
+
+                ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y));
                 
                 if (this.isGhost) ctx.globalAlpha = 0.6;
                 if (this.frozenTimer > 0) ctx.fillStyle = '#63b3ed'; 
@@ -985,13 +1028,13 @@
 
                 if (this.isBoss) { ctx.shadowBlur = 20; ctx.shadowColor = 'red'; }
 
-                ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.arc(0, 0, Math.round(this.radius), 0, Math.PI * 2); ctx.fill();
                 ctx.strokeStyle = '#1a202c'; ctx.lineWidth = 2; ctx.stroke();
 
-                if (this.hp < this.maxHp) {
-                    let w = this.radius * 2; let h = 4;
-                    ctx.fillStyle = '#000'; ctx.fillRect(-w/2, -this.radius - 8, w, h);
-                    ctx.fillStyle = '#f56565'; ctx.fillRect(-w/2, -this.radius - 8, w * (this.hp / this.maxHp), h);
+                if (this.hp < this.maxHp && this.isBoss) { // Only draw boss HP bar for perf
+                    let w = this.radius * 2; let h = 6;
+                    ctx.fillStyle = '#000'; ctx.fillRect(-w/2, -this.radius - 12, w, h);
+                    ctx.fillStyle = '#f56565'; ctx.fillRect(-w/2, -this.radius - 12, w * (this.hp / this.maxHp), h);
                 }
                 ctx.restore();
             }
@@ -1004,30 +1047,42 @@
             update(player) {
                 this.x += Math.cos(this.angle) * this.speed; this.y += Math.sin(this.angle) * this.speed;
                 if (Math.hypot(this.x - player.x, this.y - player.y) < player.radius + 5) { player.takeDamage(this.dmg); this.active = false; }
-                if (Math.hypot(this.x - player.x, this.y - player.y) > 2000) this.active = false;
+                if (!inView(this.x, this.y, 50)) this.active = false;
             }
             draw(ctx) {
-                ctx.save(); ctx.translate(this.x, this.y);
+                if (!inView(this.x, this.y, 10)) return;
+                ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y));
                 ctx.fillStyle = '#9f7aea'; ctx.beginPath(); ctx.arc(0,0, 6, 0, Math.PI*2); ctx.fill();
                 ctx.restore();
             }
         }
 
         class Projectile {
-            constructor(x, y, angle, speed, dmg, pierce, ricochet, bounce, sizeMult, type, color, isCrit, playerRef, wepId, wepLv) {
+            constructor(x, y, angle, speed, dmg, pierce, ricochet, bounce, sizeMult, type, color, isCrit, playerRef, wepId, wepLv, target=null) {
                 this.x = x; this.y = y; this.startX = x; this.startY = y; this.angle = angle; this.speed = speed; this.dmg = dmg;
                 this.pierceCount = pierce; this.ricochetCount = ricochet; this.bounceCount = bounce; this.sizeMult = sizeMult;
                 this.type = type; this.color = color; this.isCrit = isCrit; this.player = playerRef;
-                this.wepId = wepId; this.wepLv = wepLv;
+                this.wepId = wepId; this.wepLv = wepLv; this.homingTarget = target;
                 this.active = true; this.hitEnemies = new Set(); this.returning = false;
                 this.splitDone = false; this.isPhantom = false; this.spinTimer = 0; this.spun = false;
+                this.hoverTimer = 0;
             }
 
             update() {
-                if (this.wepId === 'bow' && this.wepLv >= 10 && this.active && this.type !== 'return') {
+                if (!inView(this.x, this.y, 200)) { this.active = false; return; }
+
+                if (this.wepId === 'missile' && this.homingTarget && this.homingTarget.hp > 0 && this.active) {
+                    let targetAngle = Math.atan2(this.homingTarget.y - this.y, this.homingTarget.x - this.x);
+                    let angleDiff = targetAngle - this.angle;
+                    while(angleDiff <= -Math.PI) angleDiff += Math.PI*2;
+                    while(angleDiff > Math.PI) angleDiff -= Math.PI*2;
+                    let turnSpeed = this.wepLv >= 15 ? 0.2 : 0.05;
+                    this.angle += angleDiff * turnSpeed; 
+                }
+                else if (this.wepId === 'bow' && this.wepLv >= 10 && this.active && this.type !== 'return') {
                     let nearest = null; let minD = 300;
                     for(let e of enemies) {
-                        if (!this.hitEnemies.has(e) && e.hp > 0) {
+                        if (!this.hitEnemies.has(e) && e.hp > 0 && inView(e.x, e.y, 100)) {
                             let d = Math.hypot(e.x - this.x, e.y - this.y);
                             if (d < minD) { minD = d; nearest = e; }
                         }
@@ -1054,7 +1109,7 @@
                     }
                     let nearest = null; let minD = 500;
                     for(let e of enemies) {
-                        if (!this.hitEnemies.has(e) && e.hp > 0) {
+                        if (!this.hitEnemies.has(e) && e.hp > 0 && inView(e.x, e.y, 100)) {
                             let d = Math.hypot(e.x - this.x, e.y - this.y);
                             if (d < minD) { minD = d; nearest = e; }
                         }
@@ -1070,12 +1125,12 @@
 
                 if (this.wepId === 'boomerang' && this.wepLv >= 10 && this.active) {
                     for (let en of enemies) {
-                        if (en.hp > 0) {
+                        if (en.hp > 0 && inView(en.x, en.y, 100)) {
                             let dist = Math.hypot(en.x - this.x, en.y - this.y);
                             if (dist < 200 * this.sizeMult) {
                                 let pullA = Math.atan2(this.y - en.y, this.x - en.x);
                                 en.x += Math.cos(pullA) * 2; en.y += Math.sin(pullA) * 2;
-                                if(this.wepLv >= 25 && en.hp / en.maxHp < 0.2 && !en.isBoss) { en.hp = 0; showFloatingText(en.x, en.y, "吸入!", 'text-purple-600 font-bold'); }
+                                if(this.wepLv >= 25 && en.hp / en.maxHp < 0.2 && !en.isBoss) { en.hp = 0; }
                             }
                         }
                     }
@@ -1083,7 +1138,8 @@
 
                 if (this.type === 'return') {
                     let distFromStart = Math.hypot(this.x - this.startX, this.y - this.startY);
-                    if (!this.returning && distFromStart > 400) { 
+                    let maxD = this.wepId === 'boomerang' && this.wepLv >= 50 ? 600 : 400;
+                    if (!this.returning && distFromStart > maxD) { 
                         if (this.wepId === 'boomerang' && this.wepLv >= 15 && !this.spun) {
                             this.spinTimer = 120; this.spun = true;
                         } else if (this.spinTimer <= 0) {
@@ -1101,29 +1157,63 @@
                     } else {
                         this.x += Math.cos(this.angle) * this.speed; this.y += Math.sin(this.angle) * this.speed;
                     }
+                } else if (this.hoverTimer > 0) {
+                    this.hoverTimer--;
+                    if(this.hoverTimer % 10 === 0) this.hitEnemies.clear();
+                    if(this.hoverTimer <= 0) this.active = false;
                 } else {
                     let nx = this.x + Math.cos(this.angle) * this.speed;
                     let ny = this.y + Math.sin(this.angle) * this.speed;
-                    let outX = nx < 0 || nx > mapSize.width; let outY = ny < 0 || ny > mapSize.height;
+                    let outX = nx < camera.x || nx > camera.x + width/ZOOM; 
+                    let outY = ny < camera.y || ny > camera.y + height/ZOOM;
                     
                     if (outX || outY) {
                         if (this.bounceCount > 0) {
                             if (outX) this.angle = Math.PI - this.angle;
                             if (outY) this.angle = -this.angle;
                             this.bounceCount--; this.hitEnemies.clear(); this.dmg *= 0.5; 
+                            this.x += Math.cos(this.angle) * this.speed; this.y += Math.sin(this.angle) * this.speed;
                         } else { this.active = false; }
                     } else { this.x = nx; this.y = ny; }
                 }
 
                 for (let e of enemies) {
-                    if (!this.hitEnemies.has(e) && e.hp > 0) {
+                    if (!this.hitEnemies.has(e) && e.hp > 0 && inView(e.x, e.y, 50)) {
                         let dist = Math.hypot(this.x - e.x, this.y - e.y);
                         if (dist < e.radius + 10 * this.sizeMult) { 
                             this.hitEnemies.add(e);
-                            if (e.isGhost && Math.random() < 0.3) { showFloatingText(e.x, e.y, "MISS", 'text-gray-400'); continue; }
+                            if (e.isGhost && Math.random() < 0.3) continue;
                             
                             e.takeDamage(this.dmg, this.player, this.isCrit);
                             
+                            if (this.wepId === 'missile') {
+                                let expR = this.wepLv >= 3 ? 100 : 50;
+                                visualEffects.push({ type: 'explosion', x: this.x, y: this.y, radius: expR, timer: 10 });
+                                for(let en of enemies) if(en!==e && inView(en.x, en.y, expR) && Math.hypot(en.x-this.x, en.y-this.y)<expR) en.takeDamage(this.dmg, this.player, false, true);
+                                
+                                if (this.wepLv >= 10 && !this.splitDone) {
+                                    this.splitDone = true;
+                                    for(let i=0; i<3; i++) {
+                                        let nearby = enemies.filter(en => en !== e && en.hp > 0 && inView(en.x, en.y, 300));
+                                        let t = nearby.length > 0 ? nearby[Math.floor(Math.random()*nearby.length)] : null;
+                                        projectiles.push(new Projectile(this.x, this.y, this.angle+(Math.random()-0.5), this.speed, this.dmg*0.5, 0, 0, 0, this.sizeMult*0.5, 'explosive', this.color, false, this.player, 'missile', 0, t));
+                                    }
+                                }
+                                if (this.wepLv >= 25) {
+                                    visualEffects.push({ type: 'poison_cloud', x: this.x, y: this.y, timer: 180, radius: expR, dmg: this.dmg*0.2, player: this.player });
+                                }
+                                if (this.wepLv >= 50) {
+                                    visualEffects.push({ type: 'laser', x: this.x, y: this.y, angle: 0, timer: 15, width: 80, dmg: this.dmg*5, player: this.player });
+                                    visualEffects.push({ type: 'laser', x: this.x, y: this.y, angle: Math.PI/2, timer: 15, width: 80, dmg: this.dmg*5, player: this.player });
+                                }
+                                this.active = false; break;
+                            }
+
+                            if (this.wepId === 'shuriken' && this.wepLv >= 25 && this.hoverTimer === 0 && Math.random() < 0.3) {
+                                this.hoverTimer = 60; this.hitEnemies.clear();
+                            }
+                            if (this.wepId === 'shuriken' && this.wepLv >= 5 && Math.random() < 0.5) e.applyStatus('poison', 5);
+
                             if (this.wepId === 'wand' && this.wepLv >= 15 && !this.splitDone) {
                                 this.splitDone = true;
                                 projectiles.push(new Projectile(this.x, this.y, this.angle + 0.5, this.speed, this.dmg*0.5, 0, 0, 0, this.sizeMult*0.8, this.type, this.color, false, this.player, 'wand', this.wepLv));
@@ -1135,10 +1225,17 @@
                             if (this.wepId === 'wand' && this.wepLv >= 25 && Math.random() < 0.05) {
                                 visualEffects.push({ type: 'blackhole', x: e.x, y: e.y, timer: 60, radius: 150, pullForce: 4, dmg: this.dmg, player: this.player, drawSize: 40 });
                             }
+                            if (this.wepId === 'wand' && this.wepLv >= 50 && Math.random() < 0.1) {
+                                for(let i=0; i<4; i++) projectiles.push(new Projectile(this.x, this.y, (Math.PI/2)*i, this.speed*1.5, this.dmg*2, 999, 0, 0, this.sizeMult*2, 'homing', '#ffffff', true, this.player, 'wand', 0));
+                            }
 
                             if (this.wepId === 'shotgun' && this.wepLv >= 15) {
                                 visualEffects.push({ type: 'explosion', x: e.x, y: e.y, radius: 60, timer: 10 });
-                                for(let en of enemies) if(en !== e && Math.hypot(en.x - e.x, en.y - e.y) < 60) en.takeDamage(this.dmg * 0.5, this.player, false, true);
+                                for(let en of enemies) if(en !== e && inView(en.x, en.y, 60) && Math.hypot(en.x - e.x, en.y - e.y) < 60) en.takeDamage(this.dmg * 0.5, this.player, false, true);
+                            }
+                            if (this.wepId === 'shotgun' && this.wepLv >= 50 && Math.random() < 0.05) {
+                                visualEffects.push({ type: 'holy_nova', x: this.player.x, y: this.player.y, timer: 15, radius: 400 });
+                                for(let en of enemies) if(inView(en.x, en.y, 400) && Math.hypot(en.x-this.player.x, en.y-this.player.y)<400) { en.knockbackX += Math.cos(this.angle)*20; en.knockbackY += Math.sin(this.angle)*20; }
                             }
 
                             if (this.wepId === 'bow' && this.wepLv >= 3 && !this.splitDone) {
@@ -1148,17 +1245,20 @@
                             }
                             if (this.wepId === 'bow' && this.wepLv >= 15) {
                                 visualEffects.push({ type: 'arrow_rain', x: e.x, y: e.y, timer: 15, radius: 80 });
-                                for(let en of enemies) if(en!==e && Math.hypot(en.x - e.x, en.y - e.y)<80) en.takeDamage(this.dmg*0.5, this.player, false, true);
+                                for(let en of enemies) if(en!==e && inView(en.x, en.y, 80) && Math.hypot(en.x - e.x, en.y - e.y)<80) en.takeDamage(this.dmg*0.5, this.player, false, true);
                             }
-                            if (this.wepId === 'bow' && this.wepLv >= 25) {
-                                e.judgementTimer = 60;
+                            if (this.wepId === 'bow' && this.wepLv >= 25) e.judgementTimer = 60;
+                            if (this.wepId === 'bow' && this.wepLv >= 50 && !this.splitDone && Math.random() < 0.2) {
+                                this.splitDone = true;
+                                for(let i=0; i<10; i++) projectiles.push(new Projectile(this.x, this.y, this.angle + (Math.random()-0.5)*2, this.speed, this.dmg, 999, 0, 0, this.sizeMult, 'pierce', '#ffcc00', true, this.player, 'split', 0));
                             }
 
                             if (this.wepId === 'pistol' && this.wepLv >= 10) {
                                 let expRad = this.wepLv >= 25 ? 150 : 80;
+                                if (this.wepLv >= 50) expRad = 250;
                                 visualEffects.push({ type: 'explosion', x: e.x, y: e.y, radius: expRad, timer: 15 });
                                 for (let en of enemies) {
-                                    if (en !== e && Math.hypot(en.x - e.x, en.y - e.y) < expRad) en.takeDamage(this.dmg * (this.wepLv>=25?3:0.5), this.player, false, true); 
+                                    if (en !== e && inView(en.x, en.y, expRad) && Math.hypot(en.x - e.x, en.y - e.y) < expRad) en.takeDamage(this.dmg * (this.wepLv>=25?3:0.5), this.player, false, true); 
                                 }
                                 if(this.wepLv >= 15) {
                                     for(let i=0; i<4; i++) projectiles.push(new Projectile(this.x, this.y, (Math.PI/2)*i, this.speed, this.dmg*0.3, 1, 0, 0, this.sizeMult*0.5, 'single', '#ffaa00', false, this.player, 'split', 0));
@@ -1175,7 +1275,7 @@
                                 for(let i=0; i<chainCount; i++) {
                                     let next = null; let minD = 200;
                                     for(let ne of enemies) {
-                                        if(!hitSet.has(ne) && ne.hp > 0) {
+                                        if(!hitSet.has(ne) && ne.hp > 0 && inView(ne.x, ne.y, 200)) {
                                             let d = Math.hypot(ne.x - currentTarget.x, ne.y - currentTarget.y);
                                             if(d < minD) { minD = d; next = ne; }
                                         }
@@ -1199,11 +1299,11 @@
                                 e.takeDamage(gravDmg, this.player, false, true);
                             }
 
-                            if (this.type !== 'return' && !this.isPhantom) {
+                            if (this.type !== 'return' && !this.isPhantom && this.hoverTimer <= 0) {
                                 if (this.ricochetCount > 0) {
                                     this.ricochetCount--; let nextE = null; let minD = 300;
                                     for(let ne of enemies) {
-                                        if (!this.hitEnemies.has(ne) && ne.hp > 0) {
+                                        if (!this.hitEnemies.has(ne) && ne.hp > 0 && inView(ne.x, ne.y, 300)) {
                                             let d = Math.hypot(ne.x - e.x, ne.y - e.y);
                                             if (d < minD) { minD = d; nextE = ne; }
                                         }
@@ -1222,12 +1322,19 @@
             }
 
             draw(ctx) {
-                ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle); ctx.scale(this.sizeMult, this.sizeMult);
+                if (!inView(this.x, this.y, 20)) return;
+                ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y)); ctx.rotate(this.angle); ctx.scale(this.sizeMult, this.sizeMult);
                 ctx.fillStyle = this.color;
                 if (this.type === 'bow') { ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(-10, -3); ctx.lineTo(-10, 3); ctx.fill(); } 
                 else if (this.type === 'boomerang') {
                     ctx.rotate(Date.now() / 50); ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI, false);
                     ctx.lineWidth = 4; ctx.strokeStyle = this.color; ctx.stroke();
+                } else if (this.wepId === 'shuriken') {
+                    ctx.rotate(Date.now() / 20);
+                    ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(3, -2); ctx.lineTo(8, 0); ctx.lineTo(3, 2); ctx.lineTo(0, 8); ctx.lineTo(-3, 2); ctx.lineTo(-8, 0); ctx.lineTo(-3, -2); ctx.fill();
+                } else if (this.wepId === 'missile') {
+                    ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-6, -4); ctx.lineTo(-4, 0); ctx.lineTo(-6, 4); ctx.fill();
+                    ctx.fillStyle = 'orange'; ctx.beginPath(); ctx.arc(-6, 0, 3, 0, Math.PI*2); ctx.fill();
                 } else if (this.type === 'homing') {
                     ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fillStyle = this.color; ctx.fill();
                     ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.stroke();
@@ -1245,12 +1352,12 @@
                 if (dist < player.pickupRange) this.magnetized = true;
                 if (this.magnetized) {
                     let angle = Math.atan2(player.y - this.y, player.x - this.x);
-                    this.x += Math.cos(angle) * 12; this.y += Math.sin(angle) * 12;
+                    this.x += Math.cos(angle) * 15; this.y += Math.sin(angle) * 15;
                     if (dist < player.radius + 15) {
                         this.active = false;
                         if (player.getStat('coin_bomb') > 0 && Math.random() < player.getStat('coin_bomb') * 0.05) {
                             visualEffects.push({ type: 'explosion', x: this.x, y: this.y, radius: 100, timer: 15 });
-                            for(let e of enemies) if(Math.hypot(e.x-this.x, e.y-this.y)<100) e.takeDamage(player.damage*2, player, false, true);
+                            for(let e of enemies) if(inView(e.x, e.y, 100) && Math.hypot(e.x-this.x, e.y-this.y)<100) e.takeDamage(player.damage*2, player, false, true);
                         }
                         if (this.type === 'xp') gainXp(this.value);
                         else if (this.type === 'weapon') unlockOrUpgradeWeapon(this.value);
@@ -1261,7 +1368,8 @@
                 }
             }
             draw(ctx) {
-                ctx.save(); ctx.translate(this.x, this.y);
+                if (!inView(this.x, this.y, 20)) return;
+                ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y));
                 if (this.type === 'xp') {
                     ctx.fillStyle = this.value > 50 ? '#ecc94b' : (this.value > 20 ? '#3182ce' : '#63b3ed'); 
                     ctx.beginPath(); ctx.moveTo(0, -6); ctx.lineTo(6, 0); ctx.lineTo(0, 6); ctx.lineTo(-6, 0); ctx.fill();
@@ -1295,8 +1403,9 @@
             difficulty = selectedDiff || 5; player = new Player();
             enemies = []; projectiles = []; enemyProjectiles = []; items = []; visualEffects = [];
             gameTime = 0; levelUpQueue = 0; bossActive = false; nextBossTime = 300;
+            bossPhase2Triggered = false; currentBoss = null;
             
-            document.querySelectorAll('.dmg-text, .crit-text, .heal-text, .player-dmg-text').forEach(e => e.remove());
+            document.querySelectorAll('.player-dmg-text, .heal-text').forEach(e => e.remove());
             
             updateWeaponUI(); updateStatsUI();
             
@@ -1320,15 +1429,16 @@
             sx = Math.max(100, Math.min(mapSize.width-100, sx)); sy = Math.max(100, Math.min(mapSize.height-100, sy));
             let b = new Enemy('boss', sx, sy, difficulty);
             enemies.push(b);
+            currentBoss = b;
             bossActive = true;
+            bossPhase2Triggered = false;
             document.getElementById('uiTime').parentElement.classList.add('boss-warning');
-            showFloatingText(player.x, player.y - 100, "⚠️ BOSS 出現 ⚠️", 'text-red-500 font-black text-4xl');
             
-            for(let i=0; i<200; i++) spawnEnemy(true);
+            for(let i=0; i<100; i++) spawnEnemy(true);
         }
 
         function spawnEnemy(force = false) {
-            let maxEnemies = Math.min(200, 30 + Math.floor(gameTime / 3)); 
+            let maxEnemies = Math.min(300, 30 + Math.floor(gameTime / 3)); 
             if(!force && enemies.length >= maxEnemies) return;
 
             let angle = Math.random() * Math.PI * 2;
@@ -1352,17 +1462,8 @@
 
         function killEnemy(e, p) {
             e.hp = 0; p.kills++; 
-            if (e.isBoss) bossActive = false;
-            
-            if (p.getStat('death_bloom') > 0 && Math.random() < (p.getStat('death_bloom') * 0.1)) {
-                for(let i=0; i<8; i++) projectiles.push(new Projectile(e.x, e.y, (Math.PI/4)*i, 10, p.damage*0.5, 0, 0, 0, 1, 'single', '#ffffff', false, p, 'bloom', 0));
-            }
-            if (e.type === 'splitter') {
-                for(let i=0; i<3; i++) enemies.push(new Enemy('splitter_mini', e.x+(Math.random()-0.5)*20, e.y+(Math.random()-0.5)*20, difficulty));
-            }
-            if (p.getStat('vampire') > 0 && Math.random() < (p.getStat('vampire') * 0.04)) p.heal(p.maxHp * 0.05); 
-
             if (e.isBoss) {
+                bossActive = false; currentBoss = null;
                 items.push(new Item(e.x - 20, e.y, 'health', 0));
                 items.push(new Item(e.x + 20, e.y, 'magnet', 0));
                 items.push(new Item(e.x, e.y - 30, 'diff_changer', 0));
@@ -1375,6 +1476,14 @@
                     items.push(new Item(e.x, e.y, 'xp', xpGain));
                 }
             }
+
+            if (p.getStat('death_bloom') > 0 && Math.random() < (p.getStat('death_bloom') * 0.1)) {
+                for(let i=0; i<8; i++) projectiles.push(new Projectile(e.x, e.y, (Math.PI/4)*i, 10, p.damage*0.5, 0, 0, 0, 1, 'single', '#ffffff', false, p, 'bloom', 0));
+            }
+            if (e.type === 'splitter') {
+                for(let i=0; i<3; i++) enemies.push(new Enemy('splitter_mini', e.x+(Math.random()-0.5)*20, e.y+(Math.random()-0.5)*20, difficulty));
+            }
+            if (p.getStat('vampire') > 0 && Math.random() < (p.getStat('vampire') * 0.04)) p.heal(p.maxHp * 0.05); 
         }
 
         function gainXp(amount) {
@@ -1434,10 +1543,8 @@
             let existing = player.weapons.find(w => w.id === weaponData.id);
             if (existing) {
                 existing.level++;
-                showFloatingText(player.x, player.y - 40, `${existing.name} Lv UP!`, 'text-yellow-400 font-bold text-xl');
             } else {
                 player.weapons.push({ ...weaponData, level: 1 });
-                showFloatingText(player.x, player.y - 40, `解鎖: ${weaponData.name}`, 'text-yellow-300 font-bold text-xl');
             }
             updateWeaponUI();
         }
@@ -1502,14 +1609,6 @@
             }
         }
 
-        function showFloatingText(worldX, worldY, text, cssClass) {
-            let el = document.createElement('div'); el.className = cssClass; el.innerText = text;
-            let screenX = (worldX - camera.x) * ZOOM; let screenY = (worldY - camera.y) * ZOOM;
-            el.style.left = screenX + 'px'; el.style.top = screenY + 'px';
-            uiContainer.appendChild(el);
-            setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 1000);
-        }
-
         function openPauseMenu() {
             gameState = 'paused'; handleJoystickEnd(); updatePauseUI();
             document.getElementById('pauseScreen').classList.remove('hidden'); document.getElementById('pauseScreen').classList.add('flex');
@@ -1538,19 +1637,33 @@
 
         function drawBackground() {
             ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 1;
-            let gridSize = 100;
-            let startX = Math.floor(camera.x / gridSize) * gridSize; let startY = Math.floor(camera.y / gridSize) * gridSize;
-            let endX = camera.x + width / ZOOM; let endY = camera.y + height / ZOOM;
+            let gridSize = 100 * ZOOM;
+            let startX = -((camera.x * ZOOM) % gridSize); 
+            let startY = -((camera.y * ZOOM) % gridSize);
+            
             ctx.beginPath();
-            for (let x = startX; x < endX; x += gridSize) { ctx.moveTo(x, startY); ctx.lineTo(x, endY); }
-            for (let y = startY; y < endY; y += gridSize) { ctx.moveTo(startX, y); ctx.lineTo(endX, y); }
+            for (let x = startX; x < width; x += gridSize) { ctx.moveTo(Math.round(x), 0); ctx.lineTo(Math.round(x), height); }
+            for (let y = startY; y < height; y += gridSize) { ctx.moveTo(0, Math.round(y)); ctx.lineTo(width, Math.round(y)); }
             ctx.stroke();
-            ctx.strokeStyle = 'red'; ctx.lineWidth = 5; ctx.strokeRect(0, 0, mapSize.width, mapSize.height);
+            
+            ctx.strokeStyle = 'red'; ctx.lineWidth = 5 * ZOOM;
+            let bx = Math.round(-camera.x * ZOOM); let by = Math.round(-camera.y * ZOOM);
+            ctx.strokeRect(bx, by, mapSize.width * ZOOM, mapSize.height * ZOOM);
         }
 
         function drawVisualEffects() {
             for (let i = visualEffects.length - 1; i >= 0; i--) {
                 let v = visualEffects[i];
+                if(v.type === 'text') {
+                    let el = document.createElement('div'); el.className = v.css; el.innerText = v.text;
+                    let screenX = (v.x - camera.x) * ZOOM; let screenY = (v.y - camera.y) * ZOOM;
+                    el.style.left = screenX + 'px'; el.style.top = screenY + 'px';
+                    uiContainer.appendChild(el);
+                    setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 1000);
+                    visualEffects.splice(i, 1); continue;
+                }
+                if (!inView(v.x || v.x1 || 0, v.y || v.y1 || 0, 500)) { visualEffects.splice(i,1); continue; }
+
                 if (v.type === 'lightning' || v.type === 'lightning_strike') {
                     if (v.type === 'lightning') {
                         ctx.beginPath(); ctx.moveTo(v.x1, v.y1); ctx.lineTo(v.x2, v.y2);
@@ -1562,33 +1675,33 @@
                     v.timer--; if(v.timer <= 0) visualEffects.splice(i, 1);
                 } 
                 else if (v.type === 'meteor') {
-                    ctx.save(); ctx.translate(v.x, v.y);
+                    ctx.save(); ctx.translate(Math.round(v.x), Math.round(v.y));
                     let mRad = Math.max(0, v.radius || 120); let yOff = (v.timer / 30) * 800; 
                     if (v.timer > 15) {
-                        ctx.beginPath(); ctx.arc(0, -yOff, Math.max(0, mRad * 0.3), 0, Math.PI * 2); ctx.fillStyle = '#f56565'; ctx.fill();
-                        ctx.shadowBlur = 20; ctx.shadowColor = '#c53030';
+                        ctx.beginPath(); ctx.arc(0, Math.round(-yOff), Math.round(Math.max(0, mRad * 0.3)), 0, Math.PI * 2); ctx.fillStyle = '#f56565'; ctx.fill();
                     } else {
-                        if (v.timer === 15) { for (let e of enemies) if (Math.hypot(e.x - v.x, e.y - v.y) < mRad) e.takeDamage(v.dmg, v.player, true); }
-                        ctx.beginPath(); ctx.arc(0, 0, Math.max(0, (15 - v.timer) * (mRad/15)), 0, Math.PI * 2); 
+                        if (v.timer === 15) { for (let e of enemies) if (inView(e.x,e.y,mRad) && Math.hypot(e.x - v.x, e.y - v.y) < mRad) e.takeDamage(v.dmg, v.player, true); }
+                        ctx.beginPath(); ctx.arc(0, 0, Math.round(Math.max(0, (15 - v.timer) * (mRad/15))), 0, Math.PI * 2); 
                         ctx.fillStyle = `rgba(245, 101, 101, ${v.timer / 15})`; ctx.fill();
                     }
                     ctx.restore(); v.timer--; if(v.timer <= 0) visualEffects.splice(i, 1);
                 }
                 else if (v.type === 'explosion' || v.type === 'blood_nova') {
-                    ctx.save(); ctx.translate(v.x, v.y);
+                    ctx.save(); ctx.translate(Math.round(v.x), Math.round(v.y));
                     let maxT = v.type === 'blood_nova' ? 20 : 15;
                     let currentRadius = Math.max(0, v.radius * (1 - v.timer/maxT));
-                    ctx.beginPath(); ctx.arc(0,0, currentRadius, 0, Math.PI*2);
+                    ctx.beginPath(); ctx.arc(0,0, Math.round(currentRadius), 0, Math.PI*2);
                     ctx.fillStyle = v.type === 'explosion' ? `rgba(237, 137, 54, ${v.timer/15})` : `rgba(229, 62, 62, ${v.timer/20})`; 
                     ctx.fill(); ctx.restore();
                     v.timer--; if(v.timer<=0) visualEffects.splice(i, 1);
                 }
                 else if (v.type === 'laser') {
-                    ctx.save(); ctx.translate(v.x, v.y); ctx.rotate(v.angle);
+                    ctx.save(); ctx.translate(Math.round(v.x), Math.round(v.y)); ctx.rotate(v.angle);
                     let lWidth = Math.max(0, v.width || 60); ctx.fillStyle = `rgba(159, 122, 234, ${v.timer/20})`; 
-                    ctx.fillRect(0, -lWidth/2, width/ZOOM * 2, lWidth); 
+                    ctx.fillRect(0, Math.round(-lWidth/2), Math.round(width/ZOOM * 2), Math.round(lWidth)); 
                     if (v.timer === 20) { 
                         for (let e of enemies) {
+                            if(!inView(e.x, e.y, 500)) continue;
                             let ex = e.x - v.x; let ey = e.y - v.y;
                             let distToLine = Math.abs(Math.sin(v.angle)*ex - Math.cos(v.angle)*ey);
                             let forward = (ex * Math.cos(v.angle) + ey * Math.sin(v.angle)) > 0;
@@ -1598,30 +1711,31 @@
                     ctx.restore(); v.timer--; if(v.timer<=0) visualEffects.splice(i, 1);
                 }
                 else if (v.type === 'nova' || v.type === 'frost_armor_nova') {
-                    ctx.save(); ctx.translate(v.x, v.y);
+                    ctx.save(); ctx.translate(Math.round(v.x), Math.round(v.y));
                     let maxT = v.type === 'nova' ? 30 : 15;
                     let curR = Math.max(0, v.radius * (1 - v.timer/maxT));
-                    ctx.beginPath(); ctx.arc(0, 0, curR, 0, Math.PI*2);
+                    ctx.beginPath(); ctx.arc(0, 0, Math.round(curR), 0, Math.PI*2);
                     ctx.strokeStyle = `rgba(99, 179, 237, ${v.timer/maxT})`; ctx.lineWidth = 10; ctx.stroke();
                     if (v.timer === 30 && v.type === 'nova') {
-                        for (let e of enemies) if (Math.hypot(e.x - v.x, e.y - v.y) < v.radius) { e.frozenTimer = 180; e.takeDamage(v.player.damage, v.player, false); }
+                        for (let e of enemies) if (inView(e.x,e.y,v.radius) && Math.hypot(e.x - v.x, e.y - v.y) < v.radius) { e.frozenTimer = 180; e.takeDamage(v.player.damage, v.player, false); }
                     }
                     ctx.restore(); v.timer--; if(v.timer<=0) visualEffects.splice(i, 1);
                 }
                 else if (v.type === 'holy_nova') {
-                    ctx.save(); ctx.translate(v.x, v.y);
+                    ctx.save(); ctx.translate(Math.round(v.x), Math.round(v.y));
                     let curR = Math.max(0, v.radius * (1 - v.timer/15));
-                    ctx.beginPath(); ctx.arc(0, 0, curR, 0, Math.PI*2);
+                    ctx.beginPath(); ctx.arc(0, 0, Math.round(curR), 0, Math.PI*2);
                     ctx.strokeStyle = `rgba(255, 235, 133, ${v.timer/15})`; ctx.lineWidth = 8; ctx.stroke();
                     ctx.restore(); v.timer--; if(v.timer<=0) visualEffects.splice(i, 1);
                 }
                 else if (v.type === 'blackhole') {
-                    ctx.save(); ctx.translate(v.x, v.y);
+                    ctx.save(); ctx.translate(Math.round(v.x), Math.round(v.y));
                     let coreSize = v.drawSize || 30;
-                    ctx.beginPath(); ctx.arc(0, 0, Math.max(0, coreSize + Math.sin(v.timer*0.5)*5), 0, Math.PI*2);
+                    ctx.beginPath(); ctx.arc(0, 0, Math.round(Math.max(0, coreSize + Math.sin(v.timer*0.5)*5)), 0, Math.PI*2);
                     ctx.fillStyle = '#1a202c'; ctx.fill(); ctx.strokeStyle = '#805ad5'; ctx.lineWidth = 3; ctx.stroke();
                     if(v.timer % 10 === 0) {
                         for(let e of enemies) {
+                            if(!inView(e.x, e.y, v.radius)) continue;
                             let d = Math.hypot(e.x - v.x, e.y - v.y);
                             if (d < Math.max(0, v.radius)) {
                                 let a = Math.atan2(v.y - e.y, v.x - e.x);
@@ -1632,22 +1746,22 @@
                     ctx.restore(); v.timer--; if(v.timer<=0) visualEffects.splice(i, 1);
                 }
                 else if (v.type === 'poison_cloud') {
-                    ctx.save(); ctx.translate(v.x, v.y);
-                    ctx.beginPath(); ctx.arc(0, 0, Math.max(0, v.radius), 0, Math.PI*2);
+                    ctx.save(); ctx.translate(Math.round(v.x), Math.round(v.y));
+                    ctx.beginPath(); ctx.arc(0, 0, Math.round(Math.max(0, v.radius)), 0, Math.PI*2);
                     ctx.fillStyle = `rgba(72, 187, 120, ${Math.min(0.5, v.timer/30)})`; ctx.fill();
                     if(v.timer % 30 === 0) {
-                        for(let e of enemies) if(Math.hypot(e.x - v.x, e.y - v.y) < v.radius) e.takeDamage(v.dmg, v.player, false);
+                        for(let e of enemies) if(inView(e.x, e.y, v.radius) && Math.hypot(e.x - v.x, e.y - v.y) < v.radius) e.takeDamage(v.dmg, v.player, false);
                     }
                     ctx.restore(); v.timer--; if(v.timer<=0) visualEffects.splice(i, 1);
                 }
                 else if (v.type === 'arrow_rain') {
-                    ctx.save(); ctx.translate(v.x, v.y);
-                    ctx.beginPath(); ctx.moveTo((Math.random()-0.5)*v.radius, -100); ctx.lineTo((Math.random()-0.5)*v.radius, 0);
+                    ctx.save(); ctx.translate(Math.round(v.x), Math.round(v.y));
+                    ctx.beginPath(); ctx.moveTo(Math.round((Math.random()-0.5)*v.radius), -100); ctx.lineTo(Math.round((Math.random()-0.5)*v.radius), 0);
                     ctx.strokeStyle = '#d69e2e'; ctx.lineWidth = 2; ctx.stroke();
                     ctx.restore(); v.timer--; if(v.timer<=0) visualEffects.splice(i, 1);
                 }
                 else if (v.type === 'mirage') {
-                    ctx.save(); ctx.translate(v.x, v.y);
+                    ctx.save(); ctx.translate(Math.round(v.x), Math.round(v.y));
                     ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI*2);
                     ctx.fillStyle = `rgba(66, 153, 225, ${v.timer/60})`; ctx.fill();
                     ctx.restore(); v.timer--; if(v.timer<=0) visualEffects.splice(i, 1);
@@ -1665,6 +1779,11 @@
                 
                 if (!bossActive && gameTime >= nextBossTime) { spawnBoss(); nextBossTime += 300; }
                 
+                if (bossActive && currentBoss && !bossPhase2Triggered && (currentBoss.hp / currentBoss.maxHp) < 0.5) {
+                    bossPhase2Triggered = true;
+                    for(let i=0; i<100; i++) spawnEnemy(true);
+                }
+
                 if (!bossActive) {
                     let spawnChance = 0.01 + (gameTime / 4000); 
                     if (Math.random() < Math.min(0.1, spawnChance)) spawnEnemy();
@@ -1681,7 +1800,7 @@
 
             if (gameState !== 'start') {
                 ctx.fillStyle = '#1a202c'; ctx.fillRect(0, 0, width, height);
-                ctx.save(); ctx.scale(ZOOM, ZOOM); ctx.translate(-camera.x, -camera.y);
+                ctx.save(); ctx.scale(ZOOM, ZOOM); ctx.translate(Math.round(-camera.x), Math.round(-camera.y));
                 drawBackground();
                 items.forEach(i => i.draw(ctx));
                 enemies.forEach(e => e.draw(ctx));
@@ -1721,7 +1840,7 @@
             gameState = 'playing'; if(levelUpQueue > 0) processLevelUp();
         });
 
-        document.getElementById('startBtn').addEventListener('click', () => { initGame(5); }); // 預設難度5
+        document.getElementById('startBtn').addEventListener('click', () => { initGame(5); }); 
         document.getElementById('restartBtn').addEventListener('click', () => { initGame(5); });
         document.getElementById('pauseBtn').addEventListener('mousedown', (e) => e.stopPropagation());
         document.getElementById('pauseBtn').addEventListener('touchstart', (e) => e.stopPropagation(), {passive:false});
