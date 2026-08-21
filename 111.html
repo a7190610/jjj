@@ -34,7 +34,6 @@
     </style>
 </head>
 <body>
-
     <canvas id="gameCanvas"></canvas>
 
     <div id="joystickZone">
@@ -55,7 +54,8 @@
                 <div class="bg-gray-800 bg-opacity-80 rounded px-3 py-2 border border-gray-600 shadow text-xs space-y-1">
                     <div class="text-red-400 font-bold">HP: <span id="uiHp">50</span> / <span id="uiMaxHp">50</span></div>
                     <div class="text-yellow-400">擊殺: <span id="uiKills">0</span></div>
-                    <div class="text-orange-400">基礎攻擊力: <span id="uiDamage">1</span></div>
+                    <!-- 攻擊力完全鎖死在 1 + 擊殺數 -->
+                    <div class="text-orange-400 font-bold">絕對攻擊力: <span id="uiDamage">1</span></div>
                     <div class="text-purple-400">難度倍率: x<span id="uiDiffText">5</span></div>
                     <div class="text-white mt-1 font-mono text-sm" id="uiTime">00:00</div>
                 </div>
@@ -68,16 +68,15 @@
         </div>
     </div>
 
-    <!-- Modals -->
     <div id="startScreen" class="absolute inset-0 modal-bg flex flex-col items-center justify-center z-50 pointer-events-auto">
-        <h1 class="text-6xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-yellow-500 tracking-wider text-center drop-shadow-lg">兆級倖存者<br><span class="text-3xl text-gray-300">極致進化</span></h1>
+        <h1 class="text-6xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-yellow-500 tracking-wider text-center drop-shadow-lg">兆級倖存者<br><span class="text-3xl text-gray-300">極限突破</span></h1>
         <button id="startBtn" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-4 px-12 rounded-full text-2xl shadow-[0_0_20px_rgba(79,70,229,0.5)] transition transform hover:scale-105 mb-4">開始生存</button>
         <p class="text-gray-400">操作：拖曳畫面搖桿 或 WASD移動</p>
     </div>
 
     <div id="levelUpScreen" class="absolute inset-0 modal-bg flex-col items-center justify-center z-40 hidden pointer-events-auto">
         <h2 class="text-5xl font-bold text-yellow-400 mb-2 animate-bounce drop-shadow-md">等級提升！</h2>
-        <p class="text-gray-300 mb-6 text-lg">按下對應數字鍵快速選擇</p>
+        <p class="text-gray-300 mb-6 text-lg">按下對應數字鍵快速選擇 (絕對禁止攻擊力技能)</p>
         <div id="skillsContainer" class="flex flex-col md:flex-row gap-4 w-full max-w-5xl px-4 justify-center items-stretch h-[60vh] overflow-y-auto"></div>
         <button id="rerollBtn" class="mt-6 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-8 rounded-full border border-purple-400 shadow transition">🔄 刷新技能選單 (免費)</button>
     </div>
@@ -87,28 +86,27 @@
         <button id="resumeBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-10 rounded-full text-xl shadow transition mb-8 mx-auto block">繼續遊戲</button>
         
         <div class="flex flex-col md:flex-row gap-6 w-full max-w-6xl px-4 justify-center items-start">
-            <!-- Weapon Status -->
+            <!-- Weapon Status (Will show detailed 5, 10, 25, 50 descriptions) -->
             <div class="bg-gray-800 p-6 rounded-lg border border-gray-600 flex-1 w-full text-left max-h-[60vh] overflow-y-auto">
-                <h3 class="text-xl font-bold mb-4 text-yellow-400 border-b border-gray-600 pb-2">已裝備武器與特效</h3>
+                <h3 class="text-xl font-bold mb-4 text-yellow-400 border-b border-gray-600 pb-2">已裝備武器與專屬特效</h3>
                 <div id="pauseWeaponsList" class="space-y-4"></div>
             </div>
             
-            <!-- Skill Status -->
             <div class="bg-gray-800 p-6 rounded-lg border border-gray-600 flex-1 w-full text-left max-h-[60vh] overflow-y-auto">
-                <h3 class="text-xl font-bold mb-4 text-blue-400 border-b border-gray-600 pb-2">被動技能清單</h3>
+                <h3 class="text-xl font-bold mb-4 text-blue-400 border-b border-gray-600 pb-2">輔助與發射物技能</h3>
                 <div id="pauseSkillsList" class="grid grid-cols-1 gap-2 text-sm"></div>
             </div>
         </div>
     </div>
 
-    <!-- Difficulty Change Modal (Triggered by Boss Drop) -->
+    <!-- Difficulty Modal (Triggered by Boss) -->
     <div id="diffScreen" class="absolute inset-0 modal-bg flex-col items-center justify-center z-50 hidden pointer-events-auto">
         <h2 class="text-4xl font-bold text-purple-400 mb-4 animate-pulse">獲得難度調整器！</h2>
         <p class="text-gray-300 mb-8">Boss 掉落了神秘方塊，您可以重新調整世界法則。</p>
         <div class="bg-gray-800 p-6 rounded-lg border border-gray-600 mb-8 w-80 text-center">
             <h3 class="text-lg font-bold mb-4 text-white">設定新難度倍率</h3>
             <input type="number" id="customDiffInput" class="w-full bg-gray-900 text-white border border-gray-600 rounded p-2 text-center text-xl mb-4" value="5" min="1">
-            <p class="text-xs text-red-400 mt-2 text-left">* 警告：過高的難度將賦予怪物極致的血量與絕對抗擊退能力！</p>
+            <p class="text-xs text-red-400 mt-2 text-left">* 難度越高，怪物血量暴增越快！</p>
         </div>
         <button id="confirmDiffBtn" class="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-10 rounded-full text-xl shadow transition">確認變更並繼續</button>
     </div>
@@ -122,7 +120,6 @@
     </div>
 
     <script>
-        // --- Utils ---
         function formatNum(num) {
             if (!isFinite(num)) return "∞";
             if (num >= 1e15) return num.toExponential(2);
@@ -141,13 +138,13 @@
 
         window.addEventListener('resize', () => { width = window.innerWidth; height = window.innerHeight; canvas.width = width; canvas.height = height; });
 
-        let gameState = 'start'; // 'start', 'playing', 'paused', 'levelup', 'gameover', 'diff_change'
+        let gameState = 'start'; 
         let lastTime = 0; let gameTime = 0; let difficulty = 5; let levelUpQueue = 0; let gameLoopId = null;
         let bossActive = false; let bossPhase = 0; let currentBoss = null;
         let rerollCount = 0;
         const ZOOM = 0.65; 
 
-        // 絕對物理邊界
+        // 物理邊界 4000x4000
         const mapSize = { width: 4000, height: 4000 };
         const camera = { x: 0, y: 0 };
 
@@ -157,7 +154,6 @@
         const joystickBase = document.getElementById('joystickBase');
         const joystickStick = document.getElementById('joystickStick');
 
-        // --- Event Listeners ---
         window.addEventListener('keydown', (e) => { 
             if (keys.hasOwnProperty(e.key)) keys[e.key] = true; 
             if (['1','2','3','4','5'].includes(e.key) && gameState === 'playing') switchWeaponByIndex(parseInt(e.key) - 1);
@@ -181,6 +177,7 @@
         window.addEventListener('touchmove', (e) => { if (joystick.active && e.touches.length > 0) { handleJoystickMove(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); } }, {passive: false});
         window.addEventListener('touchend', handleJoystickEnd); window.addEventListener('touchcancel', handleJoystickEnd);
 
+        // 5 把武器 (50級為滿級)
         const weaponsDb = [
             { id: 'pistol', name: '手槍', color: '#a0aec0', cooldown: 30, speed: 18, pierce: 1, maxLv: 50 },
             { id: 'bow', name: '長弓', color: '#d69e2e', cooldown: 50, speed: 20, pierce: 3, maxLv: 50 },
@@ -189,7 +186,37 @@
             { id: 'wand', name: '魔法杖', color: '#9f7aea', cooldown: 45, speed: 12, pierce: 1, maxLv: 50 }
         ];
 
-        // 嚴格禁止增加攻擊力的技能
+        function getWeaponEffectsDesc(id, lv) {
+            let eff = [];
+            if (id === 'pistol') {
+                if (lv >= 5) eff.push('Lv5: 牆壁彈跳(3次)');
+                if (lv >= 10) eff.push('Lv10: 爆裂彈頭');
+                if (lv >= 25) eff.push('Lv25: 三連發點射');
+                if (lv >= 50) eff.push('Lv50: 毀滅核爆');
+            } else if (id === 'bow') {
+                if (lv >= 5) eff.push('Lv5: 無限穿透');
+                if (lv >= 10) eff.push('Lv10: 自動追蹤');
+                if (lv >= 25) eff.push('Lv25: 漫天箭雨');
+                if (lv >= 50) eff.push('Lv50: 雷霆審判');
+            } else if (id === 'boomerang') {
+                if (lv >= 5) eff.push('Lv5: 前後雙發');
+                if (lv >= 10) eff.push('Lv10: 巨大化刃');
+                if (lv >= 25) eff.push('Lv25: 十字四方');
+                if (lv >= 50) eff.push('Lv50: 引力黑洞');
+            } else if (id === 'shotgun') {
+                if (lv >= 5) eff.push('Lv5: 極致擊退');
+                if (lv >= 10) eff.push('Lv10: 爆破霰彈');
+                if (lv >= 25) eff.push('Lv25: 貫穿衝擊');
+                if (lv >= 50) eff.push('Lv50: 死亡圓環(360度)');
+            } else if (id === 'wand') {
+                if (lv >= 5) eff.push('Lv5: 毒霧尾跡');
+                if (lv >= 10) eff.push('Lv10: 命中分裂');
+                if (lv >= 25) eff.push('Lv25: 隕石天降');
+                if (lv >= 50) eff.push('Lv50: 末日毀滅射線');
+            }
+            return eff.join('<br>') || '尚未解鎖進階效果';
+        }
+
         const availableSkills = [
             { id: 'proj_up', name: '多重發射', desc: '發射物數量 +1', maxLv: 10 },
             { id: 'pierce_up', name: '銳利箭矢', desc: '穿透力 +1', maxLv: 10 },
@@ -198,13 +225,11 @@
             { id: 'knockback', name: '衝擊波', desc: '擊退效果大幅提升', maxLv: 10 },
             { id: 'size_up', name: '巨大化', desc: '發射物體積變大', maxLv: 10 },
             
-            // 彈道方向
             { id: 'arrow_front', name: '正向增幅', desc: '正前方額外發射', maxLv: 10 },
             { id: 'arrow_diag', name: '斜向齊發', desc: '斜向各額外發射', maxLv: 10 },
             { id: 'arrow_side', name: '兩側齊發', desc: '左右側額外發射', maxLv: 10 },
             { id: 'arrow_back', name: '背向防護', desc: '正後方額外發射', maxLv: 10 },
             
-            // 防禦/輔助
             { id: 'spd_up', name: '疾風步', desc: '移動速度 +8%', maxLv: 10 },
             { id: 'pickup', name: '磁吸力', desc: '拾取範圍大幅增加', maxLv: 10 },
             { id: 'xp_up', name: '學霸', desc: '經驗值獲取 +15%', maxLv: 10 },
@@ -308,25 +333,33 @@
                 if (this.getStat('arrow_side') > 0) { for(let i=0; i<this.getStat('arrow_side'); i++) { angles.push(Math.PI/2); angles.push(-Math.PI/2); } }
                 if (this.getStat('arrow_diag') > 0) { for(let i=0; i<this.getStat('arrow_diag'); i++) { angles.push(Math.PI/4); angles.push(-Math.PI/4); } }
 
-                // 武器特效實裝
+                // 實裝所有武器 5, 10, 25, 50 的效果
                 if (wep.id === 'pistol') {
                     angles.forEach(a => {
-                        fire(a, { bounces: wep.level >= 5 ? 3 : 0, explosive: wep.level >= 10 });
-                        if (wep.level >= 25) { fire(a, { speedMult: 0.8, bounces: 3, explosive: true }); fire(a, { speedMult: 0.6, bounces: 3, explosive: true }); }
+                        let p = { bounces: wep.level >= 5 ? 3 : 0, explosive: wep.level >= 10, nuke: wep.level >= 50 };
+                        fire(a, p);
+                        if (wep.level >= 25 && wep.level < 50) { fire(a, { ...p, speedMult: 0.8 }); fire(a, { ...p, speedMult: 0.6 }); }
+                        if (wep.level >= 50) { fire(a+0.2, p); fire(a-0.2, p); }
                     });
                 } else if (wep.id === 'bow') {
                     let p = wep.level >= 5 ? 999 : totalPierce;
-                    angles.forEach(a => fire(a, { customPierce: p, homing: wep.level >= 10, arrowRain: wep.level >= 25 }));
+                    let extra = { customPierce: p, homing: wep.level >= 10, arrowRain: wep.level >= 25, lightningStrike: wep.level >= 50 };
+                    angles.forEach(a => fire(a, extra));
                 } else if (wep.id === 'boomerang') {
-                    fire(0, { sizeM: wep.level >= 10 ? (wep.level >= 25 ? 5 : 3) : 1 });
-                    if (wep.level >= 5) fire(Math.PI, { sizeM: wep.level >= 10 ? (wep.level >= 25 ? 5 : 3) : 1 });
-                    if (wep.level >= 25) { fire(Math.PI/2, { sizeM: 5 }); fire(-Math.PI/2, { sizeM: 5 }); }
+                    let s = wep.level >= 10 ? (wep.level >= 50 ? 6 : 3) : 1;
+                    let extra = { sizeM: s, blackholeHit: wep.level >= 50 };
+                    fire(0, extra);
+                    if (wep.level >= 5) fire(Math.PI, extra);
+                    if (wep.level >= 25) { fire(Math.PI/2, extra); fire(-Math.PI/2, extra); }
                 } else if (wep.id === 'shotgun') {
                     let pellets = 3 + Math.floor(wep.level/2);
-                    if(wep.level >= 25) pellets += 10;
-                    for(let i=0; i<pellets; i++) fire((Math.random()-0.5)*0.8, { heavyKnockback: wep.level >= 10, destroyShot: wep.level >= 25 });
+                    let spreadArea = wep.level >= 50 ? Math.PI * 2 : 0.8;
+                    for(let i=0; i<pellets; i++) {
+                        let aOffset = (Math.random()-0.5) * spreadArea;
+                        fire(aOffset, { heavyKnockback: wep.level >= 5, explosive: wep.level >= 10, destroyShot: wep.level >= 25 });
+                    }
                 } else if (wep.id === 'wand') {
-                    angles.forEach(a => fire(a, { homing: true, poisonTrail: wep.level >= 5, blackholeHit: wep.level >= 10, apocalypse: wep.level >= 25 }));
+                    angles.forEach(a => fire(a, { homing: true, poisonTrail: wep.level >= 5, splitOnHit: wep.level >= 10, meteor: wep.level >= 25, apocalypseLaser: wep.level >= 50 }));
                 }
             }
 
@@ -336,7 +369,6 @@
                 if (this.invulnTimer > 0) return;
                 if (Math.random() < this.getStat('evade') * 0.04) { visualEffects.push({ type: 'dmg_text', x: this.x, y: this.y-20, text: "MISS", timer: 20 }); this.invulnTimer = 20; return; }
                 
-                // 固定扣 1 血，減免機制可忽略或依需求保留，但基礎就是 1
                 amt = 1;
                 this.hp -= amt; this.invulnTimer = 120; // 2秒無敵
                 visualEffects.push({ type: 'dmg_text', x: this.x, y: this.y-30, text: "-1", timer: 30 });
@@ -360,29 +392,31 @@
                 this.x = x; this.y = y; this.type = type;
                 let scale = 0.5 + Math.random(); 
                 
-                // 怪物血量：難度倍率線性影響，確保前期能打死，後期也有挑戰
-                let hpGrowth = Math.max(1, gameTime / 120) * diff; 
+                // 為了對抗兆級傷害，怪物血量進行雙重指數成長
+                let timeScale = Math.pow(1.3, gameTime / 60); // 隨時間極速成長
+                let killScale = 1 + player.kills * 0.3; // 隨擊殺數線性放大基底
+                let hpGrowth = timeScale * killScale * diff;
                 
                 if (type === 'boss') { scale = 4.0; hpGrowth *= 50; }
                 else if (type === 'brute') { scale = Math.max(1.2, scale); hpGrowth *= 5; }
 
                 switch(type) {
                     case 'swarm': this.baseHp = 2; this.speed = 3.5; this.radius = 8; this.color = `#${Math.floor(Math.random()*16777215).toString(16)}`; this.xp = 5; break;
-                    case 'brute': this.baseHp = 20; this.speed = 0.8; this.radius = 25; this.color = `hsl(200, 30%, 40%)`; this.xp = 40; break;
-                    case 'bat': this.baseHp = 3; this.speed = 6.0; this.radius = 6; this.color = '#718096'; this.xp = 8; break;
-                    case 'boss': this.baseHp = 5000; this.speed = 1.5; this.radius = 60; this.color = '#9b2c2c'; this.xp = 1000; this.isBoss = true; scale = 1; break;
-                    default: this.baseHp = 5; this.speed = 2; this.radius = 12; this.color = `hsl(140, 60%, 50%)`; this.xp = 10;
+                    case 'brute': this.baseHp = 10; this.speed = 0.8; this.radius = 25; this.color = `hsl(200, 30%, 40%)`; this.xp = 40; break;
+                    case 'bat': this.baseHp = 1; this.speed = 6.0; this.radius = 6; this.color = '#718096'; this.xp = 8; break;
+                    case 'boss': this.baseHp = 2000; this.speed = 1.5; this.radius = 60; this.color = '#9b2c2c'; this.xp = 1000; this.isBoss = true; scale = 1; break;
+                    default: this.baseHp = 4; this.speed = 2; this.radius = 12; this.color = `hsl(140, 60%, 50%)`; this.xp = 10;
                 }
 
                 this.radius = this.radius * scale;
                 this.hp = this.baseHp * hpGrowth * (scale * 0.8);
                 this.maxHp = this.hp;
-                this.dmg = 1; // 嚴格固定碰撞傷害為 1
+                this.dmg = 1; 
                 this.speed = this.speed * (1 / Math.sqrt(scale));
                 
                 this.knockbackX = 0; this.knockbackY = 0;
                 
-                // 抗擊退
+                // 難度越高，怪越難推動
                 this.kbResist = (this.type === 'brute' || this.isBoss) ? 0.1 : 1.0;
                 this.kbResist *= Math.max(0.01, 1 - (Math.log10(diff) * 0.2));
             }
@@ -394,7 +428,7 @@
 
             update(player, diff) {
                 let distToPlayer = Math.hypot(this.x - player.x, this.y - player.y);
-                if (distToPlayer > 2000) return; // 遠處睡覺
+                if (distToPlayer > 2500) return; // 畫面外極遠處休眠，節省效能
 
                 if (Math.abs(this.knockbackX) > 0.1 || Math.abs(this.knockbackY) > 0.1) {
                     this.x += this.knockbackX; this.y += this.knockbackY;
@@ -412,11 +446,12 @@
             }
 
             draw(ctx) {
-                if (!inView(this.x, this.y, this.radius + 20)) return; 
+                if (!inView(this.x, this.y, this.radius + 20)) return; // 畫面外剔除渲染
                 ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y));
                 ctx.fillStyle = this.color;
                 ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke();
                 
+                // 血條
                 if (this.hp > 0 && this.hp < this.maxHp && (this.isBoss || this.radius > 15)) {
                     let w = this.radius * 2; let h = 4;
                     ctx.fillStyle = '#000'; ctx.fillRect(-w/2, -this.radius - 8, w, h);
@@ -456,7 +491,7 @@
                     this.x += Math.cos(this.angle) * this.speed; this.y += Math.sin(this.angle) * this.speed;
                 }
 
-                // 物理邊界反彈/銷毀邏輯
+                // 物理邊界反彈
                 if (this.x <= 0 || this.x >= mapSize.width || this.y <= 0 || this.y >= mapSize.height) {
                     if (this.extra.bounces > 0) {
                         if (this.x <= 0 || this.x >= mapSize.width) { this.angle = Math.PI - this.angle; this.x = Math.max(0, Math.min(mapSize.width, this.x)); }
@@ -478,18 +513,36 @@
                         let kx = Math.cos(this.angle) * 3 * kbMultiplier; let ky = Math.sin(this.angle) * 3 * kbMultiplier;
                         e.knockbackX = kx * e.kbResist; e.knockbackY = ky * e.kbResist;
                         
-                        // 隱藏怪物受傷浮動字，直接發揮效果
-                        if (this.extra.explosive && inView(this.x, this.y, 50)) {
-                            visualEffects.push({ type: 'explosion', x: this.x, y: this.y, timer: 15 });
-                            for(let oe of enemies) if (oe !== e && Math.hypot(oe.x - this.x, oe.y - this.y) < 100) oe.takeDamage(this.dmg*2);
+                        // 武器特效實裝與視覺
+                        if (inView(this.x, this.y, 100)) {
+                            if (this.extra.explosive || this.extra.nuke) {
+                                let r = this.extra.nuke ? 200 : 80;
+                                visualEffects.push({ type: 'explosion', x: this.x, y: this.y, timer: this.extra.nuke ? 30 : 15, maxR: r });
+                                for(let oe of enemies) if (oe !== e && Math.hypot(oe.x - this.x, oe.y - this.y) < r) oe.takeDamage(this.dmg * (this.extra.nuke ? 5 : 2));
+                            }
+                            if (this.extra.arrowRain) visualEffects.push({ type: 'arrow_rain', x: e.x, y: e.y, timer: 30 });
+                            if (this.extra.lightningStrike) {
+                                visualEffects.push({ type: 'lightning', x: e.x, y: e.y, timer: 10 });
+                                for(let oe of enemies) if(Math.hypot(oe.x-e.x, oe.y-e.y) < 150) oe.takeDamage(this.dmg * 3);
+                            }
+                            if (this.extra.blackholeHit) visualEffects.push({ type: 'blackhole', x: this.x, y: this.y, timer: 60 });
+                            if (this.extra.meteor) visualEffects.push({ type: 'meteor', x: e.x, y: e.y, timer: 45 });
+                            if (this.extra.apocalypseLaser) {
+                                visualEffects.push({ type: 'laser', startX: this.startX, startY: this.startY, angle: this.angle, timer: 20 });
+                                for(let oe of enemies) {
+                                    let distToLine = Math.abs((oe.x - this.startX) * Math.sin(this.angle) - (oe.y - this.startY) * Math.cos(this.angle));
+                                    if(distToLine < 30) oe.takeDamage(this.dmg * 10);
+                                }
+                            }
                         }
 
-                        if (this.extra.blackholeHit && inView(this.x, this.y, 50)) {
-                            visualEffects.push({ type: 'blackhole', x: this.x, y: this.y, timer: 60 });
+                        if (this.extra.splitOnHit) {
+                            projectiles.push(new Projectile(this.x, this.y, this.angle+0.5, this.speed*0.8, this.dmg*0.5, 1, 'wand', 1, this.color, this.sizeM*0.5));
+                            projectiles.push(new Projectile(this.x, this.y, this.angle-0.5, this.speed*0.8, this.dmg*0.5, 1, 'wand', 1, this.color, this.sizeM*0.5));
                         }
 
                         this.pierce--;
-                        if (this.pierce <= 0 && this.wid !== 'boomerang') { this.active = false; break; }
+                        if (this.pierce <= 0 && this.wid !== 'boomerang' && !this.extra.destroyShot) { this.active = false; break; }
                     }
                 }
             }
@@ -573,6 +626,7 @@
             let sx = mapSize.width/2; let sy = mapSize.height/2;
             currentBoss = new Enemy('boss', sx, sy, difficulty);
             enemies.push(currentBoss);
+            // 召喚 100 隻，剩下 100 隻等半血
             for(let i=0; i<100; i++) {
                 let a = Math.random() * Math.PI * 2; let r = 200 + Math.random()*800;
                 let nx = Math.max(0, Math.min(mapSize.width, sx + Math.cos(a)*r));
@@ -637,9 +691,8 @@
                 container.appendChild(btn);
             });
             
-            // 刷新按鈕邏輯
             let cost = Math.max(1, Math.floor((1 + player.kills) * 0.01));
-            let btnText = rerollCount === 0 ? "🔄 刷新技能選單 (免費)" : `🔄 刷新 (消耗 ${formatNum(cost)} 攻擊力)`;
+            let btnText = rerollCount === 0 ? "🔄 刷新技能選單 (免費)" : `🔄 刷新 (消耗 ${formatNum(cost)} 擊殺數)`;
             document.getElementById('rerollBtn').innerText = btnText;
         }
 
@@ -710,13 +763,13 @@
             
             let wList = document.getElementById('pauseWeaponsList'); wList.innerHTML = '';
             player.weapons.forEach(w => {
-                let fx = w.level >= 25 ? '極致覺醒！' : (w.level >= 10 ? '獲得進階特效' : (w.level >= 5 ? '獲得初階特效' : '無'));
-                wList.innerHTML += `<div class="bg-gray-700 p-3 rounded"><div class="font-bold text-lg" style="color:${w.color}">${w.name} <span class="text-yellow-400 text-sm">Lv.${w.level}/${w.maxLv}</span></div><div class="text-sm text-gray-300 mt-1">特效: ${fx}</div></div>`;
+                let desc = getWeaponEffectsDesc(w.id, w.level);
+                wList.innerHTML += `<div class="bg-gray-700 p-3 rounded border border-gray-600"><div class="font-bold text-lg" style="color:${w.color}">${w.name} <span class="text-yellow-400 text-sm">Lv.${w.level}/${w.maxLv}</span></div><div class="text-sm text-gray-300 mt-2 space-y-1">${desc}</div></div>`;
             });
             let sList = document.getElementById('pauseSkillsList'); sList.innerHTML = '';
             for (let k in player.skills) {
                 let sDef = availableSkills.find(s => s.id === k);
-                if (sDef) sList.innerHTML += `<div class="bg-gray-700 p-2 rounded flex justify-between"><span>${sDef.name}</span><span class="text-yellow-400 font-bold">Lv.${player.skills[k]}</span></div>`;
+                if (sDef) sList.innerHTML += `<div class="bg-gray-700 p-2 rounded flex justify-between border border-gray-600"><span>${sDef.name}</span><span class="text-yellow-400 font-bold">Lv.${player.skills[k]}</span></div>`;
             }
         }
         
@@ -745,13 +798,25 @@
             for (let i = visualEffects.length - 1; i >= 0; i--) {
                 let v = visualEffects[i]; v.timer--;
                 if (v.timer <= 0) { visualEffects.splice(i, 1); continue; }
-                if (!inView(v.x, v.y, 100)) continue;
+                if (!inView(v.x || v.startX, v.y || v.startY, 300)) continue;
                 
-                ctx.save(); ctx.translate(Math.round(v.x), Math.round(v.y));
+                ctx.save(); 
+                if(v.x) ctx.translate(Math.round(v.x), Math.round(v.y));
+                
                 if (v.type === 'explosion') {
-                    let r = Math.max(0, 30 * (1 - v.timer/15)); ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle = `rgba(237,137,54,${Math.max(0,v.timer/15)})`; ctx.fill();
+                    let r = Math.max(0, (v.maxR || 80) * (1 - v.timer/(v.maxR === 200 ? 30 : 15))); 
+                    ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle = `rgba(237,137,54,${Math.max(0,v.timer/15)})`; ctx.fill();
                 } else if (v.type === 'blackhole') {
-                    let r = Math.max(0, 40 * (1 - v.timer/60)); ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle = `rgba(0,0,0,${Math.max(0,v.timer/60)})`; ctx.fill();
+                    let r = Math.max(0, 60 * (1 - v.timer/60)); ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle = `rgba(0,0,0,${Math.max(0,v.timer/60)})`; ctx.fill();
+                } else if (v.type === 'arrow_rain') {
+                    ctx.fillStyle = '#d69e2e'; ctx.fillRect(-2, -50 + (30-v.timer)*3, 4, 20);
+                } else if (v.type === 'lightning') {
+                    ctx.strokeStyle = '#f6e05e'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(0, -300); ctx.lineTo((Math.random()-0.5)*20, -150); ctx.lineTo(0,0); ctx.stroke();
+                } else if (v.type === 'meteor') {
+                    ctx.fillStyle = '#c53030'; ctx.beginPath(); ctx.arc(-v.timer*5, -v.timer*10, 20, 0, Math.PI*2); ctx.fill();
+                } else if (v.type === 'laser') {
+                    ctx.translate(Math.round(v.startX), Math.round(v.startY)); ctx.rotate(v.angle);
+                    ctx.fillStyle = `rgba(159,122,234,${v.timer/20})`; ctx.fillRect(0, -15, 2000, 30);
                 }
                 ctx.restore();
             }
@@ -775,7 +840,7 @@
                     let spawnChance = 0.05 + (gameTime / 1000); 
                     if (Math.random() < spawnChance && enemies.length < 150) spawnEnemy();
                 } else if (currentBoss && currentBoss.hp < currentBoss.maxHp * 0.5 && bossPhase === 1) {
-                    bossPhase = 2; for(let i=0; i<100; i++) spawnEnemy();
+                    bossPhase = 2; for(let i=0; i<100; i++) spawnEnemy(); // 半血狂暴再叫 100 隻
                 }
 
                 let newEnemies = []; for(let i=0; i<enemies.length; i++) { if(enemies[i].hp !== -999) { enemies[i].update(player, difficulty); newEnemies.push(enemies[i]); } } enemies = newEnemies;
