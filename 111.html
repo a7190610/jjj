@@ -11,39 +11,38 @@
         .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
         .pointer-events-auto { pointer-events: auto; }
         
-        /* Floating Damage Text Animation */
         @keyframes floatUp {
             0% { transform: translateY(0) scale(1); opacity: 1; }
             100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
         }
-        .dmg-text {
-            position: absolute;
-            color: #ff3333;
-            font-weight: bold;
-            font-size: 1rem;
-            text-shadow: 1px 1px 2px black, -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black;
-            animation: floatUp 0.8s ease-out forwards;
-            pointer-events: none;
-            z-index: 10;
+        @keyframes pulseRed {
+            0%, 100% { color: #f56565; text-shadow: 0 0 5px #f56565; }
+            50% { color: #fff; text-shadow: 0 0 15px #f56565; }
         }
-        .crit-text { color: #ffcc00; font-size: 1.3rem; z-index: 11;}
-        .heal-text { color: #33ff33; font-weight: bold; animation: floatUp 1s ease-out forwards; }
-        .status-text { color: #e2e8f0; font-size: 0.9rem; animation: floatUp 0.8s ease-out forwards; }
         
-        /* Modal Background */
+        .dmg-text {
+            position: absolute; color: #ff3333; font-weight: bold; font-size: 1.2rem;
+            text-shadow: 1px 1px 2px black, -1px -1px 2px black, 1px -1px 2px black, -1px 1px 2px black;
+            animation: floatUp 0.8s ease-out forwards; pointer-events: none; z-index: 10;
+        }
+        .crit-text { color: #ffcc00; font-size: 1.5rem; z-index: 11;}
+        .heal-text { color: #33ff33; font-weight: bold; animation: floatUp 1s ease-out forwards; z-index: 10;}
+        .player-dmg-text { 
+            color: #ff0000; font-size: 1.8rem; font-weight: 900; 
+            text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff; 
+            animation: floatUp 1s ease-out forwards; z-index: 20;
+        }
+        .execute-text { color: #9f7aea; font-size: 1.8rem; font-weight: 900; animation: floatUp 1.2s ease-out forwards; z-index: 15; text-shadow: 0 0 10px #000; }
+        .boss-timer { animation: pulseRed 1s infinite; font-weight: bold; }
+        
         .modal-bg { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); }
-        
-        /* Weapon Slot */
-        .weapon-slot { transition: all 0.2s; border: 2px solid #4a5568; position: relative; }
+        .weapon-slot { transition: all 0.2s; border: 2px solid #4a5568; position: relative;}
         .weapon-slot.active { border-color: #f6e05e; background-color: rgba(246, 224, 94, 0.2); transform: scale(1.1); box-shadow: 0 0 10px #f6e05e; }
-        .weapon-slot.locked { opacity: 0.4; filter: grayscale(100%); cursor: not-allowed; }
-        .weapon-lv { position: absolute; bottom: -8px; right: -8px; background: #e53e3e; color: white; font-size: 0.7rem; padding: 2px 4px; border-radius: 4px; font-weight: bold;}
+        .weapon-lv { position: absolute; bottom: -6px; right: -6px; background: #e53e3e; font-size: 0.7rem; padding: 1px 4px; border-radius: 4px; font-weight: bold; color: white;}
         
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #718096; border-radius: 3px; }
 
-        /* Joystick Styles */
         #joystickZone { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: auto; z-index: 5; }
         #joystickBase { position: absolute; width: 100px; height: 100px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%; display: none; transform: translate(-50%, -50%); pointer-events: none; }
         #joystickStick { position: absolute; width: 40px; height: 40px; background: rgba(255, 255, 255, 0.5); border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
@@ -56,67 +55,71 @@
 
     <!-- Joystick Zone -->
     <div id="joystickZone">
-        <div id="joystickBase">
-            <div id="joystickStick"></div>
-        </div>
+        <div id="joystickBase"><div id="joystickStick"></div></div>
     </div>
 
     <!-- UI Layer -->
-    <div id="uiLayer" class="ui-layer flex flex-col justify-between p-4 z-10">
-        <div class="flex justify-between items-start pointer-events-auto">
-            <div>
-                <div class="bg-gray-800 bg-opacity-75 rounded px-3 py-1 mb-2 border border-gray-600 shadow pointer-events-none">
-                    <div class="text-xl font-bold text-blue-400">Lv. <span id="uiLevel">1</span></div>
-                    <div class="text-sm text-gray-300">經驗值: <span id="uiXp">0</span> / <span id="uiNextXp">10</span> <span id="uiTime" class="ml-2 text-yellow-300 font-mono">00:00</span></div>
-                    <div class="w-full bg-gray-700 h-2 mt-1 rounded overflow-hidden">
-                        <div id="xpBar" class="bg-blue-500 h-full w-0 transition-all duration-200"></div>
-                    </div>
-                </div>
-                <div class="bg-gray-800 bg-opacity-75 rounded px-3 py-1 border border-gray-600 shadow text-sm space-y-1 pointer-events-none">
-                    <div class="text-red-400">生命值: <span id="uiHp">50</span> / <span id="uiMaxHp">50</span></div>
-                    <div class="text-yellow-400">擊殺數: <span id="uiKills">0</span></div>
-                    <div class="text-orange-400">基礎攻擊力: <span id="uiDamage">1</span></div>
-                    <div class="text-gray-400">難度: <span id="uiDiffText">普通 (x2)</span></div>
+    <div id="uiLayer" class="ui-layer flex justify-between p-4 z-10">
+        <!-- Top Left Stats -->
+        <div class="pointer-events-auto">
+            <div class="bg-gray-800 bg-opacity-75 rounded px-3 py-1 mb-2 border border-gray-600 shadow pointer-events-none">
+                <div class="text-xl font-bold text-blue-400">Lv. <span id="uiLevel">1</span></div>
+                <div class="text-sm text-gray-300">經驗值: <span id="uiXp">0</span> / <span id="uiNextXp">10</span></div>
+                <div class="w-full bg-gray-700 h-2 mt-1 rounded overflow-hidden">
+                    <div id="xpBar" class="bg-blue-500 h-full w-0 transition-all duration-200"></div>
                 </div>
             </div>
-            
-            <button id="pauseBtn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded border border-gray-500 shadow pointer-events-auto transition z-20">
-                ⏸ 暫停 / 技能
+            <div class="bg-gray-800 bg-opacity-75 rounded px-3 py-1 border border-gray-600 shadow text-sm space-y-1 pointer-events-none">
+                <div class="text-red-400">生命值: <span id="uiHp">50</span> / <span id="uiMaxHp">50</span></div>
+                <div class="text-yellow-400">擊殺數: <span id="uiKills">0</span></div>
+                <div class="text-orange-400">基礎攻擊力: <span id="uiDamage">1</span></div>
+                <div class="text-gray-400">難度: <span id="uiDiffText">普通 (x5)</span></div>
+                <div class="text-purple-400 font-mono">時間: <span id="uiTime">00:00</span></div>
+            </div>
+            <button id="pauseBtn" class="mt-4 bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded border border-gray-500 shadow pointer-events-auto transition">
+                ⏸ 暫停 / 設定
             </button>
         </div>
 
-        <div class="flex justify-center mb-4 pointer-events-auto z-20">
-            <div class="bg-gray-900 bg-opacity-80 rounded-lg p-2 flex space-x-4 border border-gray-700" id="weaponContainer">
+        <!-- Top Right Weapons -->
+        <div class="pointer-events-auto flex flex-col items-end">
+            <div class="text-xs text-gray-400 mb-1">裝備武器 (按 1,2,3 切換)</div>
+            <div class="bg-gray-900 bg-opacity-80 rounded-lg p-2 flex space-x-2 border border-gray-700" id="weaponContainer">
                 <!-- Weapon slots injected by JS -->
             </div>
         </div>
     </div>
 
-    <!-- Start Screen -->
     <div id="startScreen" class="absolute inset-0 modal-bg flex flex-col items-center justify-center z-50 pointer-events-auto">
         <h1 class="text-6xl font-black mb-2 text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-yellow-500 tracking-wider" style="-webkit-text-stroke: 1px white;">兆級倖存者</h1>
-        <p class="text-xl text-gray-300 mb-8">純粹殺戮，只有擊殺能讓你變強！</p>
+        <p class="text-xl text-gray-300 mb-8">唯有殺戮，方能變強！</p>
         
-        <div class="bg-gray-800 p-6 rounded-lg border border-gray-600 mb-8 w-80 text-center shadow-lg">
+        <div class="bg-gray-800 p-6 rounded-lg border border-gray-600 mb-8 w-96 text-center shadow-lg">
             <h3 class="text-lg font-bold mb-4">選擇初始難度</h3>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-2 gap-3 mb-3">
                 <button class="diff-btn bg-green-600 hover:bg-green-500 text-white py-2 rounded" data-val="1">簡單 (x1)</button>
-                <button class="diff-btn bg-blue-600 hover:bg-blue-500 text-white py-2 rounded border-2 border-white" data-val="2">普通 (x2)</button>
-                <button class="diff-btn bg-orange-600 hover:bg-orange-500 text-white py-2 rounded" data-val="5">困難 (x5)</button>
-                <button class="diff-btn bg-red-700 hover:bg-red-600 text-white py-2 rounded font-bold" data-val="10">地獄 (x10)</button>
+                <button class="diff-btn bg-blue-600 hover:bg-blue-500 text-white py-2 rounded border-2 border-white" data-val="5">普通 (x5)</button>
+                <button class="diff-btn bg-orange-600 hover:bg-orange-500 text-white py-2 rounded" data-val="25">困難 (x25)</button>
+                <button class="diff-btn bg-red-700 hover:bg-red-600 text-white py-2 rounded font-bold" data-val="100">地獄 (x100)</button>
             </div>
+            <!-- Custom Multiplier -->
+            <div class="flex mt-4 items-center justify-between border-t border-gray-600 pt-3 gap-2">
+                <input type="number" id="customDiffInput" class="flex-1 bg-gray-700 text-white px-3 py-2 rounded outline-none border border-gray-500 focus:border-purple-500" placeholder="自訂倍率 (如 500)">
+                <button class="diff-btn bg-purple-600 hover:bg-purple-500 text-white py-2 px-4 rounded font-bold" data-custom="true" data-target="customDiffInput">套用自訂</button>
+            </div>
+            <p class="text-xs text-gray-400 mt-4">*難度影響經驗倍率與怪物血量。<br>*高難度怪物攻擊力會經過平衡處理防秒殺。</p>
         </div>
 
         <button id="startBtn" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-4 px-12 rounded-full text-2xl shadow-[0_0_20px_rgba(79,70,229,0.5)] transition transform hover:scale-105">
             開始生存
         </button>
-        <p class="mt-6 text-gray-400">操作：點擊畫面拖曳搖桿 / 或使用 WASD</p>
+        <p class="mt-6 text-gray-400">操作：點擊畫面任意處拖曳搖桿，或使用 WASD</p>
     </div>
 
     <!-- Level Up Screen -->
     <div id="levelUpScreen" class="absolute inset-0 modal-bg flex-col items-center justify-center z-40 hidden pointer-events-auto">
         <h2 class="text-5xl font-bold text-yellow-400 mb-2 animate-bounce">等級提升！</h2>
-        <p class="text-gray-300 mb-8 text-xl">選擇一個技能強化</p>
+        <p class="text-gray-300 mb-8 text-xl">選擇一個技能 (可使用數字鍵 1, 2, 3)</p>
         <div id="skillsContainer" class="flex flex-col md:flex-row gap-4 w-full max-w-5xl px-4 justify-center items-stretch">
             <!-- Skills injected via JS -->
         </div>
@@ -129,11 +132,15 @@
         <div class="flex flex-col md:flex-row gap-8 w-full max-w-5xl px-4">
             <div class="bg-gray-800 p-6 rounded-lg border border-gray-600 flex-1">
                 <h3 class="text-lg font-bold mb-4 text-gray-200">即時難度切換</h3>
-                <div class="grid grid-cols-2 gap-3" id="pauseDiffContainer">
+                <div class="grid grid-cols-2 gap-3 mb-3" id="pauseDiffContainer">
                     <button class="p-diff-btn bg-green-600 hover:bg-green-500 text-white py-2 rounded" data-val="1">簡單 (x1)</button>
-                    <button class="p-diff-btn bg-blue-600 hover:bg-blue-500 text-white py-2 rounded" data-val="2">普通 (x2)</button>
-                    <button class="p-diff-btn bg-orange-600 hover:bg-orange-500 text-white py-2 rounded" data-val="5">困難 (x5)</button>
-                    <button class="p-diff-btn bg-red-700 hover:bg-red-600 text-white py-2 rounded font-bold" data-val="10">地獄 (x10)</button>
+                    <button class="p-diff-btn bg-blue-600 hover:bg-blue-500 text-white py-2 rounded" data-val="5">普通 (x5)</button>
+                    <button class="p-diff-btn bg-orange-600 hover:bg-orange-500 text-white py-2 rounded" data-val="25">困難 (x25)</button>
+                    <button class="p-diff-btn bg-red-700 hover:bg-red-600 text-white py-2 rounded font-bold" data-val="100">地獄 (x100)</button>
+                </div>
+                <div class="flex mt-4 items-center justify-between border-t border-gray-600 pt-3 gap-2">
+                    <input type="number" id="pauseCustomDiffInput" class="flex-1 bg-gray-700 text-white px-3 py-2 rounded outline-none border border-gray-500 focus:border-purple-500" placeholder="自訂倍率 (如 500)">
+                    <button class="p-diff-btn bg-purple-600 hover:bg-purple-500 text-white py-2 px-4 rounded font-bold" data-custom="true" data-target="pauseCustomDiffInput">套用自訂</button>
                 </div>
                 <p class="text-xs text-yellow-400 mt-4">*只影響新生成的怪物與後續經驗掉落</p>
             </div>
@@ -151,7 +158,6 @@
         </button>
     </div>
 
-    <!-- Game Over Screen -->
     <div id="gameOverScreen" class="absolute inset-0 modal-bg flex-col items-center justify-center z-50 hidden pointer-events-auto">
         <h2 class="text-6xl font-bold text-red-500 mb-4">你已陣亡</h2>
         <div class="text-2xl text-white mb-2">生存時間: <span id="goTime" class="text-green-400 font-bold"></span></div>
@@ -163,6 +169,7 @@
     </div>
 
     <script>
+        /** Utility: 數字格式化 */
         function formatNum(num) {
             if (!isFinite(num)) return "∞"; 
             if (num >= 1e15) return num.toExponential(2); 
@@ -178,35 +185,39 @@
             return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
         }
 
-        // --- Core Setup & Zoom ---
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const uiContainer = document.getElementById('uiLayer');
         let width = window.innerWidth;
         let height = window.innerHeight;
         canvas.width = width;
         canvas.height = height;
         
-        // 畫面縮放系數：調小可以讓視野變寬廣
-        const ZOOM = 0.65; 
+        const ZOOM = 0.65; // 視野拉大
 
         window.addEventListener('resize', () => {
             width = window.innerWidth; height = window.innerHeight;
             canvas.width = width; canvas.height = height;
         });
 
+        // Game State Variables
         let gameState = 'start'; 
         let lastTime = 0;
         let gameTime = 0; 
-        let difficulty = 2; 
+        let difficulty = 5; // 預設 5 (普通)
         let levelUpQueue = 0;
         let gameLoopId = null; 
         let nextBossTime = 300; 
+        let bossActive = false;
+        let currentSkillChoices = []; 
 
+        window.addEventListener('blur', () => {
+            if (gameState === 'playing') openPauseMenu();
+        });
+
+        // --- Camera & Input ---
         const camera = { x: 0, y: 0 };
         const mapSize = { width: 5000, height: 5000 };
 
-        // --- Controls ---
         const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
         const joystick = { active: false, startX: 0, startY: 0, deltaX: 0, deltaY: 0 };
         const joystickZone = document.getElementById('joystickZone');
@@ -215,7 +226,13 @@
 
         window.addEventListener('keydown', (e) => { 
             if (keys.hasOwnProperty(e.key)) keys[e.key] = true; 
-            if (['1','2','3'].includes(e.key)) switchWeaponByIndex(parseInt(e.key) - 1);
+            if (['1','2','3'].includes(e.key)) {
+                if (gameState === 'playing') switchWeaponByIndex(parseInt(e.key) - 1);
+                else if (gameState === 'levelup' && currentSkillChoices.length > 0) {
+                    let idx = parseInt(e.key) - 1;
+                    if (currentSkillChoices[idx]) selectSkill(currentSkillChoices[idx].id);
+                }
+            }
             if (e.key === 'Escape' && gameState === 'playing') openPauseMenu();
         });
         window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
@@ -236,9 +253,7 @@
             joystickStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
         }
 
-        function handleJoystickEnd() {
-            joystick.active = false; joystick.deltaX = 0; joystick.deltaY = 0; joystickBase.style.display = 'none';
-        }
+        function handleJoystickEnd() { joystick.active = false; joystick.deltaX = 0; joystick.deltaY = 0; joystickBase.style.display = 'none'; }
 
         joystickZone.addEventListener('mousedown', (e) => { if (e.button === 0) handleJoystickStart(e.clientX, e.clientY); });
         window.addEventListener('mousemove', (e) => { if (joystick.active) handleJoystickMove(e.clientX, e.clientY); });
@@ -248,93 +263,110 @@
         window.addEventListener('touchend', () => handleJoystickEnd());
         window.addEventListener('touchcancel', () => handleJoystickEnd());
 
-        // 武器設定：倍率皆為 1，只有射速與穿透特性不同
         const weaponsDb = [
             { id: 'pistol', name: '手槍', type: 'single', color: '#a0aec0', baseDmg: 1, cooldown: 30, speed: 12, pierce: 1, desc: '單發高頻射擊' },
             { id: 'bow', name: '長弓', type: 'pierce', color: '#d69e2e', baseDmg: 1, cooldown: 50, speed: 18, pierce: 3, desc: '基礎高穿透' },
             { id: 'boomerang', name: '迴力鏢', type: 'return', color: '#38b2ac', baseDmg: 1, cooldown: 70, speed: 10, pierce: 99, desc: '飛出後折返' }
         ];
 
-        // --- 所有技能禁止增加攻擊力 ---
+        // 嚴格禁止增加基礎攻擊力的技能。所有技能上限 20 級。
         const availableSkills = [
-            // Archero 發射物方向系
-            { id: 'multishot', name: '連續射擊', desc: '全部箭多射一波，每級冷卻時間增加15%', maxLv: 20, getEffect: (lv)=>`發射波數 +${lv}, 冷卻延遲 +${lv*15}%` },
+            // 發射物特效 (投射方向與數量)
+            { id: 'multishot', name: '連續射擊', desc: '全部箭多射一波，每級冷卻增加15%', maxLv: 20, getEffect: (lv)=>`發射波數 +${lv}, 冷卻 +${lv*15}%` },
             { id: 'front_arrow', name: '正向箭+1', desc: '前方多射一箭', maxLv: 20, getEffect: (lv)=>`正向發射物 +${lv}` },
             { id: 'diag_arrow', name: '斜向箭+1', desc: '斜向多射各一箭', maxLv: 20, getEffect: (lv)=>`斜向發射物 +${lv*2}` },
             { id: 'side_arrow', name: '兩側箭+1', desc: '左右方多射各一箭', maxLv: 20, getEffect: (lv)=>`兩側發射物 +${lv*2}` },
             { id: 'rear_arrow', name: '背向箭+1', desc: '後方多射一箭', maxLv: 20, getEffect: (lv)=>`背向發射物 +${lv}` },
             
-            // 發射物彈道系
-            { id: 'wall_bounce', name: '反彈牆壁', desc: '子彈碰到邊界反彈，每級增加2次反彈', maxLv: 20, getEffect: (lv)=>`牆壁反彈 +${lv*2}次` },
-            { id: 'ricochet', name: '彈射', desc: '在怪物間彈跳，優先於穿透，每級增3次', maxLv: 20, getEffect: (lv)=>`怪物間彈跳 +${lv*3}次` },
-            { id: 'pierce_up', name: '穿透', desc: '可穿過怪物(以彈射為優先)，每級增加1次', maxLv: 20, getEffect: (lv)=>`穿透敵人 +${lv}次` },
+            // 彈道變化
+            { id: 'wall_bounce', name: '反彈牆壁', desc: '子彈碰到邊界反彈，每級增2次', maxLv: 20, getEffect: (lv)=>`牆壁反彈 +${lv*2}次` },
+            { id: 'ricochet', name: '彈射', desc: '在怪物間自動尋的彈跳，每級增3次', maxLv: 20, getEffect: (lv)=>`怪物間彈跳 +${lv*3}次` },
+            { id: 'pierce_up', name: '穿透', desc: '可穿過怪物(彈射優先)，每級增1次', maxLv: 20, getEffect: (lv)=>`穿透次數 +${lv}次` },
             
-            // 武器附加屬性系 (附在子彈上)
-            { id: 'fire_ench', name: '附魔: 烈火', desc: '命中造成燃燒，依賴攻擊力(最高15%)', maxLv: 20, getEffect: (lv)=>`每2秒造成 ${Math.min(15, lv)}% 攻擊力傷害` },
-            { id: 'poison_ench', name: '附魔: 劇毒', desc: '命中中毒，有機率爆發傷害', maxLv: 20, getEffect: (lv)=>`每2秒 50%機率造成 ${Math.min(15, lv)}% 傷害` },
-            { id: 'ice_ench', name: '附魔: 冰霜', desc: '擊中使敵人大幅減速', maxLv: 20, getEffect: (lv)=>`敵人減速時間 +${lv*5}` },
-            { id: 'wood_ench', name: '附魔: 荊棘', desc: '賦予暴擊機率，暴擊固定增加20%傷害', maxLv: 20, getEffect: (lv)=>`暴擊率 ${Math.min(20, lv)}% (暴傷固定+20%)` },
-            { id: 'lightning_ench', name: '附魔: 閃電', desc: '命中時產生連鎖閃電', maxLv: 20, getEffect: (lv)=>`連鎖閃電次數 +${lv}` },
-            { id: 'execute', name: '致命處決', desc: '怪物血量低於10%時有機率一擊必殺', maxLv: 20, getEffect: (lv)=>`斬殺觸發率 ${Math.min(20, lv)}%` },
-
-            // 環繞屬性球系
-            { id: 'fire_orb', name: '火之寶珠', desc: '召喚環繞火球，碰觸造成火焰傷害', maxLv: 20, getEffect: (lv)=>`火球傷害係數 +${lv*10}%` },
-            { id: 'poison_orb', name: '毒之寶珠', desc: '召喚環繞毒球，碰觸機率使敵人中毒', maxLv: 20, getEffect: (lv)=>`毒球傷害係數 +${lv*10}%` },
-            { id: 'ice_orb', name: '冰之寶珠', desc: '召喚環繞冰球，碰觸使敵人減速', maxLv: 20, getEffect: (lv)=>`冰球傷害係數 +${lv*10}%` },
-            { id: 'wood_orb', name: '木之寶珠', desc: '召喚環繞木球，碰觸造成暴擊傷害', maxLv: 20, getEffect: (lv)=>`木球傷害係數 +${lv*10}%` },
-            { id: 'lightning_orb', name: '電之寶珠', desc: '召喚環繞電球，碰觸造成麻痺', maxLv: 20, getEffect: (lv)=>`電球傷害係數 +${lv*10}%` },
-
-            // 輔助/生存系
-            { id: 'bullet_speed', name: '音速飛行', desc: '增加投射物飛行速度', maxLv: 20, getEffect: (lv)=>`飛行速度 +${lv*10}%` },
+            // 發射物質量
+            { id: 'atk_spd', name: '疾風射擊', desc: '降低武器冷卻時間', maxLv: 20, getEffect: (lv)=>`冷卻時間 -${lv*5}%` },
+            { id: 'crit_rate', name: '專注瞄準', desc: '提升暴擊機率', maxLv: 20, getEffect: (lv)=>`暴擊率 +${lv*5}%` },
+            { id: 'crit_dmg', name: '致命傷口', desc: '提升暴擊傷害倍率', maxLv: 20, getEffect: (lv)=>`暴擊倍率 +${lv*30}%` },
+            { id: 'bullet_size', name: '巨大化', desc: '增加發射物體積', maxLv: 20, getEffect: (lv)=>`發射物體積 +${lv*20}%` },
+            { id: 'bullet_speed', name: '音速飛行', desc: '增加發射物飛行速度', maxLv: 20, getEffect: (lv)=>`飛行速度 +${lv*10}%` },
             { id: 'knockback', name: '震盪衝擊', desc: '增加發射物擊退力道', maxLv: 20, getEffect: (lv)=>`擊退力道 +${lv*50}%` },
-            { id: 'spd_up', name: '疾風步', desc: '增加移動速度', maxLv: 20, getEffect: (lv)=>`移動速度 +${lv*5}%` },
+
+            // 發射物附加屬性
+            { id: 'fire_ench', name: '附魔: 烈火', desc: '命中造成燃燒(每2秒造成傷害)', maxLv: 20, getEffect: (lv)=>`燃燒傷害 ${Math.min(15, lv)}%` },
+            { id: 'poison_ench', name: '附魔: 劇毒', desc: '命中中毒，機率爆發傷害', maxLv: 20, getEffect: (lv)=>`毒傷機率 50%, 傷害 ${Math.min(15, lv)}%` },
+            { id: 'ice_ench', name: '附魔: 冰霜', desc: '擊中使敵人減速', maxLv: 20, getEffect: (lv)=>`減速時間 +${lv*5}` },
+            { id: 'wood_ench', name: '附魔: 荊棘', desc: '發射物額外獲暴擊機率', maxLv: 20, getEffect: (lv)=>`額外暴擊率 ${Math.min(20, lv)}%` },
+            { id: 'lightning_ench', name: '附魔: 閃電', desc: '命中時產生連鎖閃電', maxLv: 20, getEffect: (lv)=>`閃電次數 +${lv}` },
+            { id: 'execute', name: '死神鐮刀', desc: '怪物血量極低時有機率秒殺', maxLv: 20, getEffect: (lv)=>`秒殺率 ${lv*2.5}% (血量<10%)` },
+
+            // 環繞寶珠 (範圍隨等級變大，預設兩顆對稱)
+            { id: 'fire_orb', name: '火之寶珠', desc: '雙火球環繞(範圍隨等級擴大)', maxLv: 20, getEffect: (lv)=>`半徑+${lv*10}, 傷害+${lv*10}%` },
+            { id: 'poison_orb', name: '毒之寶珠', desc: '雙毒球環繞(範圍隨等級擴大)', maxLv: 20, getEffect: (lv)=>`半徑+${lv*10}, 傷害+${lv*10}%` },
+            { id: 'ice_orb', name: '冰之寶珠', desc: '雙冰球環繞(範圍隨等級擴大)', maxLv: 20, getEffect: (lv)=>`半徑+${lv*10}, 傷害+${lv*10}%` },
+            { id: 'wood_orb', name: '木之寶珠', desc: '雙木球環繞(範圍隨等級擴大)', maxLv: 20, getEffect: (lv)=>`半徑+${lv*10}, 傷害+${lv*10}%` },
+            { id: 'lightning_orb', name: '電之寶珠', desc: '雙電球環繞(範圍隨等級擴大)', maxLv: 20, getEffect: (lv)=>`半徑+${lv*10}, 傷害+${lv*10}%` },
+
+            // 爽快進階大招 (防無聊專用)
+            { id: 'meteor', name: '隕石召喚', desc: '每5秒隨機砸下毀滅隕石', maxLv: 20, getEffect: (lv)=>`隕石數量 ${Math.ceil(lv/3)}, 傷害 ${100+lv*20}%` },
+            { id: 'laser', name: '高能射線', desc: '定時發射貫穿畫面雷射', maxLv: 20, getEffect: (lv)=>`雷射傷害 ${100+lv*30}%` },
+            { id: 'frost_nova', name: '冰霜新星', desc: '定時釋放冰環凍結周圍', maxLv: 20, getEffect: (lv)=>`冷卻時間 ${Math.max(3, 15 - Math.floor(lv/2))}秒` },
+            { id: 'black_hole', name: '黑洞發生器', desc: '隨機生成黑洞吸附敵人', maxLv: 20, getEffect: (lv)=>`黑洞範圍 +${lv*10}%, 引力 +${lv*5}%` },
+
+            // 生存與輔助
+            { id: 'shield', name: '能量護盾', desc: '定時生成無敵護盾擋傷一次', maxLv: 20, getEffect: (lv)=>`冷卻時間 ${Math.max(5, 25-lv)}秒` },
+            { id: 'thorns', name: '荊棘裝甲', desc: '受擊時反彈傷害給周圍', maxLv: 20, getEffect: (lv)=>`反彈倍率 ${lv*50}%` },
+            { id: 'xp_heal', name: '升級恢復', desc: '每次升級額外恢復血量', maxLv: 20, getEffect: (lv)=>`額外恢復 ${lv*2}%` },
+            { id: 'spd_up', name: '輕盈身法', desc: '增加移動速度', maxLv: 20, getEffect: (lv)=>`移動速度 +${lv*5}%` },
             { id: 'hp_up', name: '強壯體魄', desc: '增加最大生命值', maxLv: 20, getEffect: (lv)=>`最大生命 +${lv*10}%` },
-            { id: 'regen', name: '治癒術', desc: '每秒恢復生命值', maxLv: 20, getEffect: (lv)=>`每秒回血 +${lv*2} 點` },
+            { id: 'regen', name: '治癒術', desc: '每秒恢復生命值', maxLv: 20, getEffect: (lv)=>`每秒回血 +${lv*2}` },
             { id: 'pickup', name: '磁吸力', desc: '增加拾取範圍', maxLv: 20, getEffect: (lv)=>`拾取範圍 +${lv*20}%` },
-            { id: 'xp_up', name: '學霸', desc: '增加經驗值獲取', maxLv: 20, getEffect: (lv)=>`經驗值獲取 +${lv*20}%` },
-            { id: 'evade', name: '幻影迴避', desc: '增加閃避機率', maxLv: 20, getEffect: (lv)=>`閃避機率 ${lv*3}%` }, 
+            { id: 'xp_up', name: '學霸', desc: '增加經驗值獲取', maxLv: 20, getEffect: (lv)=>`經驗獲取 +${lv*20}%` },
+            { id: 'evade', name: '幻影迴避', desc: '增加閃避機率', maxLv: 20, getEffect: (lv)=>`閃避率 ${lv*3}%` }, 
             { id: 'armor', name: '鋼鐵護甲', desc: '減少受到的傷害', maxLv: 20, getEffect: (lv)=>`傷害減免 ${lv*4}%` },
-            { id: 'size_down', name: '侏儒體質', desc: '體型變小，容易躲避', maxLv: 20, getEffect: (lv)=>`體積縮小 ${lv*1.5}` },
-            { id: 'vampire', name: '吸血鬼', desc: '擊殺敵人有機率恢復生命', maxLv: 20, getEffect: (lv)=>`吸血機率 ${lv*2}%` },
-            { id: 'gold_digger', name: '幸運兒', desc: '增加掉落裝備的機率', maxLv: 20, getEffect: (lv)=>`裝備掉落率 +${lv*10}%` }
+            { id: 'size_down', name: '侏儒體質', desc: '體型變小', maxLv: 20, getEffect: (lv)=>`體積縮小 ${lv*1.5}` },
+            { id: 'vampire', name: '吸血鬼', desc: '擊殺怪物機率回血', maxLv: 20, getEffect: (lv)=>`吸血機率 ${lv*2}%` },
+            { id: 'gold_digger', name: '幸運兒', desc: '增加裝備掉落率', maxLv: 20, getEffect: (lv)=>`裝備掉落率 +${lv*10}%` }
         ];
 
         class Player {
             constructor() {
                 this.x = mapSize.width / 2; this.y = mapSize.height / 2;
                 this.radius = 12; this.baseSpeed = 4;
-                this.level = 1; this.xp = 0; this.nextXp = 10;
-                this.baseHp = 50; this.maxHp = 50; this.hp = 50;
+                this.level = 1; this.xp = 0; this.nextXp = 25; 
                 
-                this.kills = 0; this.baseAttack = 1; 
+                this.baseHp = 50; this.maxHp = 50; this.hp = 50;
+                this.kills = 0; this.baseAttack = 1; // 唯一的攻擊力來源
+                
                 this.weapons = [{ id: weaponsDb[0].id, level: 1 }];
                 this.currentWeaponIdx = 0;
                 
-                this.weaponCooldown = 0;
-                this.attackQueue = 0;
-                this.burstTimer = 0;
-                this.target = null;
-                
+                this.weaponCooldown = 0; this.attackQueue = 0; this.burstTimer = 0; this.target = null;
                 this.skills = {};
+                
                 this.invulnTimer = 0; this.regenTimer = 0;
+                this.shieldTimer = 0; this.hasShield = false;
+                this.meteorTimer = 0; this.laserTimer = 0; this.novaTimer = 0; this.blackHoleTimer = 0;
             }
 
             getStat(skillId) { return this.skills[skillId] || 0; }
             
-            // 唯一真實的傷害 = 1 + 擊殺數
+            // 唯一真實攻擊力來源
             get damage() { return this.baseAttack + this.kills; }
+            
             get speed() { return this.baseSpeed * (1 + (this.getStat('spd_up') * 0.05)); }
             get pickupRange() { return 60 * (1 + (this.getStat('pickup') * 0.2)); }
+            
             get actualMaxHp() { return (this.baseHp + (this.level * 10)) * (1 + (this.getStat('hp_up') * 0.1)); }
 
             update() {
-                // Movement
                 let dx = 0, dy = 0;
                 if (joystick.active) { dx = joystick.deltaX; dy = joystick.deltaY; } 
                 else {
                     if (keys.w || keys.ArrowUp) dy -= 1; if (keys.s || keys.ArrowDown) dy += 1;
                     if (keys.a || keys.ArrowLeft) dx -= 1; if (keys.d || keys.ArrowRight) dx += 1;
                 }
+                
+                this.faceAngle = Math.atan2(dy, dx);
                 if (dx !== 0 || dy !== 0) {
                     let len = Math.hypot(dx, dy);
                     if (len > 1) { dx /= len; dy /= len; }
@@ -343,118 +375,167 @@
                 this.x = Math.max(this.radius, Math.min(mapSize.width - this.radius, this.x));
                 this.y = Math.max(this.radius, Math.min(mapSize.height - this.radius, this.y));
 
-                // Timers
                 if (this.invulnTimer > 0) this.invulnTimer--;
                 if (this.getStat('regen') > 0) {
                     this.regenTimer++;
                     if (this.regenTimer >= 60) { this.heal(this.getStat('regen') * 2); this.regenTimer = 0; }
                 }
 
-                // Attack Logic
+                // 大招與特效觸發器
+                this.processSpecials();
+
+                // 爆發射擊邏輯 (連射)
                 if (this.attackQueue > 0) {
                     if (this.burstTimer <= 0) {
-                        this.fireVolley();
-                        this.attackQueue--;
-                        this.burstTimer = 8; // Wave delay
-                        
+                        this.fireVolley(); this.attackQueue--; this.burstTimer = 8;
                         if (this.attackQueue <= 0) {
                             const wep = weaponsDb.find(w => w.id === this.weapons[this.currentWeaponIdx].id);
-                            let penalty = this.getStat('multishot') * 0.15; // 延遲增加
-                            this.weaponCooldown = Math.max(5, wep.cooldown * (1 + penalty));
+                            let penalty = this.getStat('multishot') * 0.15;
+                            let cdReduc = this.getStat('atk_spd') * 0.05;
+                            this.weaponCooldown = Math.max(5, wep.cooldown * (1 + penalty) * (1 - cdReduc));
                         }
-                    } else {
-                        this.burstTimer--;
-                    }
-                } else if (this.weaponCooldown > 0) {
-                    this.weaponCooldown--;
-                } else {
-                    this.attack();
-                }
+                    } else { this.burstTimer--; }
+                } else if (this.weaponCooldown > 0) { this.weaponCooldown--; } 
+                else { this.attack(); }
 
-                // HP adjust
                 if (this.maxHp !== this.actualMaxHp) {
                     let ratio = this.hp / this.maxHp;
                     this.maxHp = this.actualMaxHp;
                     this.hp = Math.min(this.maxHp, this.maxHp * ratio); 
                 }
                 
-                // Camera Center with Zoom
-                camera.x = this.x - (width / ZOOM) / 2;
-                camera.y = this.y - (height / ZOOM) / 2;
-
+                camera.x = this.x - (width / ZOOM) / 2; camera.y = this.y - (height / ZOOM) / 2;
                 this.processOrbs();
+            }
+
+            processSpecials() {
+                // Energy Shield
+                if (this.getStat('shield') > 0 && !this.hasShield) {
+                    this.shieldTimer++;
+                    let cd = Math.max(5, 25 - this.getStat('shield')) * 60; // 轉幀數
+                    if (this.shieldTimer >= cd) {
+                        this.hasShield = true; this.shieldTimer = 0;
+                        showFloatingText(this.x, this.y - 20, "護盾就緒", 'text-blue-300 font-bold');
+                    }
+                }
+                // Meteor
+                if (this.getStat('meteor') > 0) {
+                    this.meteorTimer++;
+                    if (this.meteorTimer >= 300) { 
+                        let count = Math.ceil(this.getStat('meteor') / 3);
+                        let dmg = this.damage * (1 + (this.getStat('meteor') * 0.2));
+                        for(let i = 0; i < count; i++) {
+                            if (enemies.length > 0) {
+                                let target = enemies[Math.floor(Math.random() * enemies.length)];
+                                visualEffects.push({ type: 'meteor', x: target.x, y: target.y, timer: 60, dmg: dmg, player: this });
+                            }
+                        }
+                        this.meteorTimer = 0;
+                    }
+                }
+                // Frost Nova
+                if (this.getStat('frost_nova') > 0) {
+                    this.novaTimer++;
+                    let cd = Math.max(3, 15 - Math.floor(this.getStat('frost_nova')/2)) * 60;
+                    if (this.novaTimer >= cd) {
+                        visualEffects.push({ type: 'nova', x: this.x, y: this.y, timer: 30, radius: 150 + this.getStat('frost_nova')*10, player: this });
+                        this.novaTimer = 0;
+                    }
+                }
+                // Laser
+                if (this.getStat('laser') > 0) {
+                    this.laserTimer++;
+                    if (this.laserTimer >= 240) { // 4s
+                        visualEffects.push({ type: 'laser', x: this.x, y: this.y, angle: this.faceAngle || 0, timer: 20, dmg: this.damage * (1 + this.getStat('laser') * 0.3), player: this });
+                        this.laserTimer = 0;
+                    }
+                }
+                // Black Hole
+                if (this.getStat('black_hole') > 0) {
+                    this.blackHoleTimer++;
+                    if (this.blackHoleTimer >= 360) { // 6s
+                        if (enemies.length > 0) {
+                            let target = enemies[Math.floor(Math.random() * enemies.length)];
+                            visualEffects.push({ type: 'blackhole', x: target.x, y: target.y, timer: 180, radius: 150 + this.getStat('black_hole')*10, pullForce: 3 + this.getStat('black_hole')*0.15, dmg: this.damage * 0.5, player: this });
+                        }
+                        this.blackHoleTimer = 0;
+                    }
+                }
             }
 
             processOrbs() {
                 const orbSkills = [
-                    { id: 'fire_orb', color: '#e53e3e', effect: 'fire' },
-                    { id: 'poison_orb', color: '#48bb78', effect: 'poison' },
-                    { id: 'ice_orb', color: '#63b3ed', effect: 'ice' },
-                    { id: 'wood_orb', color: '#d69e2e', effect: 'wood' },
+                    { id: 'fire_orb', color: '#e53e3e', effect: 'fire' }, { id: 'poison_orb', color: '#48bb78', effect: 'poison' },
+                    { id: 'ice_orb', color: '#63b3ed', effect: 'ice' }, { id: 'wood_orb', color: '#d69e2e', effect: 'wood' },
                     { id: 'lightning_orb', color: '#ecc94b', effect: 'lightning' }
                 ];
                 let timePhase = Date.now() / 500;
-                let activeOrbs = orbSkills.filter(o => this.getStat(o.id) > 0);
-                if (activeOrbs.length === 0) return;
+                let activeOrbsData = [];
+                
+                orbSkills.forEach((orbSkill, elementIndex) => {
+                    let lv = this.getStat(orbSkill.id);
+                    if (lv > 0) {
+                        // 雙珠，各自軌道不干擾
+                        let orbitRadius = 60 + (lv * 10) + (elementIndex * 15) + (this.getStat('bullet_size') * 2);
+                        activeOrbsData.push({ ...orbSkill, radius: orbitRadius, level: lv, offset: 0, eIdx: elementIndex });
+                        activeOrbsData.push({ ...orbSkill, radius: orbitRadius, level: lv, offset: Math.PI, eIdx: elementIndex });
+                    }
+                });
 
-                let orbitRadius = 60; let angleStep = (Math.PI * 2) / activeOrbs.length;
+                if (activeOrbsData.length === 0) { this.activeOrbs = null; return; }
 
-                activeOrbs.forEach((orbData, index) => {
-                    let angle = timePhase + (index * angleStep);
-                    let ox = this.x + Math.cos(angle) * orbitRadius;
-                    let oy = this.y + Math.sin(angle) * orbitRadius;
+                activeOrbsData.forEach(orbData => {
+                    let angle = timePhase + orbData.offset + (orbData.eIdx * 0.5); 
+                    let ox = this.x + Math.cos(angle) * orbData.radius; 
+                    let oy = this.y + Math.sin(angle) * orbData.radius;
                     orbData.currentX = ox; orbData.currentY = oy;
 
                     for (let e of enemies) {
-                        if (Math.hypot(ox - e.x, oy - e.y) < e.radius + 10) {
+                        if (Math.hypot(ox - e.x, oy - e.y) < e.radius + 15 + (this.getStat('bullet_size') * 1.5)) {
                             if (!e.orbCooldowns) e.orbCooldowns = {};
-                            if (!e.orbCooldowns[orbData.id] || e.orbCooldowns[orbData.id] <= 0) {
-                                let dmg = this.damage * 0.5 * (1 + this.getStat(orbData.id)*0.1);
+                            let cdKey = orbData.id + '_' + orbData.offset;
+                            if (!e.orbCooldowns[cdKey] || e.orbCooldowns[cdKey] <= 0) {
+                                let dmg = this.damage * 0.5 * (1 + orbData.level * 0.1);
                                 if (orbData.effect === 'wood') dmg *= 1.2; 
-                                
-                                e.takeDamage(dmg, this, false);
-                                e.orbCooldowns[orbData.id] = 30; // 0.5s inner CD
+                                e.takeDamage(dmg, this, false); 
+                                e.orbCooldowns[cdKey] = 30; // 半秒冷卻
 
-                                if (orbData.effect === 'fire') e.applyStatus('fire', this.getStat(orbData.id));
-                                if (orbData.effect === 'poison') e.applyStatus('poison', this.getStat(orbData.id));
-                                if (orbData.effect === 'ice') e.frozenTimer = 60 * this.getStat(orbData.id);
+                                if (orbData.effect === 'fire') e.applyStatus('fire', orbData.level);
+                                if (orbData.effect === 'poison') e.applyStatus('poison', orbData.level);
+                                if (orbData.effect === 'ice') e.frozenTimer = 60 * orbData.level;
                                 if (orbData.effect === 'lightning') e.paralyzeTimer = 30;
                             }
                         }
                     }
                 });
-                this.activeOrbs = activeOrbs; 
+                this.activeOrbs = activeOrbsData; 
             }
 
             attack() {
                 if (enemies.length === 0) return;
                 
-                // Viewport boundaries
-                let vLeft = camera.x; let vRight = camera.x + width / ZOOM;
-                let vTop = camera.y; let vBottom = camera.y + height / ZOOM;
-
+                // 只瞄準畫面內的敵人 (效能與遊戲體驗)
+                let vLeft = camera.x - 100; let vRight = camera.x + (width / ZOOM) + 100; 
+                let vTop = camera.y - 100; let vBottom = camera.y + (height / ZOOM) + 100;
                 let nearest = null; let minDist = Infinity;
+                
                 for (let e of enemies) {
-                    // 只瞄準畫面內的怪物
                     if (e.x >= vLeft && e.x <= vRight && e.y >= vTop && e.y <= vBottom) {
                         let dist = Math.hypot(e.x - this.x, e.y - this.y);
                         if (dist < minDist) { minDist = dist; nearest = e; }
                     }
                 }
                 
-                // 發呆邏輯：畫面內沒怪就不射
-                if (!nearest) return;
-
-                this.target = nearest;
-                this.attackQueue = 1 + this.getStat('multishot');
+                if (!nearest) return; // 畫面內沒敵人發呆
+                
+                this.target = nearest; 
+                this.attackQueue = 1 + this.getStat('multishot'); 
                 this.burstTimer = 0; 
             }
 
             fireVolley() {
-                // 如果目標中途死亡，重新尋找畫面內最近目標
                 if (!this.target || this.target.hp <= 0) {
-                    let vLeft = camera.x; let vRight = camera.x + width / ZOOM;
-                    let vTop = camera.y; let vBottom = camera.y + height / ZOOM;
+                    let vLeft = camera.x - 100; let vRight = camera.x + (width/ZOOM) + 100; let vTop = camera.y - 100; let vBottom = camera.y + (height/ZOOM) + 100;
                     let nearest = null; let minDist = Infinity;
                     for (let e of enemies) {
                         if (e.x >= vLeft && e.x <= vRight && e.y >= vTop && e.y <= vBottom) {
@@ -469,52 +550,37 @@
                 let baseAngle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
                 let angles = [];
 
+                // Archero 風格散射
                 let frontCount = 1 + this.getStat('front_arrow');
-                for(let i=0; i<frontCount; i++) {
-                    let spread = frontCount > 1 ? (i - (frontCount-1)/2) * 0.15 : 0;
-                    angles.push(baseAngle + spread);
-                }
-
+                for(let i=0; i<frontCount; i++) angles.push(baseAngle + (frontCount > 1 ? (i - (frontCount-1)/2) * 0.15 : 0));
+                
                 let diagCount = this.getStat('diag_arrow');
-                for(let i=0; i<diagCount; i++) {
-                    let offset = (Math.PI / 4) + (i * 0.1); angles.push(baseAngle + offset); angles.push(baseAngle - offset);
-                }
-
+                for(let i=0; i<diagCount; i++) { angles.push(baseAngle + (Math.PI/4) + (i*0.1)); angles.push(baseAngle - (Math.PI/4) - (i*0.1)); }
+                
                 let sideCount = this.getStat('side_arrow');
-                for(let i=0; i<sideCount; i++) {
-                    let offset = (Math.PI / 2) + (i * 0.1); angles.push(baseAngle + offset); angles.push(baseAngle - offset);
-                }
-
+                for(let i=0; i<sideCount; i++) { angles.push(baseAngle + (Math.PI/2) + (i*0.1)); angles.push(baseAngle - (Math.PI/2) - (i*0.1)); }
+                
                 let rearCount = this.getStat('rear_arrow');
-                for(let i=0; i<rearCount; i++) {
-                    let spread = rearCount > 1 ? (i - (rearCount-1)/2) * 0.15 : 0;
-                    angles.push(baseAngle + Math.PI + spread);
-                }
+                for(let i=0; i<rearCount; i++) angles.push(baseAngle + Math.PI + (rearCount > 1 ? (i - (rearCount-1)/2) * 0.15 : 0));
 
                 const wep = weaponsDb.find(w => w.id === this.weapons[this.currentWeaponIdx].id);
                 let dmg = this.damage; 
                 let pSpeed = wep.speed * (1 + (this.getStat('bullet_speed') * 0.1));
-                
-                let pierceCount = wep.pierce + this.getStat('pierce_up');
-                let ricochetCount = this.getStat('ricochet') * 3;
+                let pierceCount = wep.pierce + this.getStat('pierce_up'); 
+                let ricochetCount = this.getStat('ricochet') * 3; 
                 let bounceCount = this.getStat('wall_bounce') * 2;
+                let projSize = 1 + (this.getStat('bullet_size') * 0.2);
+
+                let baseCritRate = this.getStat('crit_rate') * 0.05;
+                let woodLv = this.getStat('wood_ench');
+                if(woodLv > 0) baseCritRate += Math.min(0.2, woodLv * 0.01);
+                
+                let critDmgMult = 1.5 + (this.getStat('crit_dmg') * 0.3);
 
                 for(let a of angles) {
-                    let isCrit = false;
-                    let fDmg = dmg;
-                    
-                    let woodLv = this.getStat('wood_ench');
-                    if (woodLv > 0) {
-                        let critChance = Math.min(0.2, woodLv * 0.01);
-                        if (Math.random() < critChance) { isCrit = true; fDmg *= 1.2; }
-                    }
-
-                    projectiles.push(new Projectile(
-                        this.x, this.y, a, 
-                        pSpeed, fDmg, 
-                        pierceCount, ricochetCount, bounceCount,
-                        wep.type, wep.color, isCrit, this
-                    ));
+                    let isCrit = false; let fDmg = dmg; 
+                    if (Math.random() < baseCritRate) { isCrit = true; fDmg *= critDmgMult; }
+                    projectiles.push(new Projectile(this.x, this.y, a, pSpeed, fDmg, pierceCount, ricochetCount, bounceCount, projSize, wep.type, wep.color, isCrit, this));
                 }
             }
 
@@ -528,18 +594,30 @@
             takeDamage(amt) {
                 if (this.invulnTimer > 0) return;
                 
-                let evadeRate = this.getStat('evade') * 0.03;
-                if (Math.random() < evadeRate) {
-                    showFloatingText(this.x, this.y - 20, "MISS", 'text-gray-300');
-                    this.invulnTimer = 20; 
+                if (this.hasShield) {
+                    this.hasShield = false;
+                    this.invulnTimer = 60; // 破盾無敵1秒
+                    showFloatingText(this.x, this.y - 20, "護盾格擋", 'text-blue-300 font-bold');
                     return;
                 }
 
-                let armorReduc = 1 - (this.getStat('armor') * 0.04);
-                amt = Math.max(1, amt * armorReduc);
-                
+                if (Math.random() < this.getStat('evade') * 0.03) {
+                    showFloatingText(this.x, this.y - 20, "MISS", 'text-gray-300'); this.invulnTimer = 30; return;
+                }
+
+                if (this.getStat('thorns') > 0) {
+                    let reflectDmg = amt * (this.getStat('thorns') * 0.5);
+                    for(let e of enemies) {
+                        if (Math.hypot(e.x - this.x, e.y - this.y) < e.radius + this.radius + 30) e.takeDamage(reflectDmg, this, false);
+                    }
+                }
+
+                amt = Math.max(1, amt * (1 - (this.getStat('armor') * 0.04)));
                 this.hp -= amt;
-                this.invulnTimer = 30;
+                
+                showFloatingText(this.x, this.y, "-" + formatNum(amt), 'player-dmg-text');
+                
+                this.invulnTimer = 120; // 2 seconds i-frames
                 document.getElementById('uiHp').parentElement.classList.add('animate-pulse');
                 setTimeout(()=>document.getElementById('uiHp').parentElement.classList.remove('animate-pulse'), 500);
 
@@ -548,13 +626,12 @@
 
             draw(ctx) {
                 let currentRadius = this.radius - (this.getStat('size_down') * 1.5);
-                ctx.save();
-                ctx.translate(this.x - camera.x, this.y - camera.y);
+                ctx.save(); ctx.translate(this.x - camera.x, this.y - camera.y);
                 
-                if (this.invulnTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) ctx.globalAlpha = 0.5;
+                if (this.invulnTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) ctx.globalAlpha = 0.4;
 
-                ctx.beginPath(); ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
-                ctx.fillStyle = '#4299e1'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#2b6cb0'; ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, 0, currentRadius, 0, Math.PI * 2); ctx.fillStyle = '#4299e1'; ctx.fill();
+                ctx.lineWidth = 2; ctx.strokeStyle = '#2b6cb0'; ctx.stroke();
 
                 if (joystick.active || keys.w || keys.a || keys.s || keys.d || keys.ArrowUp || keys.ArrowDown || keys.ArrowLeft || keys.ArrowRight) {
                     let dx = 0, dy = 0;
@@ -572,12 +649,18 @@
                 }
                 
                 ctx.beginPath(); ctx.arc(0, 0, this.pickupRange, 0, Math.PI * 2); ctx.fillStyle = 'rgba(255, 255, 255, 0.05)'; ctx.fill();
+                
+                if (this.hasShield) {
+                    ctx.beginPath(); ctx.arc(0, 0, currentRadius + 8, 0, Math.PI * 2);
+                    ctx.strokeStyle = '#63b3ed'; ctx.lineWidth = 3; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
+                }
                 ctx.restore();
 
                 if (this.activeOrbs) {
                     this.activeOrbs.forEach(orb => {
                         ctx.save(); ctx.translate(orb.currentX - camera.x, orb.currentY - camera.y);
-                        ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI * 2); ctx.fillStyle = orb.color; ctx.fill();
+                        let oSize = 6 * (1 + (this.getStat('bullet_size') * 0.2));
+                        ctx.beginPath(); ctx.arc(0, 0, oSize, 0, Math.PI * 2); ctx.fillStyle = orb.color; ctx.fill();
                         ctx.shadowBlur = 10; ctx.shadowColor = orb.color; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
                         ctx.restore();
                     });
@@ -588,57 +671,68 @@
         class Enemy {
             constructor(type, x, y, diff) {
                 this.x = x; this.y = y; this.type = type;
-                let healthLevelMult = 1 + (gameTime / 60) * 0.5; 
+                
+                let scale = 0.6 + Math.random() * 0.8; // 體型變異
                 
                 switch(type) {
-                    case 'swarm': this.baseHp = 2; this.speed = 3.5; this.dmg = 5; this.radius = 8; this.color = '#e53e3e'; this.xp = 5; break;
-                    case 'tank': this.baseHp = 30; this.speed = 1.0; this.dmg = 20; this.radius = 18; this.color = '#822727'; this.xp = 30; break;
-                    case 'ghost': this.baseHp = 4; this.speed = 2.0; this.dmg = 10; this.radius = 10; this.color = '#b794f4'; this.xp = 15; this.isGhost = true; break;
-                    case 'boss': this.baseHp = 1000; this.speed = 1.2; this.dmg = 50; this.radius = 40; this.color = '#9b2c2c'; this.xp = 1000; this.isBoss = true; break;
-                    default: this.baseHp = 5; this.speed = 2; this.dmg = 8; this.radius = 10; this.color = '#48bb78'; this.xp = 10;
+                    case 'bat': this.baseHp = 2; this.speed = 5.0; this.dmg = 5; this.radius = 6; this.color = `hsl(280, 80%, 40%)`; this.xp = 5; break;
+                    case 'swarm': this.baseHp = 3; this.speed = 3.5; this.dmg = 8; this.radius = 8; this.color = `hsl(0, 70%, 50%)`; this.xp = 8; break;
+                    case 'ghost': this.baseHp = 5; this.speed = 2.0; this.dmg = 12; this.radius = 12; this.color = `hsl(270, 70%, 60%)`; this.xp = 15; this.isGhost = true; break;
+                    case 'dasher': this.baseHp = 8; this.speed = 4.5; this.dmg = 15; this.radius = 10; this.color = `hsl(60, 80%, 50%)`; this.xp = 20; break;
+                    case 'shooter': this.baseHp = 6; this.speed = 1.5; this.dmg = 10; this.radius = 10; this.color = `#2f855a`; this.xp = 15; this.shootTimer = Math.random()*120; break;
+                    case 'bomber': this.baseHp = 5; this.speed = 4.0; this.dmg = 30; this.radius = 12; this.color = `#c53030`; this.xp = 25; break;
+                    case 'splitter': this.baseHp = 15; this.speed = 1.5; this.dmg = 12; this.radius = 16; this.color = `#3182ce`; this.xp = 20; break;
+                    case 'splitter_mini': this.baseHp = 3; this.speed = 4.0; this.dmg = 8; this.radius = 8; this.color = `#63b3ed`; this.xp = 5; break;
+                    case 'tank': this.baseHp = 30; this.speed = 1.0; this.dmg = 25; this.radius = 20; this.color = `hsl(0, 50%, 30%)`; this.xp = 30; break;
+                    case 'golem': this.baseHp = 80; this.speed = 0.8; this.dmg = 40; this.radius = 28; this.color = `hsl(30, 40%, 40%)`; this.xp = 60; scale = Math.max(1.0, scale); break;
+                    case 'boss': this.baseHp = 2000; this.speed = 1.5; this.dmg = 100; this.radius = 50; this.color = '#9b2c2c'; this.xp = 1000; this.isBoss = true; scale = 1; break;
+                    default: this.baseHp = 5; this.speed = 2; this.dmg = 10; this.radius = 12; this.color = `hsl(140, 60%, 50%)`; this.xp = 10;
                 }
 
-                this.hp = this.baseHp * healthLevelMult * diff;
-                this.maxHp = this.hp;
-                this.dmg = this.dmg * (1 + (gameTime / 120)) * diff; 
-                this.knockbackX = 0; this.knockbackY = 0;
+                this.radius = this.radius * scale;
+                this.speed = this.speed / Math.sqrt(scale);
+                this.baseHp = this.baseHp * (scale * scale);
+
+                let timeMult = 1 + (gameTime / 60) * 0.2; 
+                this.hp = this.baseHp * timeMult * diff; this.maxHp = this.hp;
                 
+                let diffDmgMult = Math.pow(diff, 0.5); 
+                this.dmg = this.dmg * (1 + (gameTime / 180)) * diffDmgMult; 
+
+                this.knockbackX = 0; this.knockbackY = 0;
                 this.frozenTimer = 0; this.paralyzeTimer = 0;
-                this.statusEffects = {}; 
-                if (this.orbCooldowns) this.orbCooldowns = {};
+                this.statusEffects = {}; if (this.orbCooldowns) this.orbCooldowns = {};
             }
 
-            applyStatus(type, level) {
-                if(level <= 0) return;
-                this.statusEffects[type] = { ticks: 60, level: level, timer: 0 }; 
-            }
+            applyStatus(type, level) { if(level > 0) this.statusEffects[type] = { ticks: 60, level: level, timer: 0 }; }
 
             takeDamage(amt, srcPlayer, isCrit, ignoreExecute = false) {
                 if(this.hp <= 0) return;
-
+                
+                // 處決邏輯
                 if (!ignoreExecute && !this.isBoss && this.hp < this.maxHp * 0.1) {
                     let execLv = srcPlayer.getStat('execute');
-                    if (execLv > 0 && Math.random() < (execLv * 0.01)) { 
-                        amt = this.hp; showFloatingText(this.x, this.y, "斬殺", 'crit-text');
+                    if (execLv > 0 && Math.random() < (execLv * 0.025)) { 
+                        amt = this.hp; 
+                        showFloatingText(this.x, this.y, "處決!", 'execute-text'); 
                     }
                 }
-
-                this.hp -= amt;
+                
+                this.hp -= amt; 
                 if(!ignoreExecute) showFloatingText(this.x, this.y, formatNum(amt), isCrit ? 'crit-text' : 'dmg-text');
+                
                 if (this.hp <= 0) killEnemy(this, srcPlayer);
             }
 
             update(player) {
                 if (this.hp <= 0) return;
-                
                 if (this.orbCooldowns) { for(let k in this.orbCooldowns) if(this.orbCooldowns[k] > 0) this.orbCooldowns[k]--; }
 
-                // Status
+                // Status effects
                 if (this.statusEffects.fire && this.statusEffects.fire.ticks > 0) {
                     this.statusEffects.fire.timer++;
                     if (this.statusEffects.fire.timer >= 120) { 
-                        let fireCap = Math.min(0.15, this.statusEffects.fire.level * 0.01);
-                        this.takeDamage(player.damage * fireCap, player, false, true);
+                        this.takeDamage(player.damage * Math.min(0.15, this.statusEffects.fire.level * 0.01), player, false, true);
                         this.statusEffects.fire.timer = 0;
                     }
                     this.statusEffects.fire.ticks--;
@@ -647,33 +741,46 @@
                     this.statusEffects.poison.timer++;
                     if (this.statusEffects.poison.timer >= 120) { 
                         if (Math.random() < 0.5) { 
-                            let fireCap = Math.min(0.15, this.statusEffects.poison.level * 0.01);
-                            this.takeDamage(player.damage * fireCap, player, false, true);
-                            showFloatingText(this.x, this.y-15, "毒", 'status-text');
+                            this.takeDamage(player.damage * Math.min(0.15, this.statusEffects.poison.level * 0.01), player, false, true);
+                            showFloatingText(this.x, this.y-15, "毒", 'text-green-300 font-bold text-sm');
                         }
                         this.statusEffects.poison.timer = 0;
                     }
                     this.statusEffects.poison.ticks--;
                 }
 
-                // Movement
-                if (this.paralyzeTimer > 0) {
-                    this.paralyzeTimer--;
-                } else if (Math.abs(this.knockbackX) > 0.1 || Math.abs(this.knockbackY) > 0.1) {
-                    this.x += this.knockbackX; this.y += this.knockbackY;
-                    this.knockbackX *= 0.8; this.knockbackY *= 0.8;
+                // AI Types
+                let distToPlayer = Math.hypot(player.x - this.x, player.y - this.y);
+                
+                if (this.type === 'bomber' && distToPlayer < this.radius + player.radius + 30) {
+                    // Explode
+                    visualEffects.push({ type: 'explosion', x: this.x, y: this.y, radius: 80, timer: 15 });
+                    if (distToPlayer < 80 + player.radius) player.takeDamage(this.dmg * 2);
+                    for (let e of enemies) if(e !== this && Math.hypot(e.x-this.x, e.y-this.y) < 80) e.takeDamage(this.dmg * 5, player, false, true);
+                    this.hp = 0; return;
+                }
+
+                if (this.type === 'shooter' && distToPlayer < 400 && this.paralyzeTimer <= 0 && this.frozenTimer <= 0) {
+                    this.shootTimer++;
+                    if (this.shootTimer >= 150) {
+                        enemyProjectiles.push(new EnemyProjectile(this.x, this.y, Math.atan2(player.y-this.y, player.x-this.x), 5, this.dmg, 6, '#48bb78'));
+                        this.shootTimer = 0;
+                    }
+                    if (distToPlayer < 300) { this.speed = 0; } else { this.speed = 1.5; } // Stop to shoot
+                }
+
+                if (this.paralyzeTimer > 0) { this.paralyzeTimer--; } 
+                else if (Math.abs(this.knockbackX) > 0.1 || Math.abs(this.knockbackY) > 0.1) {
+                    this.x += this.knockbackX; this.y += this.knockbackY; this.knockbackX *= 0.8; this.knockbackY *= 0.8;
                 } else {
                     let angle = Math.atan2(player.y - this.y, player.x - this.x);
-                    let slowMult = this.frozenTimer > 0 ? 0.3 : 1;
-                    if (this.frozenTimer > 0) this.frozenTimer--;
-
-                    this.x += Math.cos(angle) * this.speed * slowMult;
-                    this.y += Math.sin(angle) * this.speed * slowMult;
+                    if (this.type === 'bat') angle += Math.sin(gameTime * 10) * 0.8; 
+                    
+                    let slowMult = this.frozenTimer > 0 ? 0.3 : 1; if (this.frozenTimer > 0) this.frozenTimer--;
+                    this.x += Math.cos(angle) * this.speed * slowMult; this.y += Math.sin(angle) * this.speed * slowMult;
                 }
                 
-                if (Math.hypot(this.x - player.x, this.y - player.y) < this.radius + player.radius) {
-                    player.takeDamage(this.dmg);
-                }
+                if (distToPlayer < this.radius + player.radius) player.takeDamage(this.dmg);
             }
 
             draw(ctx) {
@@ -698,15 +805,27 @@
             }
         }
 
-        let visualEffects = []; 
+        class EnemyProjectile {
+            constructor(x, y, angle, speed, dmg, radius, color) {
+                this.x = x; this.y = y; this.angle = angle; this.speed = speed; this.dmg = dmg; this.radius = radius; this.color = color; this.active = true;
+            }
+            update(player) {
+                this.x += Math.cos(this.angle) * this.speed; this.y += Math.sin(this.angle) * this.speed;
+                if (Math.hypot(this.x - player.x, this.y - player.y) < this.radius + player.radius) { player.takeDamage(this.dmg); this.active = false; }
+                let screenX = this.x - camera.x; let screenY = this.y - camera.y;
+                if (screenX < -100 || screenX > width + 100 || screenY < -100 || screenY > height + 100) this.active = false;
+            }
+            draw(ctx) {
+                ctx.save(); ctx.translate(this.x - camera.x, this.y - camera.y);
+                ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI*2); ctx.fillStyle = this.color; ctx.fill(); ctx.restore();
+            }
+        }
 
         class Projectile {
-            constructor(x, y, angle, speed, dmg, pierce, ricochet, bounce, type, color, isCrit, playerRef) {
-                this.x = x; this.y = y; this.startX = x; this.startY = y;
-                this.angle = angle; this.speed = speed; this.dmg = dmg;
-                this.pierceCount = pierce; this.ricochetCount = ricochet; this.bounceCount = bounce;
-                this.type = type; this.color = color; this.isCrit = isCrit;
-                this.player = playerRef;
+            constructor(x, y, angle, speed, dmg, pierce, ricochet, bounce, sizeMult, type, color, isCrit, playerRef) {
+                this.x = x; this.y = y; this.startX = x; this.startY = y; this.angle = angle; this.speed = speed; this.dmg = dmg;
+                this.pierceCount = pierce; this.ricochetCount = ricochet; this.bounceCount = bounce; this.sizeMult = sizeMult;
+                this.type = type; this.color = color; this.isCrit = isCrit; this.player = playerRef;
                 this.active = true; this.hitEnemies = new Set(); this.returning = false;
             }
 
@@ -716,15 +835,13 @@
                     if (!this.returning && distFromStart > 300) { this.returning = true; this.hitEnemies.clear(); }
                     if (this.returning) {
                         let angleToPlayer = Math.atan2(this.player.y - this.y, this.player.x - this.x);
-                        this.x += Math.cos(angleToPlayer) * this.speed * 1.5;
-                        this.y += Math.sin(angleToPlayer) * this.speed * 1.5;
-                        if (Math.hypot(this.x - this.player.x, this.y - this.player.y) < this.player.radius + 10) this.active = false;
+                        this.x += Math.cos(angleToPlayer) * this.speed * 1.5; this.y += Math.sin(angleToPlayer) * this.speed * 1.5;
+                        if (Math.hypot(this.x - this.player.x, this.y - this.player.y) < this.player.radius + 10 * this.sizeMult) this.active = false;
                     } else {
                         this.x += Math.cos(this.angle) * this.speed; this.y += Math.sin(this.angle) * this.speed;
                     }
                 } else {
                     this.x += Math.cos(this.angle) * this.speed; this.y += Math.sin(this.angle) * this.speed;
-                    
                     if (this.x < 0 || this.x > mapSize.width) {
                         if (this.bounceCount > 0) { this.angle = Math.PI - this.angle; this.bounceCount--; this.x = Math.max(0, Math.min(mapSize.width, this.x)); } 
                         else this.active = false;
@@ -736,16 +853,14 @@
                 }
 
                 if (!this.active) return;
-
                 for (let e of enemies) {
                     if (!this.hitEnemies.has(e)) {
-                        let dist = Math.hypot(this.x - e.x, this.y - e.y);
-                        if (dist < e.radius + 10) { 
+                        if (Math.hypot(this.x - e.x, this.y - e.y) < e.radius + 10 * this.sizeMult) { 
                             this.hitEnemies.add(e);
                             if (e.isGhost && Math.random() < 0.3) { showFloatingText(e.x, e.y, "MISS", 'text-gray-400'); continue; }
                             
                             e.takeDamage(this.dmg, this.player, this.isCrit);
-
+                            
                             if (this.player.getStat('fire_ench') > 0) e.applyStatus('fire', this.player.getStat('fire_ench'));
                             if (this.player.getStat('poison_ench') > 0) e.applyStatus('poison', this.player.getStat('poison_ench'));
                             if (this.player.getStat('ice_ench') > 0) e.frozenTimer = 60 + (this.player.getStat('ice_ench') * 5);
@@ -760,7 +875,6 @@
                             let kbMultiplier = 1 + (this.player.getStat('knockback') * 0.5);
                             e.knockbackX = Math.cos(this.angle) * 3 * kbMultiplier; e.knockbackY = Math.sin(this.angle) * 3 * kbMultiplier;
 
-                            // 彈跳/穿透邏輯
                             if (this.type !== 'return') {
                                 if (this.ricochetCount > 0) {
                                     let nextTarget = null; let minTDist = 300;
@@ -770,14 +884,9 @@
                                             if (nd < minTDist) { minTDist = nd; nextTarget = ne; }
                                         }
                                     }
-                                    if (nextTarget) {
-                                        this.angle = Math.atan2(nextTarget.y - this.y, nextTarget.x - this.x);
-                                        this.ricochetCount--; return;
-                                    }
+                                    if (nextTarget) { this.angle = Math.atan2(nextTarget.y - this.y, nextTarget.x - this.x); this.ricochetCount--; return; }
                                 }
-                                
-                                if (this.pierceCount > 0) { this.pierceCount--; } 
-                                else { this.active = false; break; }
+                                if (this.pierceCount > 0) { this.pierceCount--; } else { this.active = false; break; }
                             }
                         }
                     }
@@ -785,34 +894,23 @@
             }
 
             draw(ctx) {
-                ctx.save(); ctx.translate(this.x - camera.x, this.y - camera.y); ctx.rotate(this.angle);
-                ctx.fillStyle = this.color;
-                if (this.type === 'bow') {
-                    ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(-10, -3); ctx.lineTo(-10, 3); ctx.fill();
-                } else if (this.type === 'boomerang') {
-                    ctx.rotate(Date.now() / 50);
-                    ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI, false); ctx.lineWidth = 4; ctx.strokeStyle = this.color; ctx.stroke();
-                } else {
-                    ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
-                }
+                ctx.save(); ctx.translate(this.x - camera.x, this.y - camera.y); ctx.rotate(this.angle); ctx.fillStyle = this.color;
+                ctx.scale(this.sizeMult, this.sizeMult);
+                if (this.type === 'bow') { ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(-10, -3); ctx.lineTo(-10, 3); ctx.fill(); } 
+                else if (this.type === 'boomerang') { ctx.rotate(Date.now() / 50); ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI, false); ctx.lineWidth = 4; ctx.strokeStyle = this.color; ctx.stroke(); } 
+                else { ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill(); }
                 ctx.restore();
             }
         }
 
         class Item {
-            constructor(x, y, type, value) {
-                this.x = x; this.y = y; this.type = type; this.value = value;
-                this.active = true; this.magnetized = false;
-            }
-
+            constructor(x, y, type, value) { this.x = x; this.y = y; this.type = type; this.value = value; this.active = true; this.magnetized = false; }
             update(player) {
                 let dist = Math.hypot(this.x - player.x, this.y - player.y);
                 if (dist < player.pickupRange) this.magnetized = true;
-
                 if (this.magnetized) {
                     let angle = Math.atan2(player.y - this.y, player.x - this.x);
-                    this.x += Math.cos(angle) * 12; this.y += Math.sin(angle) * 12;
-                    
+                    this.x += Math.cos(angle) * 15; this.y += Math.sin(angle) * 15;
                     if (dist < player.radius + 10) {
                         this.active = false;
                         if (this.type === 'xp') gainXp(this.value);
@@ -822,7 +920,6 @@
                     }
                 }
             }
-
             draw(ctx) {
                 ctx.save(); ctx.translate(this.x - camera.x, this.y - camera.y);
                 if (this.type === 'xp') {
@@ -832,50 +929,51 @@
                     ctx.fillStyle = '#ecc94b'; ctx.fillRect(-8, -8, 16, 16); ctx.strokeStyle = '#fff'; ctx.strokeRect(-8,-8,16,16);
                     ctx.fillStyle = 'black'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '10px Arial'; ctx.fillText('W', 0, 0);
                 } else if (this.type === 'full_heal') {
-                    ctx.fillStyle = '#fc8181'; ctx.fillRect(-8, -8, 16, 16);
-                    ctx.fillStyle = '#fff'; ctx.fillRect(-2,-6,4,12); ctx.fillRect(-6,-2,12,4);
+                    ctx.fillStyle = '#fc8181'; ctx.fillRect(-8, -8, 16, 16); ctx.fillStyle = '#fff'; ctx.fillRect(-2,-6,4,12); ctx.fillRect(-6,-2,12,4);
                 } else if (this.type === 'magnet') {
-                    ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 4;
-                    ctx.beginPath(); ctx.arc(0,0,6, Math.PI, 0); ctx.stroke();
+                    ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(0,0,6, Math.PI, 0); ctx.stroke();
                 }
                 ctx.restore();
             }
         }
 
-        let player; let enemies = []; let projectiles = []; let items = [];
+        let player; let enemies = []; let projectiles = []; let enemyProjectiles = []; let items = []; let visualEffects = []; 
+        let uiContainer = document.getElementById('uiLayer');
 
         function initGame(selectedDiff) {
             if (gameLoopId) cancelAnimationFrame(gameLoopId);
             for (let k in keys) keys[k] = false; handleJoystickEnd(); 
 
             difficulty = selectedDiff; player = new Player();
-            enemies = []; projectiles = []; items = []; visualEffects = [];
-            gameTime = 0; levelUpQueue = 0; nextBossTime = 300;
+            enemies = []; projectiles = []; enemyProjectiles = []; items = []; visualEffects = [];
+            gameTime = 0; levelUpQueue = 0; nextBossTime = 300; bossActive = false;
             
-            document.querySelectorAll('.dmg-text, .heal-text, .crit-text, .status-text').forEach(e => e.remove());
+            document.querySelectorAll('.dmg-text, .heal-text, .crit-text, .player-dmg-text, .execute-text').forEach(e => e.remove());
             
             updateWeaponUI(); updateStatsUI();
             document.getElementById('startScreen').classList.add('hidden');
             document.getElementById('gameOverScreen').classList.add('hidden');
             document.getElementById('pauseScreen').classList.add('hidden');
             
-            const diffMap = {1: '簡單 (x1)', 2: '普通 (x2)', 5: '困難 (x5)', 10: '地獄 (x10)'};
-            document.getElementById('uiDiffText').innerText = diffMap[difficulty];
+            document.getElementById('uiDiffText').innerText = `倍率 (x${difficulty})`;
             
             gameState = 'playing'; lastTime = performance.now(); gameLoopId = requestAnimationFrame(gameLoop);
         }
 
         function spawnEnemy() {
             let angle = Math.random() * Math.PI * 2; 
-            let dist = Math.max(width / ZOOM, height / ZOOM) / 2 + 100; // 確保生成在畫面外
+            let dist = Math.max(width / ZOOM, height / ZOOM) / 2 + 100; 
             let sx = Math.max(0, Math.min(mapSize.width, player.x + Math.cos(angle) * dist));
             let sy = Math.max(0, Math.min(mapSize.height, player.y + Math.sin(angle) * dist));
 
             let type = 'basic'; let r = Math.random();
-            if (gameTime > 60) { if (r < 0.2) type = 'swarm'; else if (r < 0.3) type = 'tank'; }
-            if (gameTime > 120) { if (r < 0.4) type = 'swarm'; else if (r < 0.5) type = 'ghost'; }
-            if (type === 'swarm') {
-                for(let i=0; i<3; i++) enemies.push(new Enemy(type, sx + (Math.random()-0.5)*50, sy + (Math.random()-0.5)*50, difficulty));
+            if (gameTime > 30) { if (r < 0.2) type = 'swarm'; else if (r < 0.3) type = 'bat'; else if (r < 0.4) type = 'dasher';}
+            if (gameTime > 60) { if (r < 0.15) type = 'shooter'; else if (r < 0.3) type = 'bomber'; }
+            if (gameTime > 90) { if (r < 0.1) type = 'splitter'; else if (r < 0.2) type = 'tank'; else if (r < 0.3) type = 'ghost'; else if (r < 0.4) type = 'golem'; }
+            
+            if (type === 'swarm' || type === 'bat') {
+                let count = type === 'swarm' ? 3 : 5;
+                for(let i=0; i<count; i++) enemies.push(new Enemy(type, sx + (Math.random()-0.5)*50, sy + (Math.random()-0.5)*50, difficulty));
             } else enemies.push(new Enemy(type, sx, sy, difficulty));
         }
 
@@ -884,13 +982,19 @@
             let dist = Math.max(width / ZOOM, height / ZOOM) / 2 + 150; 
             let sx = Math.max(0, Math.min(mapSize.width, player.x + Math.cos(angle) * dist));
             let sy = Math.max(0, Math.min(mapSize.height, player.y + Math.sin(angle) * dist));
-            
             enemies.push(new Enemy('boss', sx, sy, difficulty));
             showFloatingText(player.x, player.y - 80, "⚠️ BOSS 出現 ⚠️", 'text-red-500 font-bold text-4xl');
+            bossActive = true;
         }
 
         function killEnemy(e, p) {
             e.hp = 0; p.kills++; 
+            if (e.isBoss) bossActive = false;
+            
+            if (e.type === 'splitter') {
+                for(let i=0; i<3; i++) enemies.push(new Enemy('splitter_mini', e.x + (Math.random()-0.5)*20, e.y + (Math.random()-0.5)*20, difficulty));
+            }
+
             if (p.getStat('vampire') > 0 && Math.random() < (p.getStat('vampire') * 0.02)) p.heal(p.maxHp * 0.05); 
 
             if (e.isBoss) {
@@ -913,7 +1017,9 @@
         function gainXp(amount) {
             player.xp += amount;
             while (player.xp >= player.nextXp) {
-                player.xp -= player.nextXp; player.nextXp = Math.floor(player.nextXp * 1.5); levelUpQueue++;
+                player.xp -= player.nextXp; levelUpQueue++;
+                let projLevel = player.level + levelUpQueue;
+                player.nextXp = Math.floor(10 + Math.pow(projLevel, 1.8) * 15);
             }
             if (levelUpQueue > 0 && gameState === 'playing') processLevelUp();
             updateStatsUI();
@@ -921,7 +1027,11 @@
 
         function processLevelUp() {
             if (levelUpQueue > 0) {
-                gameState = 'levelup'; handleJoystickEnd(); levelUpQueue--; player.level++; player.heal(player.maxHp * 0.2); 
+                gameState = 'levelup'; handleJoystickEnd(); levelUpQueue--; player.level++; 
+                
+                let healPct = 0.2 + (player.getStat('xp_heal') * 0.02);
+                player.heal(player.maxHp * healPct); 
+                
                 generateLevelUpOptions();
                 document.getElementById('levelUpScreen').classList.remove('hidden'); document.getElementById('levelUpScreen').classList.add('flex');
                 updateStatsUI();
@@ -933,12 +1043,12 @@
             let pool = availableSkills.filter(s => { let currentLv = player.getStat(s.id); return currentLv < s.maxLv; });
             pool.sort(() => 0.5 - Math.random()); let choices = pool.slice(0, 3);
             if (choices.length === 0) choices = [{ id: 'heal_full', name: '全面恢復', desc: '恢復 100% 生命值', maxLv: 999 }];
-
-            choices.forEach(skill => {
+            currentSkillChoices = choices; 
+            choices.forEach((skill, index) => {
                 let currentLv = player.getStat(skill.id) || 0;
                 let btn = document.createElement('div');
                 btn.className = 'bg-gray-800 hover:bg-gray-700 border-2 border-blue-500 rounded-xl p-6 cursor-pointer flex-1 text-center transition transform hover:-translate-y-2 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)]';
-                btn.innerHTML = `<h3 class="text-2xl font-bold text-blue-300 mb-2">${skill.name} <span class="text-sm text-gray-400">Lv.${currentLv} &rarr; ${currentLv+1}</span></h3><p class="text-gray-300">${skill.desc}</p>`;
+                btn.innerHTML = `<h3 class="text-2xl font-bold text-blue-300 mb-2">[${index+1}] ${skill.name} <span class="text-sm text-gray-400">Lv.${currentLv} &rarr; ${currentLv+1}</span></h3><p class="text-gray-300">${skill.desc}</p>`;
                 btn.onclick = () => selectSkill(skill.id);
                 container.appendChild(btn);
             });
@@ -948,7 +1058,9 @@
             if (skillId === 'heal_full') player.heal(player.maxHp);
             else player.skills[skillId] = (player.skills[skillId] || 0) + 1;
             document.getElementById('levelUpScreen').classList.add('hidden'); document.getElementById('levelUpScreen').classList.remove('flex');
-            player.invulnTimer = 60; gameState = 'playing';
+            
+            player.invulnTimer = 120; // 升級後無敵
+            gameState = 'playing';
             if (levelUpQueue > 0) setTimeout(() => { if (gameState === 'playing') processLevelUp(); }, 100);
         }
 
@@ -979,13 +1091,13 @@
                 let isActive = isOwned && (player.weapons[player.currentWeaponIdx].id === wData.id);
                 
                 let div = document.createElement('div');
-                div.className = `weapon-slot w-14 h-14 rounded flex items-center justify-center font-bold cursor-pointer relative pointer-events-auto`;
+                div.className = `weapon-slot w-12 h-12 rounded flex items-center justify-center font-bold cursor-pointer pointer-events-auto`;
                 
                 if (isOwned) {
                     div.style.color = wData.color; div.classList.add('bg-gray-800');
                     if(isActive) div.classList.add('active');
                     let lvBadge = document.createElement('div'); lvBadge.className = 'weapon-lv'; lvBadge.innerText = 'Lv' + ownedObj.level; div.appendChild(lvBadge);
-                } else { div.classList.add('locked', 'bg-gray-900'); div.style.color = '#718096'; }
+                } else { div.classList.add('opacity-40', 'bg-gray-900', 'cursor-not-allowed'); div.style.color = '#718096'; }
 
                 div.innerHTML += `<span>${idx + 1}</span>`; div.title = wData.name + (isOwned ? '' : ' (未解鎖)');
                 div.addEventListener('mousedown', (e) => e.stopPropagation()); div.addEventListener('touchstart', (e) => e.stopPropagation(), {passive: false});
@@ -1004,7 +1116,11 @@
             document.getElementById('uiMaxHp').innerText = formatNum(Math.floor(player.maxHp));
             document.getElementById('uiKills').innerText = formatNum(player.kills);
             document.getElementById('uiDamage').innerText = formatNum(player.damage);
-            document.getElementById('uiTime').innerText = formatTime(gameTime);
+            
+            let timeEl = document.getElementById('uiTime');
+            timeEl.innerText = formatTime(gameTime);
+            if (bossActive) { timeEl.classList.add('boss-timer'); timeEl.innerText = "[BOSS 戰]"; }
+            else { timeEl.classList.remove('boss-timer'); }
         }
 
         function showFloatingText(worldX, worldY, text, cssClass) {
@@ -1018,22 +1134,19 @@
             gameState = 'paused'; handleJoystickEnd();
             document.getElementById('pauseScreen').classList.remove('hidden'); document.getElementById('pauseScreen').classList.add('flex');
             
-            document.querySelectorAll('.p-diff-btn').forEach(btn => {
+            document.querySelectorAll('.p-diff-btn:not([data-custom])').forEach(btn => {
                 if(parseInt(btn.getAttribute('data-val')) === difficulty) btn.classList.add('border-2', 'border-white');
                 else btn.classList.remove('border-2', 'border-white');
             });
 
-            // 顯示技能與加成效果
-            let list = document.getElementById('acquiredSkillsList'); list.innerHTML = '';
-            let hasSkills = false;
+            let list = document.getElementById('acquiredSkillsList'); list.innerHTML = ''; let hasSkills = false;
             availableSkills.forEach(s => {
                 let lv = player.getStat(s.id);
                 if (lv > 0) { 
                     hasSkills = true; 
-                    let effectStr = s.getEffect ? s.getEffect(lv) : '';
                     list.innerHTML += `<div class="bg-gray-700 p-3 rounded flex flex-col justify-between mb-2">
                         <div class="flex justify-between items-center"><span class="font-bold text-lg">${s.name}</span><span class="text-yellow-400 font-bold bg-gray-900 px-2 rounded">Lv.${lv}</span></div>
-                        <div class="text-sm text-green-300 mt-1">${effectStr}</div>
+                        <div class="text-sm text-green-300 mt-1">${s.getEffect(lv)}</div>
                     </div>`; 
                 }
             });
@@ -1068,11 +1181,72 @@
             for (let i = visualEffects.length - 1; i >= 0; i--) {
                 let v = visualEffects[i];
                 if (v.type === 'lightning') {
-                    ctx.save(); ctx.translate(-camera.x, -camera.y);
-                    ctx.beginPath(); ctx.moveTo(v.x1, v.y1);
+                    ctx.save(); ctx.translate(-camera.x, -camera.y); ctx.beginPath(); ctx.moveTo(v.x1, v.y1);
                     let midX = (v.x1 + v.x2)/2 + (Math.random()-0.5)*30; let midY = (v.y1 + v.y2)/2 + (Math.random()-0.5)*30;
                     ctx.lineTo(midX, midY); ctx.lineTo(v.x2, v.y2);
-                    ctx.strokeStyle = '#ecc94b'; ctx.lineWidth = 2; ctx.shadowBlur = 10; ctx.shadowColor = '#ecc94b'; ctx.stroke();
+                    ctx.strokeStyle = '#ecc94b'; ctx.lineWidth = 2; ctx.shadowBlur = 10; ctx.shadowColor = '#ecc94b'; ctx.stroke(); ctx.restore();
+                } 
+                else if (v.type === 'meteor') {
+                    ctx.save(); ctx.translate(v.x - camera.x, v.y - camera.y);
+                    let yOff = (v.timer / 60) * 800; 
+                    if (v.timer > 15) {
+                        ctx.beginPath(); ctx.arc(0, -yOff, 20, 0, Math.PI * 2); ctx.fillStyle = '#f56565'; ctx.fill();
+                        ctx.shadowBlur = 20; ctx.shadowColor = '#c53030';
+                    } else {
+                        if (v.timer === 15) { 
+                            for (let e of enemies) if (Math.hypot(e.x - v.x, e.y - v.y) < 120) e.takeDamage(v.dmg, v.player, true);
+                        }
+                        ctx.beginPath(); ctx.arc(0, 0, (15 - v.timer) * 10, 0, Math.PI * 2); 
+                        ctx.fillStyle = `rgba(245, 101, 101, ${v.timer / 15})`; ctx.fill();
+                    }
+                    ctx.restore();
+                }
+                else if (v.type === 'explosion') {
+                    ctx.save(); ctx.translate(v.x - camera.x, v.y - camera.y);
+                    ctx.beginPath(); ctx.arc(0, 0, v.radius * (1 - v.timer/15), 0, Math.PI*2);
+                    ctx.fillStyle = `rgba(229, 62, 62, ${v.timer/15})`; ctx.fill(); ctx.restore();
+                }
+                else if (v.type === 'laser') {
+                    ctx.save(); ctx.translate(v.x - camera.x, v.y - camera.y);
+                    ctx.rotate(v.angle);
+                    ctx.fillStyle = `rgba(159, 122, 234, ${v.timer/20})`; 
+                    ctx.fillRect(0, -30, width/ZOOM * 2, 60); // 粗大雷射
+                    if (v.timer === 20) { // 一瞬間結算傷害
+                        for (let e of enemies) {
+                            let ex = e.x - v.x; let ey = e.y - v.y;
+                            let distToLine = Math.abs(Math.sin(v.angle)*ex - Math.cos(v.angle)*ey);
+                            let forward = (ex * Math.cos(v.angle) + ey * Math.sin(v.angle)) > 0;
+                            if (forward && distToLine < 40 + e.radius) e.takeDamage(v.dmg, v.player, true);
+                        }
+                    }
+                    ctx.restore();
+                }
+                else if (v.type === 'nova') {
+                    ctx.save(); ctx.translate(v.x - camera.x, v.y - camera.y);
+                    let currentRad = v.radius * (1 - v.timer/30);
+                    ctx.beginPath(); ctx.arc(0, 0, currentRad, 0, Math.PI*2);
+                    ctx.strokeStyle = `rgba(99, 179, 237, ${v.timer/30})`; ctx.lineWidth = 10; ctx.stroke();
+                    if (v.timer === 30) {
+                        for (let e of enemies) {
+                            if (Math.hypot(e.x - v.x, e.y - v.y) < v.radius) { e.frozenTimer = 120; e.takeDamage(v.player.damage, v.player, false); }
+                        }
+                    }
+                    ctx.restore();
+                }
+                else if (v.type === 'blackhole') {
+                    ctx.save(); ctx.translate(v.x - camera.x, v.y - camera.y);
+                    ctx.beginPath(); ctx.arc(0, 0, 30 + Math.sin(v.timer*0.5)*5, 0, Math.PI*2);
+                    ctx.fillStyle = '#1a202c'; ctx.fill();
+                    ctx.strokeStyle = '#805ad5'; ctx.lineWidth = 3; ctx.stroke();
+                    // 引力
+                    for (let e of enemies) {
+                        let d = Math.hypot(e.x - v.x, e.y - v.y);
+                        if (d < v.radius) {
+                            let a = Math.atan2(v.y - e.y, v.x - e.x);
+                            e.x += Math.cos(a) * v.pullForce; e.y += Math.sin(a) * v.pullForce;
+                            if (v.timer % 30 === 0 && d < 50) e.takeDamage(v.dmg, v.player, false);
+                        }
+                    }
                     ctx.restore();
                 }
                 v.timer--; if(v.timer <= 0) visualEffects.splice(i, 1);
@@ -1083,16 +1257,18 @@
             let dt = (time - lastTime) / 1000; lastTime = time;
 
             if (gameState === 'playing') {
-                gameTime += dt;
+                if(!bossActive) gameTime += dt; 
                 player.update();
                 
-                if (gameTime >= nextBossTime) { spawnBoss(); nextBossTime += 300; }
-                let spawnChance = 0.005 + (gameTime / 5000); 
-                let maxEnemies = Math.min(150, 20 + Math.floor(gameTime / 5)); 
+                if (!bossActive && gameTime >= nextBossTime) { spawnBoss(); nextBossTime += 300; }
+                
+                let spawnChance = 0.01 + (gameTime / 4000); 
+                let maxEnemies = Math.min(200, 30 + Math.floor(gameTime / 3)); 
                 if (Math.random() < Math.min(0.1, spawnChance) && enemies.length < maxEnemies) spawnEnemy();
 
                 enemies = enemies.filter(e => e.hp > 0); enemies.forEach(e => e.update(player));
                 projectiles = projectiles.filter(p => p.active); projectiles.forEach(p => p.update());
+                enemyProjectiles = enemyProjectiles.filter(p => p.active); enemyProjectiles.forEach(p => p.update(player));
                 items = items.filter(i => i.active); items.forEach(i => i.update(player));
                 
                 if(levelUpQueue > 0) processLevelUp();
@@ -1101,31 +1277,42 @@
 
             if (gameState !== 'start') {
                 ctx.fillStyle = '#1a202c'; ctx.fillRect(0, 0, width, height);
-                ctx.save(); ctx.scale(ZOOM, ZOOM); // Apply Wide Camera Scale
-
-                drawBackgroundGrid();
-                items.forEach(i => i.draw(ctx)); enemies.forEach(e => e.draw(ctx)); projectiles.forEach(p => p.draw(ctx));
+                ctx.save(); ctx.scale(ZOOM, ZOOM);
+                drawBackgroundGrid(); items.forEach(i => i.draw(ctx)); enemies.forEach(e => e.draw(ctx)); projectiles.forEach(p => p.draw(ctx)); enemyProjectiles.forEach(p => p.draw(ctx));
                 if(player) player.draw(ctx);
-                drawVisualEffects();
-                
-                ctx.restore();
+                drawVisualEffects(); ctx.restore();
             }
             gameLoopId = requestAnimationFrame(gameLoop);
         }
 
-        document.querySelectorAll('.diff-btn, .p-diff-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                let isPause = e.target.classList.contains('p-diff-btn');
-                let selector = isPause ? '.p-diff-btn' : '.diff-btn';
-                document.querySelectorAll(selector).forEach(b => b.classList.remove('border-2', 'border-white'));
-                e.target.classList.add('border-2', 'border-white');
-                difficulty = parseInt(e.target.getAttribute('data-val'));
-                if(isPause) document.getElementById('uiDiffText').innerText = {1:'簡單 (x1)',2:'普通 (x2)',5:'困難 (x5)',10:'地獄 (x10)'}[difficulty];
+        function setupDiffButtons(selector) {
+            document.querySelectorAll(selector).forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll(selector).forEach(b => b.classList.remove('border-2', 'border-white'));
+                    e.target.classList.add('border-2', 'border-white');
+                    
+                    if (e.target.dataset.custom) {
+                        let input = document.getElementById(e.target.dataset.target);
+                        let val = parseFloat(input.value);
+                        if (!isNaN(val) && val > 0) difficulty = val;
+                        else difficulty = 5; 
+                    } else {
+                        difficulty = parseInt(e.target.getAttribute('data-val'));
+                    }
+                    if (gameState === 'paused') document.getElementById('uiDiffText').innerText = `倍率 (x${difficulty})`;
+                });
             });
-        });
+        }
+        setupDiffButtons('.diff-btn'); setupDiffButtons('.p-diff-btn');
 
         document.getElementById('startBtn').addEventListener('click', () => {
-            let sel = document.querySelector('.diff-btn.border-white'); initGame(sel ? parseInt(sel.getAttribute('data-val')) : 2);
+            let sel = document.querySelector('.diff-btn.border-white');
+            if(sel && sel.dataset.custom) {
+                let val = parseFloat(document.getElementById(sel.dataset.target).value);
+                initGame(!isNaN(val) && val > 0 ? val : 5);
+            } else {
+                initGame(sel ? parseInt(sel.getAttribute('data-val')) : 5);
+            }
         });
         document.getElementById('restartBtn').addEventListener('click', () => initGame(difficulty));
         document.getElementById('pauseBtn').addEventListener('mousedown', (e) => e.stopPropagation());
@@ -1133,7 +1320,7 @@
         document.getElementById('pauseBtn').addEventListener('click', () => { if (gameState === 'playing') openPauseMenu(); });
         document.getElementById('resumeBtn').addEventListener('click', resumeGame);
 
-        ctx.fillStyle = '#1a202c'; ctx.fillRect(0, 0, width, height); // Initial fill
+        ctx.fillStyle = '#1a202c'; ctx.fillRect(0, 0, width, height);
     </script>
 </body>
 </html>
