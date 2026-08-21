@@ -1,1 +1,804 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>兆級倖存者</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #1a202c; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
+        #gameCanvas { display: block; width: 100%; height: 100%; }
+        .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+        .pointer-events-auto { pointer-events: auto; }
+        
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
+        }
+        .heal-text { position: absolute; color: #33ff33; font-weight: bold; font-size: 1.2rem; text-shadow: 1px 1px 2px black; animation: floatUp 1s ease-out forwards; pointer-events: none; z-index: 10; }
+        .dmg-text { position: absolute; color: #ff3333; font-weight: bold; font-size: 1.2rem; text-shadow: 1px 1px 2px black; animation: floatUp 0.8s ease-out forwards; pointer-events: none; z-index: 10; }
+        
+        .modal-bg { background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); }
+        .boss-warning { animation: pulseRed 1s infinite; }
+        @keyframes pulseRed { 0% { color: #f56565; text-shadow: 0 0 10px red; } 50% { color: white; text-shadow: none; } 100% { color: #f56565; text-shadow: 0 0 10px red; } }
+        
+        .weapon-slot { transition: all 0.2s; border: 2px solid #4a5568; }
+        .weapon-slot.active { border-color: #f6e05e; background-color: rgba(246, 224, 94, 0.2); transform: scale(1.1); box-shadow: 0 0 10px #f6e05e; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #718096; border-radius: 3px; }
 
+        #joystickZone { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: auto; z-index: 5; }
+        #joystickBase { position: absolute; width: 120px; height: 120px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 50%; display: none; transform: translate(-50%, -50%); pointer-events: none; }
+        #joystickStick { position: absolute; width: 50px; height: 50px; background: rgba(255, 255, 255, 0.5); border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="joystickZone">
+        <div id="joystickBase"><div id="joystickStick"></div></div>
+    </div>
+
+    <!-- UI Layer -->
+    <div id="uiLayer" class="ui-layer flex flex-col justify-between p-4 z-10">
+        <div class="flex justify-between items-start pointer-events-none">
+            <!-- Left Stats -->
+            <div class="pointer-events-auto flex flex-col gap-2">
+                <button id="pauseBtn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded border border-gray-500 shadow transition w-fit text-sm">⏸ 暫停/設定</button>
+                <div class="bg-gray-800 bg-opacity-80 rounded px-3 py-2 border border-gray-600 shadow">
+                    <div class="text-xl font-bold text-blue-400">Lv. <span id="uiLevel">1</span></div>
+                    <div class="text-xs text-gray-300">XP: <span id="uiXp">0</span> / <span id="uiNextXp">10</span></div>
+                    <div class="w-full bg-gray-700 h-2 mt-1 rounded overflow-hidden"><div id="xpBar" class="bg-blue-500 h-full w-0 transition-all duration-200"></div></div>
+                </div>
+                <div class="bg-gray-800 bg-opacity-80 rounded px-3 py-2 border border-gray-600 shadow text-xs space-y-1">
+                    <div class="text-red-400 font-bold">HP: <span id="uiHp">50</span> / <span id="uiMaxHp">50</span></div>
+                    <div class="text-yellow-400">擊殺: <span id="uiKills">0</span></div>
+                    <div class="text-orange-400">基礎攻擊力: <span id="uiDamage">1</span></div>
+                    <div class="text-purple-400">難度倍率: x<span id="uiDiffText">5</span></div>
+                    <div class="text-white mt-1 font-mono text-sm" id="uiTime">00:00</div>
+                </div>
+            </div>
+
+            <!-- Right Weapons -->
+            <div class="pointer-events-auto flex flex-col gap-2 items-end" id="weaponContainer">
+                <!-- Injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="startScreen" class="absolute inset-0 modal-bg flex flex-col items-center justify-center z-50 pointer-events-auto">
+        <h1 class="text-6xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-yellow-500 tracking-wider text-center drop-shadow-lg">兆級倖存者<br><span class="text-3xl text-gray-300">極致進化</span></h1>
+        <button id="startBtn" class="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-bold py-4 px-12 rounded-full text-2xl shadow-[0_0_20px_rgba(79,70,229,0.5)] transition transform hover:scale-105 mb-4">開始生存</button>
+        <p class="text-gray-400">操作：拖曳畫面搖桿 或 WASD移動</p>
+    </div>
+
+    <div id="levelUpScreen" class="absolute inset-0 modal-bg flex-col items-center justify-center z-40 hidden pointer-events-auto">
+        <h2 class="text-5xl font-bold text-yellow-400 mb-2 animate-bounce drop-shadow-md">等級提升！</h2>
+        <p class="text-gray-300 mb-6 text-lg">按下對應數字鍵快速選擇</p>
+        <div id="skillsContainer" class="flex flex-col md:flex-row gap-4 w-full max-w-5xl px-4 justify-center items-stretch h-[60vh] overflow-y-auto"></div>
+        <button id="rerollBtn" class="mt-6 bg-purple-600 hover:bg-purple-500 text-white font-bold py-2 px-8 rounded-full border border-purple-400 shadow transition">🔄 刷新技能選單 (免費)</button>
+    </div>
+
+    <div id="pauseScreen" class="absolute inset-0 modal-bg flex-col items-center justify-start py-10 z-50 hidden pointer-events-auto overflow-y-auto">
+        <h2 class="text-4xl font-bold text-white mb-6 tracking-widest text-center">遊戲暫停</h2>
+        <button id="resumeBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-10 rounded-full text-xl shadow transition mb-8 mx-auto block">繼續遊戲</button>
+        
+        <div class="flex flex-col md:flex-row gap-6 w-full max-w-6xl px-4 justify-center items-start">
+            <!-- Weapon Status -->
+            <div class="bg-gray-800 p-6 rounded-lg border border-gray-600 flex-1 w-full text-left max-h-[60vh] overflow-y-auto">
+                <h3 class="text-xl font-bold mb-4 text-yellow-400 border-b border-gray-600 pb-2">已裝備武器與特效</h3>
+                <div id="pauseWeaponsList" class="space-y-4"></div>
+            </div>
+            
+            <!-- Skill Status -->
+            <div class="bg-gray-800 p-6 rounded-lg border border-gray-600 flex-1 w-full text-left max-h-[60vh] overflow-y-auto">
+                <h3 class="text-xl font-bold mb-4 text-blue-400 border-b border-gray-600 pb-2">被動技能清單</h3>
+                <div id="pauseSkillsList" class="grid grid-cols-1 gap-2 text-sm"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Difficulty Change Modal (Triggered by Boss Drop) -->
+    <div id="diffScreen" class="absolute inset-0 modal-bg flex-col items-center justify-center z-50 hidden pointer-events-auto">
+        <h2 class="text-4xl font-bold text-purple-400 mb-4 animate-pulse">獲得難度調整器！</h2>
+        <p class="text-gray-300 mb-8">Boss 掉落了神秘方塊，您可以重新調整世界法則。</p>
+        <div class="bg-gray-800 p-6 rounded-lg border border-gray-600 mb-8 w-80 text-center">
+            <h3 class="text-lg font-bold mb-4 text-white">設定新難度倍率</h3>
+            <input type="number" id="customDiffInput" class="w-full bg-gray-900 text-white border border-gray-600 rounded p-2 text-center text-xl mb-4" value="5" min="1">
+            <p class="text-xs text-red-400 mt-2 text-left">* 警告：過高的難度將賦予怪物極致的血量與絕對抗擊退能力！</p>
+        </div>
+        <button id="confirmDiffBtn" class="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-10 rounded-full text-xl shadow transition">確認變更並繼續</button>
+    </div>
+
+    <div id="gameOverScreen" class="absolute inset-0 modal-bg flex-col items-center justify-center z-50 hidden pointer-events-auto">
+        <h2 class="text-6xl font-bold text-red-500 mb-4 drop-shadow-lg">你已陣亡</h2>
+        <div class="text-2xl text-white mb-2">最終等級: <span id="goLevel" class="text-blue-400 font-bold"></span></div>
+        <div class="text-2xl text-white mb-2">存活時間: <span id="goTime" class="text-gray-300 font-bold"></span></div>
+        <div class="text-2xl text-white mb-8">總擊殺數: <span id="goKills" class="text-yellow-400 font-bold"></span></div>
+        <button id="restartBtn" class="bg-white text-black hover:bg-gray-200 font-bold py-3 px-8 rounded-full text-xl transition">重新挑戰</button>
+    </div>
+
+    <script>
+        // --- Utils ---
+        function formatNum(num) {
+            if (!isFinite(num)) return "∞";
+            if (num >= 1e15) return num.toExponential(2);
+            if (num >= 1e12) return (num / 1e12).toFixed(2) + '兆';
+            if (num >= 1e8) return (num / 1e8).toFixed(2) + '億';
+            if (num >= 1e4) return (num / 1e4).toFixed(2) + '萬';
+            return Math.floor(Math.max(0, num)).toString();
+        }
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+
+        window.addEventListener('resize', () => { width = window.innerWidth; height = window.innerHeight; canvas.width = width; canvas.height = height; });
+
+        let gameState = 'start'; // 'start', 'playing', 'paused', 'levelup', 'gameover', 'diff_change'
+        let lastTime = 0; let gameTime = 0; let difficulty = 5; let levelUpQueue = 0; let gameLoopId = null;
+        let bossActive = false; let bossPhase = 0; let currentBoss = null;
+        let rerollCount = 0;
+        const ZOOM = 0.65; 
+
+        // 絕對物理邊界
+        const mapSize = { width: 4000, height: 4000 };
+        const camera = { x: 0, y: 0 };
+
+        const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
+        const joystick = { active: false, startX: 0, startY: 0, deltaX: 0, deltaY: 0 };
+        const joystickZone = document.getElementById('joystickZone');
+        const joystickBase = document.getElementById('joystickBase');
+        const joystickStick = document.getElementById('joystickStick');
+
+        // --- Event Listeners ---
+        window.addEventListener('keydown', (e) => { 
+            if (keys.hasOwnProperty(e.key)) keys[e.key] = true; 
+            if (['1','2','3','4','5'].includes(e.key) && gameState === 'playing') switchWeaponByIndex(parseInt(e.key) - 1);
+            if (['1','2','3'].includes(e.key) && gameState === 'levelup') {
+                const btns = document.querySelectorAll('#skillsContainer > div');
+                if(btns[parseInt(e.key)-1]) btns[parseInt(e.key)-1].click();
+            }
+            if (e.key === 'Escape' && gameState === 'playing') openPauseMenu();
+        });
+        window.addEventListener('keyup', (e) => { if (keys.hasOwnProperty(e.key)) keys[e.key] = false; });
+        window.addEventListener('blur', () => { if(gameState === 'playing') openPauseMenu(); });
+
+        function handleJoystickStart(x, y) { if (gameState !== 'playing') return; joystick.active = true; joystick.startX = x; joystick.startY = y; joystick.deltaX = 0; joystick.deltaY = 0; joystickBase.style.display = 'block'; joystickBase.style.left = `${x}px`; joystickBase.style.top = `${y}px`; joystickStick.style.transform = `translate(-50%, -50%)`; }
+        function handleJoystickMove(x, y) { if (!joystick.active) return; let dx = x - joystick.startX; let dy = y - joystick.startY; let distance = Math.hypot(dx, dy); const maxD = 40; if (distance > maxD) { dx = (dx / distance) * maxD; dy = (dy / distance) * maxD; } joystick.deltaX = dx / maxD; joystick.deltaY = dy / maxD; joystickStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`; }
+        function handleJoystickEnd() { joystick.active = false; joystick.deltaX = 0; joystick.deltaY = 0; joystickBase.style.display = 'none'; }
+        
+        joystickZone.addEventListener('mousedown', (e) => { if (e.button === 0) handleJoystickStart(e.clientX, e.clientY); });
+        window.addEventListener('mousemove', (e) => { if (joystick.active) handleJoystickMove(e.clientX, e.clientY); });
+        window.addEventListener('mouseup', () => handleJoystickEnd());
+        joystickZone.addEventListener('touchstart', (e) => { if (e.touches.length > 0) handleJoystickStart(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
+        window.addEventListener('touchmove', (e) => { if (joystick.active && e.touches.length > 0) { handleJoystickMove(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); } }, {passive: false});
+        window.addEventListener('touchend', handleJoystickEnd); window.addEventListener('touchcancel', handleJoystickEnd);
+
+        const weaponsDb = [
+            { id: 'pistol', name: '手槍', color: '#a0aec0', cooldown: 30, speed: 18, pierce: 1, maxLv: 50 },
+            { id: 'bow', name: '長弓', color: '#d69e2e', cooldown: 50, speed: 20, pierce: 3, maxLv: 50 },
+            { id: 'boomerang', name: '迴力鏢', color: '#38b2ac', cooldown: 60, speed: 14, pierce: 99, maxLv: 50 },
+            { id: 'shotgun', name: '散彈槍', color: '#e53e3e', cooldown: 70, speed: 16, pierce: 2, maxLv: 50 },
+            { id: 'wand', name: '魔法杖', color: '#9f7aea', cooldown: 45, speed: 12, pierce: 1, maxLv: 50 }
+        ];
+
+        // 嚴格禁止增加攻擊力的技能
+        const availableSkills = [
+            { id: 'proj_up', name: '多重發射', desc: '發射物數量 +1', maxLv: 10 },
+            { id: 'pierce_up', name: '銳利箭矢', desc: '穿透力 +1', maxLv: 10 },
+            { id: 'cooldown', name: '快速射擊', desc: '冷卻縮減 5%', maxLv: 10 },
+            { id: 'bullet_speed', name: '音速飛行', desc: '發射物速度 +15%', maxLv: 10 },
+            { id: 'knockback', name: '衝擊波', desc: '擊退效果大幅提升', maxLv: 10 },
+            { id: 'size_up', name: '巨大化', desc: '發射物體積變大', maxLv: 10 },
+            
+            // 彈道方向
+            { id: 'arrow_front', name: '正向增幅', desc: '正前方額外發射', maxLv: 10 },
+            { id: 'arrow_diag', name: '斜向齊發', desc: '斜向各額外發射', maxLv: 10 },
+            { id: 'arrow_side', name: '兩側齊發', desc: '左右側額外發射', maxLv: 10 },
+            { id: 'arrow_back', name: '背向防護', desc: '正後方額外發射', maxLv: 10 },
+            
+            // 防禦/輔助
+            { id: 'spd_up', name: '疾風步', desc: '移動速度 +8%', maxLv: 10 },
+            { id: 'pickup', name: '磁吸力', desc: '拾取範圍大幅增加', maxLv: 10 },
+            { id: 'xp_up', name: '學霸', desc: '經驗值獲取 +15%', maxLv: 10 },
+            { id: 'armor', name: '鋼鐵護甲', desc: '受傷減免 5%', maxLv: 10 },
+            { id: 'evade', name: '幻影迴避', desc: '閃避機率 +4%', maxLv: 10 },
+            { id: 'vampire', name: '吸血鬼', desc: '擊殺有極低機率恢復 1% HP', maxLv: 10 },
+            { id: 'regen', name: '治癒術', desc: '每秒固定恢復 1% 最大生命', maxLv: 10 }
+        ];
+
+        function inView(x, y, padding) {
+            let screenX = (x - camera.x) * ZOOM;
+            let screenY = (y - camera.y) * ZOOM;
+            return (screenX > -padding && screenX < width + padding && screenY > -padding && screenY < height + padding);
+        }
+
+        class Player {
+            constructor() {
+                this.x = mapSize.width / 2; this.y = mapSize.height / 2; this.radius = 15; this.baseSpeed = 4.5;
+                this.level = 1; this.xp = 0; this.nextXp = 10;
+                
+                this.maxHp = 50 + (this.level * 10);
+                this.hp = this.maxHp;
+                
+                this.kills = 0; this.baseAttack = 1; 
+                this.weapons = [ { ...weaponsDb[0], level: 1 } ]; this.currentWeaponIdx = 0; this.weaponCooldown = 0;
+                this.skills = {}; this.invulnTimer = 0; this.regenTimer = 0;
+            }
+            getStat(id) { return this.skills[id] || 0; }
+            get damage() { return this.baseAttack + this.kills; } // 唯一的傷害來源
+            get speed() { return this.baseSpeed * (1 + (this.getStat('spd_up') * 0.08)); }
+            get pickupRange() { return 80 * (1 + (this.getStat('pickup') * 0.4)); }
+
+            update() {
+                let dx = 0, dy = 0;
+                if (joystick.active) { dx = joystick.deltaX; dy = joystick.deltaY; } 
+                else {
+                    if (keys.w || keys.ArrowUp) dy -= 1; if (keys.s || keys.ArrowDown) dy += 1;
+                    if (keys.a || keys.ArrowLeft) dx -= 1; if (keys.d || keys.ArrowRight) dx += 1;
+                }
+                if (dx !== 0 || dy !== 0) {
+                    let len = Math.hypot(dx, dy);
+                    if (len > 1) { dx /= len; dy /= len; }
+                    this.x += dx * this.speed; this.y += dy * this.speed;
+                }
+
+                this.x = Math.max(this.radius, Math.min(mapSize.width - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(mapSize.height - this.radius, this.y));
+
+                camera.x = this.x - (width / 2) / ZOOM;
+                camera.y = this.y - (height / 2) / ZOOM;
+
+                if (this.invulnTimer > 0) this.invulnTimer--;
+                
+                if (this.getStat('regen') > 0) {
+                    this.regenTimer++;
+                    if (this.regenTimer >= 60) {
+                        this.heal(this.maxHp * 0.01 * this.getStat('regen'));
+                        this.regenTimer = 0;
+                    }
+                }
+
+                if (this.weaponCooldown > 0) this.weaponCooldown--;
+                else this.attack();
+            }
+
+            attack() {
+                if (enemies.length === 0) return;
+                
+                let nearest = null; let minDist = Infinity;
+                for (let e of enemies) {
+                    if (!inView(e.x, e.y, 0)) continue;
+                    let dist = Math.hypot(e.x - this.x, e.y - this.y);
+                    if (dist < minDist) { minDist = dist; nearest = e; }
+                }
+                if (!nearest) return; 
+
+                const wep = this.weapons[this.currentWeaponIdx];
+                let cdReduc = 1 - (this.getStat('cooldown') * 0.05);
+                this.weaponCooldown = Math.max(3, wep.cooldown * cdReduc);
+
+                let baseAngle = Math.atan2(nearest.y - this.y, nearest.x - this.x);
+                let dmg = this.damage; // 準確無浮動的攻擊力
+                let pSpeed = wep.speed * (1 + (this.getStat('bullet_speed') * 0.15));
+                let sizeMult = 1 + (this.getStat('size_up') * 0.2);
+                let totalPierce = wep.pierce + this.getStat('pierce_up');
+
+                let fire = (angleOffset, extraProps) => {
+                    let finalAngle = baseAngle + angleOffset;
+                    projectiles.push(new Projectile(
+                        this.x, this.y, finalAngle, pSpeed, dmg, totalPierce, 
+                        wep.id, wep.level, wep.color, sizeMult, extraProps
+                    ));
+                };
+
+                let angles = [];
+                let c = 1 + this.getStat('proj_up');
+                for(let i=0; i<c; i++) angles.push(c>1 ? (i-(c-1)/2)*0.15 : 0);
+                
+                if (this.getStat('arrow_front') > 0) { for(let i=0; i<this.getStat('arrow_front'); i++) angles.push(0); }
+                if (this.getStat('arrow_back') > 0) { for(let i=0; i<this.getStat('arrow_back'); i++) angles.push(Math.PI); }
+                if (this.getStat('arrow_side') > 0) { for(let i=0; i<this.getStat('arrow_side'); i++) { angles.push(Math.PI/2); angles.push(-Math.PI/2); } }
+                if (this.getStat('arrow_diag') > 0) { for(let i=0; i<this.getStat('arrow_diag'); i++) { angles.push(Math.PI/4); angles.push(-Math.PI/4); } }
+
+                // 武器特效實裝
+                if (wep.id === 'pistol') {
+                    angles.forEach(a => {
+                        fire(a, { bounces: wep.level >= 5 ? 3 : 0, explosive: wep.level >= 10 });
+                        if (wep.level >= 25) { fire(a, { speedMult: 0.8, bounces: 3, explosive: true }); fire(a, { speedMult: 0.6, bounces: 3, explosive: true }); }
+                    });
+                } else if (wep.id === 'bow') {
+                    let p = wep.level >= 5 ? 999 : totalPierce;
+                    angles.forEach(a => fire(a, { customPierce: p, homing: wep.level >= 10, arrowRain: wep.level >= 25 }));
+                } else if (wep.id === 'boomerang') {
+                    fire(0, { sizeM: wep.level >= 10 ? (wep.level >= 25 ? 5 : 3) : 1 });
+                    if (wep.level >= 5) fire(Math.PI, { sizeM: wep.level >= 10 ? (wep.level >= 25 ? 5 : 3) : 1 });
+                    if (wep.level >= 25) { fire(Math.PI/2, { sizeM: 5 }); fire(-Math.PI/2, { sizeM: 5 }); }
+                } else if (wep.id === 'shotgun') {
+                    let pellets = 3 + Math.floor(wep.level/2);
+                    if(wep.level >= 25) pellets += 10;
+                    for(let i=0; i<pellets; i++) fire((Math.random()-0.5)*0.8, { heavyKnockback: wep.level >= 10, destroyShot: wep.level >= 25 });
+                } else if (wep.id === 'wand') {
+                    angles.forEach(a => fire(a, { homing: true, poisonTrail: wep.level >= 5, blackholeHit: wep.level >= 10, apocalypse: wep.level >= 25 }));
+                }
+            }
+
+            heal(amt) { if(this.hp < this.maxHp) { this.hp = Math.min(this.maxHp, this.hp + amt); visualEffects.push({ type: 'heal_text', x: this.x, y: this.y-20, text: "+"+formatNum(amt), timer: 30 }); } }
+            
+            takeDamage(amt) {
+                if (this.invulnTimer > 0) return;
+                if (Math.random() < this.getStat('evade') * 0.04) { visualEffects.push({ type: 'dmg_text', x: this.x, y: this.y-20, text: "MISS", timer: 20 }); this.invulnTimer = 20; return; }
+                
+                // 固定扣 1 血，減免機制可忽略或依需求保留，但基礎就是 1
+                amt = 1;
+                this.hp -= amt; this.invulnTimer = 120; // 2秒無敵
+                visualEffects.push({ type: 'dmg_text', x: this.x, y: this.y-30, text: "-1", timer: 30 });
+                document.getElementById('uiHp').parentElement.classList.add('animate-pulse'); setTimeout(()=>document.getElementById('uiHp').parentElement.classList.remove('animate-pulse'), 500);
+                
+                updateStatsUI();
+                if (this.hp <= 0) { this.hp = 0; triggerGameOver(); }
+            }
+
+            draw(ctx) {
+                ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y));
+                if (this.invulnTimer > 0 && Math.floor(Date.now() / 100) % 2 === 0) ctx.globalAlpha = 0.5;
+                ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 2); ctx.fillStyle = '#4299e1'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#2b6cb0'; ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, 0, this.pickupRange, 0, Math.PI*2); ctx.fillStyle = 'rgba(255,255,255,0.03)'; ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Enemy {
+            constructor(type, x, y, diff) {
+                this.x = x; this.y = y; this.type = type;
+                let scale = 0.5 + Math.random(); 
+                
+                // 怪物血量：難度倍率線性影響，確保前期能打死，後期也有挑戰
+                let hpGrowth = Math.max(1, gameTime / 120) * diff; 
+                
+                if (type === 'boss') { scale = 4.0; hpGrowth *= 50; }
+                else if (type === 'brute') { scale = Math.max(1.2, scale); hpGrowth *= 5; }
+
+                switch(type) {
+                    case 'swarm': this.baseHp = 2; this.speed = 3.5; this.radius = 8; this.color = `#${Math.floor(Math.random()*16777215).toString(16)}`; this.xp = 5; break;
+                    case 'brute': this.baseHp = 20; this.speed = 0.8; this.radius = 25; this.color = `hsl(200, 30%, 40%)`; this.xp = 40; break;
+                    case 'bat': this.baseHp = 3; this.speed = 6.0; this.radius = 6; this.color = '#718096'; this.xp = 8; break;
+                    case 'boss': this.baseHp = 5000; this.speed = 1.5; this.radius = 60; this.color = '#9b2c2c'; this.xp = 1000; this.isBoss = true; scale = 1; break;
+                    default: this.baseHp = 5; this.speed = 2; this.radius = 12; this.color = `hsl(140, 60%, 50%)`; this.xp = 10;
+                }
+
+                this.radius = this.radius * scale;
+                this.hp = this.baseHp * hpGrowth * (scale * 0.8);
+                this.maxHp = this.hp;
+                this.dmg = 1; // 嚴格固定碰撞傷害為 1
+                this.speed = this.speed * (1 / Math.sqrt(scale));
+                
+                this.knockbackX = 0; this.knockbackY = 0;
+                
+                // 抗擊退
+                this.kbResist = (this.type === 'brute' || this.isBoss) ? 0.1 : 1.0;
+                this.kbResist *= Math.max(0.01, 1 - (Math.log10(diff) * 0.2));
+            }
+
+            takeDamage(amt) {
+                this.hp -= amt;
+                if (this.hp <= 0 && this.hp !== -999) { this.hp = -999; killEnemy(this, player); }
+            }
+
+            update(player, diff) {
+                let distToPlayer = Math.hypot(this.x - player.x, this.y - player.y);
+                if (distToPlayer > 2000) return; // 遠處睡覺
+
+                if (Math.abs(this.knockbackX) > 0.1 || Math.abs(this.knockbackY) > 0.1) {
+                    this.x += this.knockbackX; this.y += this.knockbackY;
+                    this.knockbackX *= 0.8; this.knockbackY *= 0.8;
+                } else {
+                    let angle = Math.atan2(player.y - this.y, player.x - this.x);
+                    this.x += Math.cos(angle) * this.speed;
+                    this.y += Math.sin(angle) * this.speed;
+                }
+                
+                this.x = Math.max(this.radius, Math.min(mapSize.width - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(mapSize.height - this.radius, this.y));
+                
+                if (distToPlayer < this.radius + player.radius) player.takeDamage(this.dmg);
+            }
+
+            draw(ctx) {
+                if (!inView(this.x, this.y, this.radius + 20)) return; 
+                ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y));
+                ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke();
+                
+                if (this.hp > 0 && this.hp < this.maxHp && (this.isBoss || this.radius > 15)) {
+                    let w = this.radius * 2; let h = 4;
+                    ctx.fillStyle = '#000'; ctx.fillRect(-w/2, -this.radius - 8, w, h);
+                    ctx.fillStyle = '#f56565'; ctx.fillRect(-w/2, -this.radius - 8, w * (this.hp / this.maxHp), h);
+                }
+                ctx.restore();
+            }
+        }
+
+        class Projectile {
+            constructor(x, y, angle, speed, dmg, pierce, wid, wlv, color, sizeM, extra) {
+                this.x = x; this.y = y; this.startX = x; this.startY = y;
+                this.angle = angle; this.speed = extra?.speedMult ? speed * extra.speedMult : speed; 
+                this.dmg = dmg; this.pierce = extra?.customPierce ?? pierce;
+                this.wid = wid; this.wlv = wlv; this.color = color; this.sizeM = extra?.sizeM || sizeM;
+                this.extra = extra || {};
+                this.active = true; this.hitEnemies = new Set(); this.returning = false;
+            }
+            update() {
+                if (this.wid === 'boomerang' && !this.returning && Math.hypot(this.x - this.startX, this.y - this.startY) > 350) {
+                    this.returning = true; this.hitEnemies.clear();
+                }
+                
+                if (this.returning) {
+                    let a = Math.atan2(player.y - this.y, player.x - this.x);
+                    this.x += Math.cos(a) * this.speed * 1.5; this.y += Math.sin(a) * this.speed * 1.5;
+                    if (Math.hypot(this.x - player.x, this.y - player.y) < player.radius + 15) this.active = false;
+                } else if (this.extra.homing && enemies.length > 0) {
+                    let target = enemies[0]; let md = Infinity;
+                    for(let e of enemies) { let d = Math.hypot(e.x-this.x, e.y-this.y); if(d<md) { md=d; target=e;} }
+                    let ta = Math.atan2(target.y - this.y, target.x - this.x);
+                    let diff = ta - this.angle;
+                    while (diff < -Math.PI) diff += Math.PI * 2; while (diff > Math.PI) diff -= Math.PI * 2;
+                    this.angle += diff * 0.1;
+                    this.x += Math.cos(this.angle) * this.speed; this.y += Math.sin(this.angle) * this.speed;
+                } else {
+                    this.x += Math.cos(this.angle) * this.speed; this.y += Math.sin(this.angle) * this.speed;
+                }
+
+                // 物理邊界反彈/銷毀邏輯
+                if (this.x <= 0 || this.x >= mapSize.width || this.y <= 0 || this.y >= mapSize.height) {
+                    if (this.extra.bounces > 0) {
+                        if (this.x <= 0 || this.x >= mapSize.width) { this.angle = Math.PI - this.angle; this.x = Math.max(0, Math.min(mapSize.width, this.x)); }
+                        if (this.y <= 0 || this.y >= mapSize.height) { this.angle = -this.angle; this.y = Math.max(0, Math.min(mapSize.height, this.y)); }
+                        this.extra.bounces--;
+                    } else {
+                        this.active = false;
+                    }
+                }
+
+                for (let e of enemies) {
+                    if (!this.active) break;
+                    if (!this.hitEnemies.has(e) && Math.hypot(this.x - e.x, this.y - e.y) < e.radius + 10 * this.sizeM) {
+                        this.hitEnemies.add(e);
+                        e.takeDamage(this.dmg);
+
+                        let kbMultiplier = 1 + (player.getStat('knockback') * 1.5);
+                        if (this.extra.heavyKnockback) kbMultiplier *= 5;
+                        let kx = Math.cos(this.angle) * 3 * kbMultiplier; let ky = Math.sin(this.angle) * 3 * kbMultiplier;
+                        e.knockbackX = kx * e.kbResist; e.knockbackY = ky * e.kbResist;
+                        
+                        // 隱藏怪物受傷浮動字，直接發揮效果
+                        if (this.extra.explosive && inView(this.x, this.y, 50)) {
+                            visualEffects.push({ type: 'explosion', x: this.x, y: this.y, timer: 15 });
+                            for(let oe of enemies) if (oe !== e && Math.hypot(oe.x - this.x, oe.y - this.y) < 100) oe.takeDamage(this.dmg*2);
+                        }
+
+                        if (this.extra.blackholeHit && inView(this.x, this.y, 50)) {
+                            visualEffects.push({ type: 'blackhole', x: this.x, y: this.y, timer: 60 });
+                        }
+
+                        this.pierce--;
+                        if (this.pierce <= 0 && this.wid !== 'boomerang') { this.active = false; break; }
+                    }
+                }
+            }
+            draw(ctx) {
+                if (!inView(this.x, this.y, 20)) return;
+                ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y)); ctx.rotate(this.angle); ctx.scale(this.sizeM, this.sizeM);
+                ctx.fillStyle = this.color;
+                if (this.wid === 'bow') { ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(-10, -4); ctx.lineTo(-10, 4); ctx.fill(); } 
+                else if (this.wid === 'boomerang') { ctx.rotate(Date.now() / 30); ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI, false); ctx.lineWidth = 4; ctx.strokeStyle = this.color; ctx.stroke(); } 
+                else { ctx.beginPath(); ctx.arc(0, 0, 6, 0, Math.PI*2); ctx.fill(); }
+                ctx.restore();
+            }
+        }
+
+        class Item {
+            constructor(x, y, type, value) { this.x = x; this.y = y; this.type = type; this.value = value; this.active = true; this.magnet = false; }
+            update(player) {
+                if (Math.hypot(this.x - player.x, this.y - player.y) < player.pickupRange) this.magnet = true;
+                if (this.magnet) {
+                    let a = Math.atan2(player.y - this.y, player.x - this.x); this.x += Math.cos(a)*15; this.y += Math.sin(a)*15;
+                    if (Math.hypot(this.x - player.x, this.y - player.y) < player.radius + 10) {
+                        this.active = false;
+                        if (this.type === 'xp') gainXp(this.value);
+                        else if (this.type === 'weapon') unlockWeapon(this.value);
+                        else if (this.type === 'health') player.heal(player.maxHp);
+                        else if (this.type === 'magnet') { items.forEach(i => i.magnet = true); }
+                        else if (this.type === 'diff_changer') openDiffChanger();
+                    }
+                }
+            }
+            draw(ctx) {
+                if (!inView(this.x, this.y, 10)) return;
+                ctx.save(); ctx.translate(Math.round(this.x), Math.round(this.y));
+                if (this.type === 'xp') { ctx.fillStyle = '#63b3ed'; ctx.beginPath(); ctx.moveTo(0, -6); ctx.lineTo(6, 0); ctx.lineTo(0, 6); ctx.lineTo(-6, 0); ctx.fill(); }
+                else if (this.type === 'weapon') { ctx.fillStyle = '#ecc94b'; ctx.fillRect(-8, -8, 16, 16); ctx.strokeStyle='#fff'; ctx.strokeRect(-8,-8,16,16); ctx.fillStyle='black'; ctx.font='10px Arial'; ctx.fillText('W',-4,4); }
+                else if (this.type === 'health') { ctx.fillStyle = '#f56565'; ctx.font = '20px Arial'; ctx.fillText('❤',-10,10); }
+                else if (this.type === 'magnet') { ctx.fillStyle = '#4299e1'; ctx.font = '20px Arial'; ctx.fillText('🧲',-10,10); }
+                else if (this.type === 'diff_changer') { ctx.fillStyle = '#9f7aea'; ctx.fillRect(-10, -10, 20, 20); ctx.fillStyle='white'; ctx.fillText('D',-5,5); }
+                ctx.restore();
+            }
+        }
+
+        let player; let enemies = []; let projectiles = []; let items = []; let visualEffects = [];
+        
+        function initGame(selectedDiff) {
+            if (gameLoopId) cancelAnimationFrame(gameLoopId);
+            for (let k in keys) keys[k] = false; handleJoystickEnd(); 
+
+            difficulty = selectedDiff || 5; player = new Player();
+            enemies = []; projectiles = []; items = []; visualEffects = [];
+            gameTime = 0; levelUpQueue = 0; bossActive = false; currentBoss = null; rerollCount = 0;
+            
+            document.querySelectorAll('.dmg-text, .heal-text').forEach(e => e.remove());
+            updateWeaponUI(); updateStatsUI();
+            
+            ['startScreen','gameOverScreen','pauseScreen','diffScreen'].forEach(id => document.getElementById(id).classList.add('hidden'));
+            document.getElementById('uiDiffText').innerText = difficulty;
+            document.getElementById('uiTime').parentElement.classList.remove('boss-warning');
+            
+            gameState = 'playing'; lastTime = performance.now();
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        function spawnEnemy() {
+            let a = Math.random() * Math.PI * 2; 
+            let dist = Math.max(width/ZOOM, height/ZOOM) / 1.5 + 100; 
+            let sx = player.x + Math.cos(a) * dist; let sy = player.y + Math.sin(a) * dist;
+            sx = Math.max(0, Math.min(mapSize.width, sx)); sy = Math.max(0, Math.min(mapSize.height, sy));
+            if (inView(sx, sy, 0)) return; 
+
+            let r = Math.random(); let type = 'basic';
+            if (gameTime > 60) { if (r < 0.2) type = 'swarm'; else if (r < 0.3) type = 'bat'; }
+            if (gameTime > 120) { if (r < 0.3) type = 'brute'; }
+            
+            if (type === 'swarm') { for(let i=0; i<3; i++) enemies.push(new Enemy(type, sx+(Math.random()-0.5)*50, sy+(Math.random()-0.5)*50, difficulty)); }
+            else enemies.push(new Enemy(type, sx, sy, difficulty));
+        }
+
+        function triggerBossWave() {
+            bossActive = true; bossPhase = 1;
+            let sx = mapSize.width/2; let sy = mapSize.height/2;
+            currentBoss = new Enemy('boss', sx, sy, difficulty);
+            enemies.push(currentBoss);
+            for(let i=0; i<100; i++) {
+                let a = Math.random() * Math.PI * 2; let r = 200 + Math.random()*800;
+                let nx = Math.max(0, Math.min(mapSize.width, sx + Math.cos(a)*r));
+                let ny = Math.max(0, Math.min(mapSize.height, sy + Math.sin(a)*r));
+                enemies.push(new Enemy(['brute','bat','basic'][Math.floor(Math.random()*3)], nx, ny, difficulty));
+            }
+            document.getElementById('uiTime').parentElement.classList.add('boss-warning');
+        }
+
+        function killEnemy(e, p) {
+            p.kills++; 
+            if (e.isBoss) {
+                bossActive = false; currentBoss = null;
+                items.push(new Item(e.x - 20, e.y, 'health', 0));
+                items.push(new Item(e.x + 20, e.y, 'magnet', 0));
+                items.push(new Item(e.x, e.y - 30, 'diff_changer', 0));
+                document.getElementById('uiTime').parentElement.classList.remove('boss-warning');
+            } else {
+                if (p.getStat('vampire') > 0 && Math.random() < (p.getStat('vampire') * 0.005)) p.heal(p.maxHp * 0.01); 
+                if (Math.random() < 0.008) items.push(new Item(e.x, e.y, 'weapon', weaponsDb[Math.floor(Math.random() * weaponsDb.length)]));
+                else { let xpGain = e.xp * (1 + (p.getStat('xp_up') * 0.15)) * difficulty; items.push(new Item(e.x, e.y, 'xp', xpGain)); }
+            }
+        }
+
+        function gainXp(amt) {
+            player.xp += amt;
+            while (player.xp >= player.nextXp) {
+                player.xp -= player.nextXp; player.nextXp = Math.floor(player.nextXp * 1.3 + 10);
+                levelUpQueue++;
+            }
+            if (levelUpQueue > 0 && gameState === 'playing') processLevelUp();
+            if (Math.random() < 0.2) updateStatsUI();
+        }
+
+        function processLevelUp() {
+            if (levelUpQueue > 0) {
+                gameState = 'levelup'; handleJoystickEnd(); levelUpQueue--; 
+                
+                player.level++; 
+                player.maxHp = 50 + (player.level * 10);
+                player.heal(player.maxHp * 0.1); 
+                
+                rerollCount = 0; 
+                generateLevelUpOptions();
+                document.getElementById('levelUpScreen').classList.remove('hidden'); document.getElementById('levelUpScreen').classList.add('flex');
+                updateStatsUI();
+            }
+        }
+
+        function generateLevelUpOptions() {
+            let container = document.getElementById('skillsContainer'); container.innerHTML = '';
+            let pool = availableSkills.filter(s => player.getStat(s.id) < s.maxLv);
+            pool.sort(() => 0.5 - Math.random()); let choices = pool.slice(0, 3);
+            if (choices.length === 0) choices = [{ id: 'heal_full', name: '全滿恢復', desc: '恢復 100% 生命', maxLv: 999 }];
+
+            choices.forEach((skill, idx) => {
+                let currentLv = player.getStat(skill.id);
+                let btn = document.createElement('div');
+                btn.className = 'bg-gray-800 hover:bg-gray-700 border-2 border-blue-500 rounded-xl p-4 cursor-pointer flex-1 text-center transition flex flex-col justify-center shadow-lg transform hover:-translate-y-1';
+                btn.innerHTML = `<h3 class="text-xl font-bold text-blue-300 mb-1">[${idx+1}] ${skill.name}</h3><span class="text-xs text-yellow-400 mb-2">Lv.${currentLv} &rarr; ${currentLv+1}</span><p class="text-gray-300 text-sm leading-snug">${skill.desc}</p>`;
+                btn.onclick = () => selectSkill(skill.id);
+                container.appendChild(btn);
+            });
+            
+            // 刷新按鈕邏輯
+            let cost = Math.max(1, Math.floor((1 + player.kills) * 0.01));
+            let btnText = rerollCount === 0 ? "🔄 刷新技能選單 (免費)" : `🔄 刷新 (消耗 ${formatNum(cost)} 攻擊力)`;
+            document.getElementById('rerollBtn').innerText = btnText;
+        }
+
+        document.getElementById('rerollBtn').onclick = () => {
+            if (rerollCount === 0) {
+                rerollCount++; generateLevelUpOptions();
+            } else {
+                let cost = Math.max(1, Math.floor((1 + player.kills) * 0.01));
+                if (player.kills >= cost) { player.kills -= cost; rerollCount++; generateLevelUpOptions(); updateStatsUI(); }
+            }
+        };
+
+        function selectSkill(skillId) {
+            if (skillId === 'heal_full') player.heal(player.maxHp);
+            else player.skills[skillId] = (player.skills[skillId] || 0) + 1;
+            
+            document.getElementById('levelUpScreen').classList.add('hidden'); document.getElementById('levelUpScreen').classList.remove('flex');
+            player.invulnTimer = 120; gameState = 'playing';
+            if (levelUpQueue > 0) setTimeout(() => { if (gameState === 'playing') processLevelUp(); }, 50);
+        }
+
+        function unlockWeapon(wepData) {
+            let exists = player.weapons.find(w => w.id === wepData.id);
+            if (exists) { if (exists.level < exists.maxLv) exists.level++; } 
+            else player.weapons.push({ ...wepData, level: 1 });
+            updateWeaponUI();
+        }
+
+        function switchWeaponByIndex(idx) { if (idx >= 0 && idx < player.weapons.length && gameState === 'playing') { player.currentWeaponIdx = idx; updateWeaponUI(); } }
+
+        function updateWeaponUI() {
+            let container = document.getElementById('weaponContainer'); container.innerHTML = '';
+            player.weapons.forEach((w, idx) => {
+                let div = document.createElement('div');
+                div.className = `weapon-slot w-14 h-14 rounded flex flex-col items-center justify-center font-bold cursor-pointer relative bg-gray-800 pointer-events-auto shadow`;
+                if (idx === player.currentWeaponIdx) div.classList.add('active');
+                div.style.color = w.color;
+                div.innerHTML = `<span class="text-xs absolute top-1 left-1 opacity-70">${idx+1}</span><span class="text-sm">${w.name.substring(0,2)}</span><span class="text-[10px] text-yellow-400">Lv.${w.level}</span>`;
+                div.onclick = (e) => { e.stopPropagation(); switchWeaponByIndex(idx); };
+                container.appendChild(div);
+            });
+        }
+
+        function updateStatsUI() {
+            if (!player) return;
+            document.getElementById('uiLevel').innerText = formatNum(player.level);
+            document.getElementById('uiXp').innerText = formatNum(Math.floor(player.xp)); document.getElementById('uiNextXp').innerText = formatNum(player.nextXp);
+            document.getElementById('xpBar').style.width = `${(player.xp / player.nextXp) * 100}%`;
+            document.getElementById('uiHp').innerText = formatNum(Math.floor(player.hp)); document.getElementById('uiMaxHp').innerText = formatNum(Math.floor(player.maxHp));
+            document.getElementById('uiKills').innerText = formatNum(player.kills); document.getElementById('uiDamage').innerText = formatNum(player.damage);
+        }
+
+        function openDiffChanger() {
+            gameState = 'diff_change'; handleJoystickEnd();
+            document.getElementById('diffScreen').classList.remove('hidden'); document.getElementById('diffScreen').classList.add('flex');
+            document.getElementById('customDiffInput').value = difficulty;
+        }
+        document.getElementById('confirmDiffBtn').onclick = () => {
+            let val = parseInt(document.getElementById('customDiffInput').value); if(val>0) difficulty = val;
+            document.getElementById('uiDiffText').innerText = formatNum(difficulty);
+            document.getElementById('diffScreen').classList.add('hidden'); document.getElementById('diffScreen').classList.remove('flex');
+            player.invulnTimer = 120; gameState = 'playing';
+        };
+
+        function openPauseMenu() {
+            gameState = 'paused'; handleJoystickEnd();
+            document.getElementById('pauseScreen').classList.remove('hidden'); document.getElementById('pauseScreen').classList.add('flex');
+            
+            let wList = document.getElementById('pauseWeaponsList'); wList.innerHTML = '';
+            player.weapons.forEach(w => {
+                let fx = w.level >= 25 ? '極致覺醒！' : (w.level >= 10 ? '獲得進階特效' : (w.level >= 5 ? '獲得初階特效' : '無'));
+                wList.innerHTML += `<div class="bg-gray-700 p-3 rounded"><div class="font-bold text-lg" style="color:${w.color}">${w.name} <span class="text-yellow-400 text-sm">Lv.${w.level}/${w.maxLv}</span></div><div class="text-sm text-gray-300 mt-1">特效: ${fx}</div></div>`;
+            });
+            let sList = document.getElementById('pauseSkillsList'); sList.innerHTML = '';
+            for (let k in player.skills) {
+                let sDef = availableSkills.find(s => s.id === k);
+                if (sDef) sList.innerHTML += `<div class="bg-gray-700 p-2 rounded flex justify-between"><span>${sDef.name}</span><span class="text-yellow-400 font-bold">Lv.${player.skills[k]}</span></div>`;
+            }
+        }
+        
+        document.getElementById('pauseBtn').onclick = (e) => { e.stopPropagation(); if (gameState === 'playing') openPauseMenu(); };
+        document.getElementById('resumeBtn').onclick = () => { document.getElementById('pauseScreen').classList.add('hidden'); document.getElementById('pauseScreen').classList.remove('flex'); gameState = 'playing'; if(levelUpQueue > 0) processLevelUp(); };
+
+        function triggerGameOver() {
+            gameState = 'gameover'; handleJoystickEnd();
+            document.getElementById('goLevel').innerText = formatNum(player.level); document.getElementById('goKills').innerText = formatNum(player.kills);
+            let m = Math.floor(gameTime/60); let s = Math.floor(gameTime%60); document.getElementById('goTime').innerText = `${m}:${s<10?'0':''}${s}`;
+            document.getElementById('gameOverScreen').classList.remove('hidden'); document.getElementById('gameOverScreen').classList.add('flex');
+        }
+
+        function drawBackground() {
+            ctx.fillStyle = '#1a202c'; ctx.fillRect(0, 0, width, height);
+            ctx.save(); ctx.scale(ZOOM, ZOOM); ctx.translate(Math.round(-camera.x), Math.round(-camera.y));
+            ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 1; ctx.beginPath();
+            for (let x = 0; x <= mapSize.width; x += 100) { ctx.moveTo(x, 0); ctx.lineTo(x, mapSize.height); }
+            for (let y = 0; y <= mapSize.height; y += 100) { ctx.moveTo(0, y); ctx.lineTo(mapSize.width, y); }
+            ctx.stroke();
+            ctx.strokeStyle = '#e53e3e'; ctx.lineWidth = 10; ctx.strokeRect(0, 0, mapSize.width, mapSize.height);
+            ctx.restore();
+        }
+
+        function drawVisualEffects() {
+            for (let i = visualEffects.length - 1; i >= 0; i--) {
+                let v = visualEffects[i]; v.timer--;
+                if (v.timer <= 0) { visualEffects.splice(i, 1); continue; }
+                if (!inView(v.x, v.y, 100)) continue;
+                
+                ctx.save(); ctx.translate(Math.round(v.x), Math.round(v.y));
+                if (v.type === 'explosion') {
+                    let r = Math.max(0, 30 * (1 - v.timer/15)); ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle = `rgba(237,137,54,${Math.max(0,v.timer/15)})`; ctx.fill();
+                } else if (v.type === 'blackhole') {
+                    let r = Math.max(0, 40 * (1 - v.timer/60)); ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fillStyle = `rgba(0,0,0,${Math.max(0,v.timer/60)})`; ctx.fill();
+                }
+                ctx.restore();
+            }
+        }
+
+        function gameLoop(time) {
+            let dt = (time - lastTime) / 1000; lastTime = time;
+
+            if (gameState === 'playing') {
+                if (!bossActive) gameTime += dt; 
+                
+                let m = Math.floor(gameTime/60); let s = Math.floor(gameTime%60);
+                if(bossActive) document.getElementById('uiTime').innerText = `[BOSS戰]`;
+                else document.getElementById('uiTime').innerText = `${m}:${s<10?'0':''}${s}`;
+
+                player.update();
+                
+                if (!bossActive && gameTime > 0 && Math.floor(gameTime) % 300 === 0 && Math.floor(gameTime - dt) % 300 !== 0) triggerBossWave();
+                
+                if (!bossActive) {
+                    let spawnChance = 0.05 + (gameTime / 1000); 
+                    if (Math.random() < spawnChance && enemies.length < 150) spawnEnemy();
+                } else if (currentBoss && currentBoss.hp < currentBoss.maxHp * 0.5 && bossPhase === 1) {
+                    bossPhase = 2; for(let i=0; i<100; i++) spawnEnemy();
+                }
+
+                let newEnemies = []; for(let i=0; i<enemies.length; i++) { if(enemies[i].hp !== -999) { enemies[i].update(player, difficulty); newEnemies.push(enemies[i]); } } enemies = newEnemies;
+                let newProj = []; for(let i=0; i<projectiles.length; i++) { if(projectiles[i].active) { projectiles[i].update(); newProj.push(projectiles[i]); } } projectiles = newProj;
+                let newItems = []; for(let i=0; i<items.length; i++) { if(items[i].active) { items[i].update(player); newItems.push(items[i]); } } items = newItems;
+                
+                if (levelUpQueue > 0) processLevelUp();
+            }
+
+            if (gameState !== 'start') {
+                drawBackground();
+                ctx.save(); ctx.scale(ZOOM, ZOOM); ctx.translate(Math.round(-camera.x), Math.round(-camera.y));
+                items.forEach(i => i.draw(ctx)); enemies.forEach(e => e.draw(ctx)); 
+                projectiles.forEach(p => p.draw(ctx)); 
+                if(player) player.draw(ctx);
+                drawVisualEffects();
+                ctx.restore();
+            }
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        document.getElementById('startBtn').onclick = () => initGame(5);
+        document.getElementById('restartBtn').onclick = () => initGame(difficulty);
+    </script>
+</body>
+</html>
