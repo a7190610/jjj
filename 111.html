@@ -40,10 +40,8 @@
         <div id="joystickBase"><div id="joystickStick"></div></div>
     </div>
 
-    <!-- UI Layer -->
     <div id="uiLayer" class="ui-layer flex flex-col justify-between p-4 z-10">
         <div class="flex justify-between items-start pointer-events-none">
-            <!-- Left Stats -->
             <div class="pointer-events-auto flex flex-col gap-2">
                 <button id="pauseBtn" class="bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded border border-gray-500 shadow transition w-fit text-sm">⏸ 暫停/設定</button>
                 <div class="bg-gray-800 bg-opacity-80 rounded px-3 py-2 border border-gray-600 shadow">
@@ -54,25 +52,21 @@
                 <div class="bg-gray-800 bg-opacity-80 rounded px-3 py-2 border border-gray-600 shadow text-xs space-y-1">
                     <div class="text-red-400 font-bold">HP: <span id="uiHp">50</span> / <span id="uiMaxHp">50</span></div>
                     <div class="text-yellow-400">擊殺: <span id="uiKills">0</span></div>
-                    <!-- 攻擊力完全鎖死在 1 + 擊殺數 -->
                     <div class="text-orange-400 font-bold">絕對攻擊力: <span id="uiDamage">1</span></div>
                     <div class="text-purple-400">難度倍率: x<span id="uiDiffText">5</span></div>
                     <div class="text-white mt-1 font-mono text-sm" id="uiTime">00:00</div>
                 </div>
             </div>
 
-            <!-- Right Weapons (Now only shows the single equipped weapon) -->
             <div class="pointer-events-auto flex flex-col gap-2 items-end" id="weaponContainer">
                 <!-- Injected via JS -->
             </div>
         </div>
     </div>
 
-    <!-- Start Screen -->
     <div id="startScreen" class="absolute inset-0 modal-bg flex flex-col items-center justify-center z-50 pointer-events-auto overflow-y-auto py-10">
         <h1 class="text-6xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-yellow-500 tracking-wider text-center drop-shadow-lg">兆級倖存者<br><span class="text-3xl text-gray-300">極限突破</span></h1>
         
-        <!-- Pre-game Weapon Selection -->
         <div class="bg-gray-800 p-6 rounded-lg border border-gray-600 mb-6 w-full max-w-2xl text-center shadow-xl">
             <h3 class="text-xl font-bold mb-4 text-white border-b border-gray-600 pb-2">選擇出戰武器</h3>
             <p class="text-sm text-gray-400 mb-4">戰鬥中透過收集「武器碎片」升級武器，最高 50 級！</p>
@@ -184,7 +178,6 @@
         window.addEventListener('touchmove', (e) => { if (joystick.active && e.touches.length > 0) { handleJoystickMove(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); } }, {passive: false});
         window.addEventListener('touchend', handleJoystickEnd); window.addEventListener('touchcancel', handleJoystickEnd);
 
-        // --- Weapon Database ---
         const weaponsDb = [
             { id: 'pistol', name: '手槍', color: '#a0aec0', cooldown: 30, speed: 18, pierce: 1, maxLv: 50 },
             { id: 'bow', name: '長弓', color: '#d69e2e', cooldown: 50, speed: 20, pierce: 3, maxLv: 50 },
@@ -193,7 +186,7 @@
             { id: 'wand', name: '魔法杖', color: '#9f7aea', cooldown: 45, speed: 12, pierce: 1, maxLv: 50 }
         ];
 
-        let selectedStartWeaponId = 'pistol'; // Default choice
+        let selectedStartWeaponId = 'pistol';
 
         function renderStartScreenWeapons() {
             const container = document.getElementById('startWeaponContainer');
@@ -206,7 +199,6 @@
                 container.appendChild(div);
             });
         }
-        // Initial render for start screen
         renderStartScreenWeapons();
 
         function getWeaponEffectsDesc(id, lv) {
@@ -240,8 +232,6 @@
             return eff.join('<br>') || '尚未解鎖進階效果 (碎片升級)';
         }
 
-        // --- Skills Database ---
-        // Note: Pierce is marked incompatible with Bow/Boomerang since they get infinite naturally or early.
         const availableSkills = [
             { id: 'proj_up', name: '多重發射', desc: '發射物數量 +1', maxLv: 10 },
             { id: 'pierce_up', name: '銳利箭矢', desc: '穿透力 +1', maxLv: 10, incompatible: ['boomerang', 'bow'] },
@@ -280,7 +270,6 @@
                 
                 this.kills = 0; this.baseAttack = 1; 
                 
-                // Initialize with chosen weapon
                 const chosenData = weaponsDb.find(w => w.id === selectedStartWeaponId);
                 this.weapon = { ...chosenData, level: 1 }; 
                 this.weaponCooldown = 0;
@@ -288,7 +277,7 @@
                 this.skills = {}; this.invulnTimer = 0; this.regenTimer = 0;
             }
             getStat(id) { return this.skills[id] || 0; }
-            get damage() { return this.baseAttack + this.kills; } // 唯一的傷害來源
+            get damage() { return this.baseAttack + this.kills; }
             get speed() { return this.baseSpeed * (1 + (this.getStat('spd_up') * 0.08)); }
             get pickupRange() { return 80 * (1 + (this.getStat('pickup') * 0.4)); }
 
@@ -363,7 +352,6 @@
                 if (this.getStat('arrow_side') > 0) { for(let i=0; i<this.getStat('arrow_side'); i++) { angles.push(Math.PI/2); angles.push(-Math.PI/2); } }
                 if (this.getStat('arrow_diag') > 0) { for(let i=0; i<this.getStat('arrow_diag'); i++) { angles.push(Math.PI/4); angles.push(-Math.PI/4); } }
 
-                // Weapon specifics
                 if (wep.id === 'pistol') {
                     angles.forEach(a => {
                         let p = { bounces: wep.level >= 5 ? 3 : 0, explosive: wep.level >= 10, nuke: wep.level >= 50 };
@@ -399,8 +387,8 @@
                 if (this.invulnTimer > 0) return;
                 if (Math.random() < this.getStat('evade') * 0.04) { visualEffects.push({ type: 'dmg_text', x: this.x, y: this.y-20, text: "MISS", timer: 20 }); this.invulnTimer = 20; return; }
                 
-                amt = 1; // Fixed 1 damage
-                this.hp -= amt; this.invulnTimer = 120; // 2 seconds i-frame
+                amt = 1; 
+                this.hp -= amt; this.invulnTimer = 120;
                 visualEffects.push({ type: 'dmg_text', x: this.x, y: this.y-30, text: "-1", timer: 30 });
                 document.getElementById('uiHp').parentElement.classList.add('animate-pulse'); setTimeout(()=>document.getElementById('uiHp').parentElement.classList.remove('animate-pulse'), 500);
                 
@@ -422,19 +410,21 @@
                 this.x = x; this.y = y; this.type = type;
                 let scale = 0.5 + Math.random(); 
                 
-                let timeScale = Math.pow(1.3, gameTime / 60);
-                let killScale = 1 + player.kills * 0.3; 
-                let hpGrowth = timeScale * killScale * diff;
+                // NEW: Balanced HP Growth Formula decoupled from player kills
+                let timeScale = Math.pow(1.15, gameTime / 60); // Slower exponential growth over time
+                let levelScale = 1 + (player.level * 0.1); // Linear growth with player level
+                let hpGrowth = timeScale * levelScale * diff;
                 
                 if (type === 'boss') { scale = 4.0; hpGrowth *= 50; }
                 else if (type === 'brute') { scale = Math.max(1.2, scale); hpGrowth *= 5; }
 
+                // Adjusted base HP slightly lower to ensure early game is smooth
                 switch(type) {
-                    case 'swarm': this.baseHp = 2; this.speed = 3.5; this.radius = 8; this.color = `#${Math.floor(Math.random()*16777215).toString(16)}`; this.xp = 5; break;
-                    case 'brute': this.baseHp = 10; this.speed = 0.8; this.radius = 25; this.color = `hsl(200, 30%, 40%)`; this.xp = 40; break;
+                    case 'swarm': this.baseHp = 1; this.speed = 3.5; this.radius = 8; this.color = `#${Math.floor(Math.random()*16777215).toString(16)}`; this.xp = 5; break;
+                    case 'brute': this.baseHp = 8; this.speed = 0.8; this.radius = 25; this.color = `hsl(200, 30%, 40%)`; this.xp = 40; break;
                     case 'bat': this.baseHp = 1; this.speed = 6.0; this.radius = 6; this.color = '#718096'; this.xp = 8; break;
-                    case 'boss': this.baseHp = 2000; this.speed = 1.5; this.radius = 60; this.color = '#9b2c2c'; this.xp = 1000; this.isBoss = true; scale = 1; break;
-                    default: this.baseHp = 4; this.speed = 2; this.radius = 12; this.color = `hsl(140, 60%, 50%)`; this.xp = 10;
+                    case 'boss': this.baseHp = 500; this.speed = 1.5; this.radius = 60; this.color = '#9b2c2c'; this.xp = 1000; this.isBoss = true; scale = 1; break;
+                    default: this.baseHp = 3; this.speed = 2; this.radius = 12; this.color = `hsl(140, 60%, 50%)`; this.xp = 10;
                 }
 
                 this.radius = this.radius * scale;
@@ -444,7 +434,6 @@
                 this.speed = this.speed * (1 / Math.sqrt(scale));
                 
                 this.knockbackX = 0; this.knockbackY = 0;
-                
                 this.kbResist = (this.type === 'brute' || this.isBoss) ? 0.1 : 1.0;
                 this.kbResist *= Math.max(0.01, 1 - (Math.log10(diff) * 0.2));
             }
@@ -456,7 +445,7 @@
 
             update(player, diff) {
                 let distToPlayer = Math.hypot(this.x - player.x, this.y - player.y);
-                if (distToPlayer > 2500) return; // Sleep if far away
+                if (distToPlayer > 2500) return; 
 
                 if (Math.abs(this.knockbackX) > 0.1 || Math.abs(this.knockbackY) > 0.1) {
                     this.x += this.knockbackX; this.y += this.knockbackY;
@@ -479,7 +468,6 @@
                 ctx.fillStyle = this.color;
                 ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke();
                 
-                // HP Bar
                 if (this.hp > 0 && this.hp < this.maxHp && (this.isBoss || this.radius > 15)) {
                     let w = this.radius * 2; let h = 4;
                     ctx.fillStyle = '#000'; ctx.fillRect(-w/2, -this.radius - 8, w, h);
@@ -519,7 +507,6 @@
                     this.x += Math.cos(this.angle) * this.speed; this.y += Math.sin(this.angle) * this.speed;
                 }
 
-                // Bounce off physical bounds
                 if (this.x <= 0 || this.x >= mapSize.width || this.y <= 0 || this.y >= mapSize.height) {
                     if (this.extra.bounces > 0) {
                         if (this.x <= 0 || this.x >= mapSize.width) { this.angle = Math.PI - this.angle; this.x = Math.max(0, Math.min(mapSize.width, this.x)); }
@@ -663,7 +650,6 @@
             let sx = mapSize.width/2; let sy = mapSize.height/2;
             currentBoss = new Enemy('boss', sx, sy, difficulty);
             enemies.push(currentBoss);
-            // First wave of 100
             for(let i=0; i<100; i++) {
                 let a = Math.random() * Math.PI * 2; let r = 200 + Math.random()*800;
                 let nx = Math.max(0, Math.min(mapSize.width, sx + Math.cos(a)*r));
@@ -680,14 +666,13 @@
                 items.push(new Item(e.x - 20, e.y, 'health', 0));
                 items.push(new Item(e.x + 20, e.y, 'magnet', 0));
                 items.push(new Item(e.x, e.y - 30, 'diff_changer', 0));
-                // Boss explodes 5 fragments
                 for(let i=0; i<5; i++) items.push(new Item(e.x + (Math.random()-0.5)*50, e.y + (Math.random()-0.5)*50, 'weapon_fragment', 0));
                 document.getElementById('uiTime').parentElement.classList.remove('boss-warning');
             } else {
                 if (p.getStat('vampire') > 0 && Math.random() < (p.getStat('vampire') * 0.005)) p.heal(p.maxHp * 0.01); 
                 
-                // Drop fragment instead of weapon box
-                if (Math.random() < 0.02) items.push(new Item(e.x, e.y, 'weapon_fragment', 0));
+                // NEW: Significantly lowered drop rate to make 50 levels an actual challenge
+                if (Math.random() < 0.005) items.push(new Item(e.x, e.y, 'weapon_fragment', 0));
                 else { let xpGain = e.xp * (1 + (p.getStat('xp_up') * 0.15)) * difficulty; items.push(new Item(e.x, e.y, 'xp', xpGain)); }
             }
         }
@@ -695,7 +680,9 @@
         function gainXp(amt) {
             player.xp += amt;
             while (player.xp >= player.nextXp) {
-                player.xp -= player.nextXp; player.nextXp = Math.floor(player.nextXp * 1.3 + 10);
+                player.xp -= player.nextXp; 
+                // NEW: Smoother XP growth curve
+                player.nextXp = Math.floor(player.nextXp * 1.15 + 20);
                 levelUpQueue++;
             }
             if (levelUpQueue > 0 && gameState === 'playing') processLevelUp();
@@ -720,7 +707,6 @@
         function generateLevelUpOptions() {
             let container = document.getElementById('skillsContainer'); container.innerHTML = '';
             
-            // Filter out skills that are maxed OR incompatible with the equipped weapon
             let pool = availableSkills.filter(s => {
                 let currentWepId = player.weapon.id;
                 let isCompatible = !s.incompatible || !s.incompatible.includes(currentWepId);
@@ -898,7 +884,7 @@
             gameLoopId = requestAnimationFrame(gameLoop);
         }
 
-        document.getElementById('startBtn').onclick = () => initGame(5); // Default to normal difficulty (x5)
+        document.getElementById('startBtn').onclick = () => initGame(5); 
         document.getElementById('restartBtn').onclick = () => { gameState = 'start'; document.getElementById('gameOverScreen').classList.add('hidden'); document.getElementById('startScreen').classList.remove('hidden'); document.getElementById('startScreen').classList.add('flex'); };
     </script>
 </body>
