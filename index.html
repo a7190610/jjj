@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>智慧材積系統與生產日報表</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js"></script>
+    <style>
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+        body { background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
+        
+        thead.sticky-header { position: sticky; top: 0; z-index: 10; }
+        
+        .report-input { width: 100%; height: 100%; min-height: 44px; text-align: center; font-size: 16px; font-weight: 700; background-color: transparent; outline: none; padding: 4px; border-radius: 0; }
+        .report-input:focus { background-color: #dcfce7; box-shadow: inset 0 0 0 2px #16a34a; }
+        
+        .calc-input { width: 100%; height: 100%; min-height: 44px; text-align: center; font-size: 16px; font-weight: 700; background-color: transparent; outline: none; padding: 4px 2px; border-radius: 0; }
+        .calc-input:focus { background-color: #e0e7ff; box-shadow: inset 0 0 0 2px #4f46e5; }
+        
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* 偵測螢幕高度(鍵盤彈出時)，隱藏佔空間的底部元素 */
+        @media screen and (max-height: 550px) {
+            .hide-on-keyboard { display: none !important; }
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col overflow-hidden bg-slate-50">
+    <div id="root" class="h-full w-full"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo, useEffect, useRef } = React;
+
+        // ==========================================
+        // 1. 圖示元件 (Icons)
+        // ==========================================
+        const TrashIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2-2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2-2v2"></path></svg>;
+        const CalculatorIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="16" y1="14" x2="16" y2="14.01"></line><line x1="16" y1="10" x2="16" y2="10.01"></line><line x1="12" y1="10" x2="12" y2="10.01"></line><line x1="8" y1="10" x2="8" y2="10.01"></line><line x1="12" y1="14" x2="12" y2="14.01"></line><line x1="8" y1="14" x2="8" y2="14.01"></line><line x1="12" y1="18" x2="12" y2="18.01"></line><line x1="8" y1="18" x2="8" y2="18.01"></line></svg>;
+        const TableIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="9" x2="9" y2="21"></line><line x1="15" y1="9" x2="15" y2="21"></line></svg>;
+        const EditIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
+        const SaveIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
+        const BoxIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"></polyline><rect x="1" y="3" width="22" height="5"></rect><line x1="10" y1="12" x2="14" y2="12"></line></svg>;
+        const TruckIcon = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 18H3c-.6 0-1-.4-1-1V7c0-.6.4-1 1-1h10c.6 0 1 .4 1 1v11"></path><path d="M14 9h4l4 4v5h-3"></path><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="18" r="2"></circle></svg>;
+
+        // ==========================================
+        // 2. 系統常數設定
+        // ==========================================
+        const ROW_COUNT = 50;
+
+        const USER_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyCa0s6Xuxa9Pm3VD7I_WJG_zPjfloZv8D8",
+            authDomain: "zy-cbm.firebaseapp.com",
+            projectId: "zy-cbm",
+            storageBucket: "zy-cbm.firebasestorage.app",
+            messagingSenderId: "768904093823",
+            appId: "1:768904093823:web:a80401260bf9cb9a1f5f4a"
+        };
+
+        const CUSTOMERS = {
+            '0': '德冠',
+            '1': '松敬',
+            '2': '龍興',
+            '5': '榮杕',
+            '6': '榮隆',
+            '7': '森隆',
+            '8': '沅興'
+        };
+
+        const holidays2026 = [
+            '2026-01-01', '2026-01-02', '2026-01-03', '2026-01-04',
+            '2026-02-14', '2026-02-15', '2026-02-16', '2026-02-17', '2026-02-18', '2026-02-19', '2026-02-20', '2026-02-21', '2026-02-22',
+            '2026-02-27', '2026-02-28', '2026-03-01',
+            '2026-04-03', '2026-04-04', '2026-04-05', '2026-04-06',
+            '2026-05-01', '2026-05-02', '2026-05-03',
+            '2026-06-19', '2026-06-20', '2026-06-21',
+            '2026-09-25', '2026-09-26', '2026-09-27', '2026-09-28',
+            '2026-10-09', '2026-10-10', '2026-10-11',
+            '2026-10-24', '2026-10-25', '2026-10-26',
+            '2026-12-25', '2026-12-26', '2026-12-27'
+        ];
+
+        const fmtNum = (n) => Number(Number(n).toFixed(4));
+
+        // ==========================================
+        // 3. 主應用程式元件
+        // ==========================================
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('calculator'); // 預設改為明細表格
+            const savedYear = localStorage.getItem('zy_year') ? parseInt(localStorage.getItem('zy_year')) : 2026;
+            const savedMonth = localStorage.getItem('zy_month') ? parseInt(localStorage.getItem('zy_month')) : (new Date().getMonth() + 1);
+            
+            const [year, setYear] = useState(savedYear); 
+            const [month, setMonth] = useState(savedMonth);
+
+            const availableYears = useMemo(() => {
+                const currentSystemYear = new Date().getFullYear();
+                const yearsArray = Array.from({ length: Math.max(1, currentSystemYear - 2026 + 1) }, (_, i) => 2026 + i);
+                if (!yearsArray.includes(savedYear)) yearsArray.push(savedYear);
+                return yearsArray.sort((a, b) => a - b);
+            }, [savedYear]);
+            
+            const [reportRows, setReportRows] = useState(Array.from({ length: 31 }, (_, i) => ({ date: i + 1, g1: '', g2: '', g3: '' })));
+            const [detailsData, setDetailsData] = useState({});
+            
+            const [calcContext, setCalcContext] = useState({ date: new Date().getDate(), group: 'calc_only', customer: '1' });
+            const [loadedContext, setLoadedContext] = useState({ year: savedYear, month: savedMonth, date: new Date().getDate(), group: 'calc_only', customer: '1' });
+            const [calcRows, setCalcRows] = useState(Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '1', u: '', c: '' })));
+            
+            const [isHeaderOpen, setIsHeaderOpen] = useState(true);
+            const [isSummaryOpen, setIsSummaryOpen] = useState(true);
+
+            const [user, setUser] = useState(null);
+            const [firebaseReady, setFirebaseReady] = useState(false);
+            const [isLoadingData, setIsLoadingData] = useState(true);
+            const [syncStatus, setSyncStatus] = useState('💾 手動儲存');
+            
+            const [hasInitializedDate, setHasInitializedDate] = useState(false);
+
+            const [focusedReportRow, setFocusedReportRow] = useState(null);
+            const [focusedCalcRow, setFocusedCalcRow] = useState(null);
+            const [confirmClearCalc, setConfirmClearCalc] = useState(false);
+            const [confirmDeleteRowIdx, setConfirmDeleteRowIdx] = useState(null);
+            const [viewDetailModal, setViewDetailModal] = useState({ isOpen: false, date: null, group: null });
+            
+            const [overwriteModal, setOverwriteModal] = useState({ isOpen: false, newTotal: 0, existingTotal: '', targetDate: 1, targetGroup: 'g1' });
+            const [warningModal, setWarningModal] = useState({ isOpen: false, message: '', confirmAction: null });
+            const [moveModal, setMoveModal] = useState({ isOpen: false, fromYear: null, fromMonth: null, fromDate: null, fromGroup: null, fromCustomer: null, toYear: null, toMonth: null, toDate: null, toGroup: null, toCustomer: null, pendingAction: null });
+
+            const [invCustomer, setInvCustomer] = useState('all'); 
+            const [invSort, setInvSort] = useState('date');
+            const [expandedDates, setExpandedDates] = useState({}); 
+            
+            const [shippingReportDate, setShippingReportDate] = useState(new Date().getDate());
+
+            const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+            // ==========================================
+            // [新增] Enter 自動跳到下一個輸入框功能
+            // ==========================================
+            const handleEnterToNext = (e, className) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const inputs = Array.from(document.querySelectorAll(`.${className}`));
+                    const index = inputs.indexOf(e.target);
+                    if (index > -1 && index < inputs.length - 1) {
+                        inputs[index + 1].focus();
+                        inputs[index + 1].select(); 
+                    } else if (index === inputs.length - 1) {
+                        e.target.blur(); 
+                    }
+                }
+            };
+
+            useEffect(() => {
+                const handleFocusIn = (e) => {
+                    if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) setIsKeyboardOpen(true);
+                };
+                const handleFocusOut = () => {
+                    setTimeout(() => {
+                        if (!['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) setIsKeyboardOpen(false);
+                    }, 50);
+                };
+                window.addEventListener('focusin', handleFocusIn);
+                window.addEventListener('focusout', handleFocusOut);
+                return () => {
+                    window.removeEventListener('focusin', handleFocusIn);
+                    window.removeEventListener('focusout', handleFocusOut);
+                };
+            }, []);
+
+            useEffect(() => {
+                localStorage.setItem('zy_year', year.toString());
+                localStorage.setItem('zy_month', month.toString());
+                
+                const daysInMonth = new Date(year, month, 0).getDate();
+                setCalcContext(prev => prev.date > daysInMonth ? { ...prev, date: daysInMonth } : prev);
+                setShippingReportDate(prev => prev > daysInMonth ? daysInMonth : prev);
+            }, [year, month]);
+
+            useEffect(() => {
+                const daysInMonth = new Date(year, month, 0).getDate() || 31;
+                if (!isLoadingData && reportRows.length !== daysInMonth) {
+                    setReportRows(Array.from({ length: daysInMonth }, (_, i) => ({ date: i + 1, g1: '', g2: '', g3: '' })));
+                }
+            }, [year, month, isLoadingData]);
+
+            const getDayInfo = (dateNum) => {
+                const dateObj = new Date(year, month - 1, dateNum);
+                const dayOfWeek = dateObj.getDay();
+                const weekStr = ['日','一','二','三','四','五','六'][dayOfWeek];
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(dateNum).padStart(2, '0')}`;
+                const isHoliday = dayOfWeek === 0 || dayOfWeek === 6 || holidays2026.includes(dateStr);
+                return { label: `${dateNum}-${weekStr}`, isHoliday };
+            };
+
+            const getNum = (val) => parseFloat(val) || 0;
+
+            const computedReport = useMemo(() => {
+                let sumG1 = 0, sumG2 = 0, sumG3 = 0, sumTotal = 0;
+                const processedRows = reportRows.map(row => {
+                    const dailyTotal = getNum(row.g1) + getNum(row.g2) + getNum(row.g3);
+                    const hasData = row.g1 !== '' || row.g2 !== '' || row.g3 !== '';
+                    if (hasData) {
+                        sumG1 += getNum(row.g1); sumG2 += getNum(row.g2); sumG3 += getNum(row.g3); sumTotal += dailyTotal;
+                    }
+                    return { ...row, dailyTotal, hasData };
+                });
+                return { processedRows, sumG1, sumG2, sumG3, sumTotal };
+            }, [reportRows]);
+
+            const enrichedReportRows = useMemo(() => {
+                const rows = [];
+                let currentWeekTotal = 0;
+
+                computedReport.processedRows.forEach((row, idx) => {
+                    rows.push({ type: 'day', ...row, originalIndex: idx });
+                    currentWeekTotal += row.dailyTotal;
+
+                    const dateObj = new Date(year, month - 1, row.date);
+                    if (dateObj.getDay() === 0 || row.date === computedReport.processedRows.length) {
+                        rows.push({ type: 'week_total', label: '小計', total: currentWeekTotal, key: `wt-${row.date}` });
+                        currentWeekTotal = 0;
+                    }
+                });
+
+                rows.push({ type: 'month_total', label: '當月總計', g1: computedReport.sumG1, g2: computedReport.sumG2, g3: computedReport.sumG3, total: computedReport.sumTotal, key: 'mt-final' });
+                return rows;
+            }, [computedReport, year, month]);
+
+            useEffect(() => {
+                let isMounted = true;
+                const initFirebase = async () => {
+                    try {
+                        const loadModule = (url) => new Function(`return import("${url}")`)();
+                        const { initializeApp } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js');
+                        const { getAuth, signInWithEmailAndPassword, onAuthStateChanged } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
+                        const { getFirestore, doc, setDoc, getDoc } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+                        
+                        const app = initializeApp(USER_FIREBASE_CONFIG);
+                        const auth = getAuth(app);
+                        const db = getFirestore(app);
+                        
+                        try {
+                            await signInWithEmailAndPassword(auth, 'joe623@zy.com', 'joe0623');
+                        } catch (authErr) {
+                            if (isMounted) { 
+                                setFirebaseReady(true); 
+                                setIsLoadingData(false); 
+                                setSyncStatus('⚠️ 連線失敗'); 
+                            }
+                            return;
+                        }
+
+                        window.db = db; window.setDoc = setDoc; window.doc = doc;
+                        
+                        onAuthStateChanged(auth, (currentUser) => {
+                            if (!isMounted) return;
+                            setUser(currentUser);
+                            setFirebaseReady(true);
+                        });
+                    } catch (error) {
+                        if(isMounted) {
+                            setFirebaseReady(true);
+                            setIsLoadingData(false);
+                            setSyncStatus('⚠️ 連線失敗');
+                        }
+                    }
+                };
+                initFirebase();
+                return () => { isMounted = false; };
+            }, []);
+
+            useEffect(() => {
+                if (!user || !firebaseReady || !window.db) return;
+
+                setIsLoadingData(true);
+
+                const docId = `report_${year}_${month}`;
+                const docPath = window.doc(window.db, 'users', user.uid, 'app_data', docId);
+
+                new Function('return import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js")')().then(({ getDoc }) => {
+                    getDoc(docPath).then(snap => {
+                        if (snap.exists()) {
+                            const data = snap.data();
+                            setReportRows(data.reportRows || []);
+                            setDetailsData(data.detailsData || {});
+                        } else {
+                            const days = new Date(year, month, 0).getDate() || 31;
+                            setReportRows(Array.from({ length: days }, (_, i) => ({ date: i + 1, g1: '', g2: '', g3: '' })));
+                            setDetailsData({});
+                        }
+                        setIsLoadingData(false);
+                        setSyncStatus('💾 手動儲存');
+                    }).catch(e => {
+                        setIsLoadingData(false);
+                        setSyncStatus('⚠️ 讀取失敗');
+                    });
+                });
+            }, [user, firebaseReady, year, month]);
+
+            useEffect(() => {
+                if (!isLoadingData && !hasInitializedDate && reportRows.length > 0) {
+                    const today = new Date();
+                    const checkY = year;
+                    const checkM = month;
+                    let targetDate = today.getDate(); 
+                    
+                    if (checkY !== today.getFullYear() || checkM !== (today.getMonth() + 1)) {
+                        targetDate = 1; 
+                    }
+                    
+                    const maxDays = new Date(checkY, checkM, 0).getDate();
+                    if (targetDate > maxDays) targetDate = maxDays;
+                    if (targetDate < 1) targetDate = 1;
+
+                    setCalcContext(prev => ({ ...prev, date: targetDate, group: 'calc_only', customer: '1' }));
+                    setLoadedContext({ year: checkY, month: checkM, date: targetDate, group: 'calc_only', customer: '1' });
+                    setShippingReportDate(targetDate);
+                    
+                    const key = `${targetDate}-calc_only`;
+                    setCalcRows(detailsData[key] || Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '1', u: '', c: '' })));
+                    
+                    setHasInitializedDate(true);
+                }
+                // eslint-disable-next-line react-hooks/exhaustive-deps
+            }, [isLoadingData, hasInitializedDate]);
+
+            const performFirebaseSave = async (payloadReportRows, payloadDetailsData) => {
+                if (!user || !window.db) throw new Error("無使用者登入或資料庫尚未連線");
+                
+                const docId = `report_${year}_${month}`;
+                const docPath = window.doc(window.db, 'users', user.uid, 'app_data', docId);
+
+                const cleanReportRows = payloadReportRows.map(r => ({
+                    date: r.date || 1,
+                    g1: r.g1 || '',
+                    g2: r.g2 || '',
+                    g3: r.g3 || '',
+                    dailyTotal: Number(r.dailyTotal) || 0
+                }));
+                const cleanDetailsData = JSON.parse(JSON.stringify(payloadDetailsData));
+
+                let currentWeekTotal = 0;
+                const weeklySubtotals = {};
+                cleanReportRows.forEach((r, idx) => {
+                    currentWeekTotal += r.dailyTotal;
+                    const dateObj = new Date(year, month - 1, r.date);
+                    if (dateObj.getDay() === 0 || r.date === cleanReportRows.length) {
+                        weeklySubtotals[`wt-${r.date}`] = Number(currentWeekTotal.toFixed(2));
+                        currentWeekTotal = 0;
+                    }
+                });
+
+                let sumG1 = 0, sumG2 = 0, sumG3 = 0, sumTotal = 0;
+                cleanReportRows.forEach(r => {
+                    sumG1 += r.g1 ? Number(r.g1) : 0;
+                    sumG2 += r.g2 ? Number(r.g2) : 0;
+                    sumG3 += r.g3 ? Number(r.g3) : 0;
+                    sumTotal += r.dailyTotal;
+                });
+
+                await window.setDoc(docPath, {
+                    reportRows: cleanReportRows,
+                    detailsData: cleanDetailsData,
+                    summary: {
+                        totalG1: Number(sumG1.toFixed(2)),
+                        totalG2: Number(sumG2.toFixed(2)),
+                        totalG3: Number(sumG3.toFixed(2)),
+                        totalAll: Number(sumTotal.toFixed(2))
+                    },
+                    weeklySubtotals: weeklySubtotals,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+
+                return true;
+            };
+
+            const handleManualSave = async () => {
+                if (!user || !firebaseReady || !window.setDoc || !window.db) {
+                    setWarningModal({
+                        isOpen: true,
+                        message: `⚠️ 儲存失敗：系統尚未連線成功。\n請確認網路狀態後重新整理網頁！`,
+                        confirmAction: () => setWarningModal({ isOpen: false, message: '', confirmAction: null })
+                    });
+                    return;
+                }
+                
+                setSyncStatus('🔄 儲存中...');
+                try {
+                    let currentDetailsData = { ...detailsData };
+                    if (calcContext.group !== 'calc_only') {
+                        const isShipping = calcContext.group === 'shipping';
+                        const currentKey = isShipping 
+                            ? `${calcContext.date}-shipping-${calcContext.customer}`
+                            : `${calcContext.date}-${calcContext.group}`;
+                        currentDetailsData[currentKey] = calcRows;
+                    }
+
+                    const rowsWithTotals = computedReport.processedRows.map(r => ({
+                        ...r,
+                        dailyTotal: Number(r.dailyTotal.toFixed(2))
+                    }));
+                    
+                    await performFirebaseSave(rowsWithTotals, currentDetailsData);
+                    setDetailsData(currentDetailsData);
+                    
+                    setSyncStatus('✅ 已儲存');
+                    setTimeout(() => setSyncStatus('💾 手動儲存'), 3000);
+                } catch (error) {
+                    console.error("Save Error:", error);
+                    setWarningModal({
+                        isOpen: true,
+                        message: `❌ 儲存失敗！\n錯誤訊息：${error.message}\n如果一直出現此錯誤，請截圖告知開發者。`,
+                        confirmAction: () => setWarningModal({ isOpen: false, message: '', confirmAction: null })
+                    });
+                    setSyncStatus('⚠️ 儲存失敗');
+                }
+            };
+
+            const removeDataFromOldMonth = async (oldCtx) => {
+                if (!user || !window.db) return;
+                try {
+                    const oldDocId = `report_${oldCtx.year}_${oldCtx.month}`;
+                    const oldDocPath = window.doc(window.db, 'users', user.uid, 'app_data', oldDocId);
+                    const snap = await new Function('return import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js")')().then(({ getDoc }) => getDoc(oldDocPath));
+
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        const keyToRemove = oldCtx.group === 'shipping' ? `${oldCtx.date}-shipping-${oldCtx.customer}` : `${oldCtx.date}-${oldCtx.group}`;
+
+                        if (data.detailsData && data.detailsData[keyToRemove]) {
+                            data.detailsData[keyToRemove] = Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '1', u: '', c: '' }));
+                            
+                            if (oldCtx.group !== 'calc_only' && oldCtx.group !== 'shipping') {
+                                const rowIndex = data.reportRows.findIndex(r => r.date === oldCtx.date);
+                                if (rowIndex > -1) {
+                                    data.reportRows[rowIndex][oldCtx.group] = '';
+                                    const getNum = (val) => parseFloat(val) || 0;
+                                    data.reportRows[rowIndex].dailyTotal = getNum(data.reportRows[rowIndex].g1) + getNum(data.reportRows[rowIndex].g2) + getNum(data.reportRows[rowIndex].g3);
+                                }
+                            }
+                            await window.setDoc(oldDocPath, { detailsData: data.detailsData, reportRows: data.reportRows }, { merge: true });
+                        }
+                    }
+                } catch (e) {
+                    console.error("跨月資料清理失敗:", e);
+                }
+            };
+
+            const parseL = (val) => {
+                if (!val) return 0;
+                let str = String(val).trim();
+                let n = parseFloat(str);
+                if (isNaN(n)) return 0;
+                if (n < 1) return n; 
+                if (n <= 20) return n / 10;
+                if (n > 20 && n <= 200) return n / 100; 
+                if (n > 200) return n / 1000; 
+                return 0;
+            };
+
+            const parseWT = (val) => {
+                if (!val) return 0;
+                let str = String(val).trim();
+                if (str.includes('.')) return parseFloat(str);
+                let n = parseFloat(str);
+                if (isNaN(n)) return 0;
+                if (str.length === 1) return n;
+                if (str.length === 2) return n / 10;
+                if (str.length === 3) return n / 100;
+                if (str.length >= 4) return parseFloat(str[0] + '.' + str.substring(1));
+                return 0;
+            };
+
+            const computedCalcRows = useMemo(() => {
+                return calcRows.map((row, index) => {
+                    const parsedL = parseL(row.l);
+                    const parsedW = parseWT(row.w);
+                    let parsedT = 0;
+                    let displayT = String(row.t);
+                    if (displayT && ['a', '=', '同', 'δ', '△', 'Δ'].includes(displayT.toLowerCase())) {
+                        parsedT = parsedW; 
+                    } else {
+                        parsedT = parseWT(row.t);
+                    }
+                    const parsedP = parseInt(row.p) || 0;
+                    const parsedQ = parseInt(row.q) || 1;
+                    const parsedU = parseFloat(row.u) || 0;
+                    
+                    const totalBranches = parsedP * parsedQ;
+                    const volume = parsedL * parsedW * parsedT * totalBranches;
+                    const price = totalBranches * parsedU; 
+                    const isValid = volume > 0 || totalBranches > 0;
+                    
+                    return { ...row, parsedL, parsedW, parsedT, parsedP, parsedQ, parsedU, c: row.c || '', totalBranches, volume, price, isValid, index };
+                });
+            }, [calcRows]);
+
+            const calcTotalVolume = useMemo(() => {
+                return computedCalcRows.reduce((sum, r) => sum + (r.isValid && !isNaN(r.volume) ? r.volume : 0), 0);
+            }, [computedCalcRows]);
+
+            const calcTotalQuantity = useMemo(() => {
+                return computedCalcRows.reduce((sum, r) => sum + (r.isValid && !isNaN(r.parsedQ) ? r.parsedQ : 0), 0);
+            }, [computedCalcRows]);
+
+            const generateInventoryData = (cId, sortBy) => {
+                let inventory = [];
+                for (let d = 1; d <= 31; d++) {
+                    ['g1', 'g2', 'g3'].forEach(g => {
+                        const rows = detailsData[`${d}-${g}`] || [];
+                        rows.forEach((r, rIdx) => {
+                            if (!r.l) return;
+                            const rCId = r.c ? String(r.c).trim() : '0';
+                            if (cId !== 'all' && rCId !== String(cId)) return; 
+                            const q = parseInt(r.q) || 0;
+                            if (q <= 0) return;
+                            
+                            const origL = String(r.l).trim();
+                            const origW = String(r.w).trim();
+                            const origT = String(r.t).trim();
+                            
+                            inventory.push({
+                                date: d, group: g, rIdx: rIdx, cId: rCId, customerName: CUSTOMERS[rCId] || '未知',
+                                origL, origW, origT, dimKey: `${origL}*${origW}*${origT}`,
+                                p: parseInt(r.p) || 0, q: q
+                            });
+                        });
+                    });
+                }
+
+                let shipping = [];
+                for (let d = 1; d <= 31; d++) {
+                    const targetCustomers = cId === 'all' ? Object.keys(CUSTOMERS) : [cId];
+                    targetCustomers.forEach(shipCId => {
+                        const shipKey = `${d}-shipping-${shipCId}`;
+                        const rows = detailsData[shipKey] || [];
+                        rows.forEach(r => {
+                            if (!r.l) return;
+                            const q = parseInt(r.q) || 0;
+                            if (q <= 0) return;
+                            const origL = String(r.l).trim(), origW = String(r.w).trim(), origT = String(r.t).trim();
+                            shipping.push({ date: d, cId: shipCId, origL, origW, origT, dimKey: `${origL}*${origW}*${origT}`, p: parseInt(r.p) || 0, q: q });
+                        });
+                    });
+                }
+
+                shipping.forEach(ship => {
+                    let qToDeduct = ship.q;
+                    for (let i = 0; i < inventory.length; i++) {
+                        let prod = inventory[i];
+                        if (prod.dimKey === ship.dimKey && prod.p === ship.p && prod.cId === ship.cId && prod.q > 0) {
+                            if (prod.q >= qToDeduct) {
+                                prod.q -= qToDeduct;
+                                qToDeduct = 0;
+                                break;
+                            } else {
+                                qToDeduct -= prod.q;
+                                prod.q = 0;
+                            }
+                        }
+                    }
+                });
+
+                inventory = inventory.filter(i => i.q > 0);
+
+                if (sortBy === 'date') {
+                    const grouped = {};
+                    inventory.forEach(item => {
+                        if (!grouped[item.date]) grouped[item.date] = [];
+                        const existing = grouped[item.date].find(x => x.dimKey === item.dimKey && x.p === item.p && x.cId === item.cId);
+                        if (existing) existing.q += item.q;
+                        else grouped[item.date].push({ ...item });
+                    });
+                    return grouped;
+                } else {
+                    const grouped = {};
+                    inventory.forEach(item => {
+                        const key = `${item.dimKey}-${item.p}-${item.cId}`;
+                        if (!grouped[key]) grouped[key] = { ...item, q: 0 };
+                        grouped[key].q += item.q;
+                    });
+                    return grouped;
+                }
+            };
+
+            const toggleDateExpand = (dateStr) => {
+                setExpandedDates(prev => ({ ...prev, [dateStr]: !prev[dateStr] }));
+            };
+
+            const requestGlobalDateChange = (newY, newM, customAction = null) => {
+                const hasData = calcRows.some(r => r.l !== '' || r.w !== '' || r.t !== '' || r.p !== '');
+                if (hasData && (year !== newY || month !== newM)) {
+                    setMoveModal({
+                        isOpen: true,
+                        fromYear: year, fromMonth: month, fromDate: calcContext.date, fromGroup: calcContext.group, fromCustomer: calcContext.customer,
+                        toYear: newY, toMonth: newM, toDate: calcContext.date, toGroup: calcContext.group, toCustomer: calcContext.customer,
+                        pendingAction: () => {
+                            if (year !== newY) setYear(newY);
+                            if (month !== newM) setMonth(newM);
+                            setFocusedCalcRow(null);
+                            if (customAction) customAction();
+                        }
+                    });
+                } else {
+                    if (year !== newY) setYear(newY);
+                    if (month !== newM) setMonth(newM);
+                    if (customAction) customAction();
+                }
+            };
+
+            const handleReportChange = (index, field, value) => {
+                if (value !== '' && !/^\d*\.?\d*$/.test(value)) return;
+                const newRows = [...reportRows];
+                newRows[index] = { ...newRows[index], [field]: value };
+                setReportRows(newRows);
+            };
+
+            const jumpToCalculator = (date, group, specificCustomer = null) => {
+                const targetCustomer = specificCustomer || calcContext.customer;
+                setCalcContext({ date, group, customer: targetCustomer });
+                setLoadedContext({ year, month, date, group, customer: targetCustomer });
+                const key = group === 'shipping' ? `${date}-shipping-${targetCustomer}` : `${date}-${group}`;
+                setCalcRows(detailsData[key] || Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '1', u: '', c: '' })));
+                setViewDetailModal({ isOpen: false, date: null, group: null });
+                setActiveTab('calculator');
+                setIsHeaderOpen(true);
+            };
+
+            const openDetailModal = (date, group) => {
+                const key = `${date}-${group}`;
+                if (detailsData[key]) {
+                    setViewDetailModal({ isOpen: true, date, group });
+                } else {
+                    jumpToCalculator(date, group);
+                }
+            };
+
+            const handleCalcInputChange = (index, field, value) => {
+                const newRows = [...calcRows];
+                newRows[index] = { ...newRows[index], [field]: value };
+                setCalcRows(newRows);
+            };
+
+            const handleClearRow = (index) => {
+                const newRows = [...calcRows];
+                newRows[index] = { l: '', w: '', t: '', p: '', q: '1', u: '', c: '' };
+                setCalcRows(newRows);
+            };
+
+            const handleCopyAbove = (index) => {
+                if (index > 0) {
+                    const newRows = [...calcRows];
+                    newRows[index].c = newRows[index - 1].c; 
+                    newRows[index].l = newRows[index - 1].l;
+                    newRows[index].w = newRows[index - 1].w;
+                    newRows[index].t = newRows[index - 1].t;
+                    setCalcRows(newRows);
+                }
+            };
+
+            const handleMergeIdentical = () => {
+                const newRows = [];
+                calcRows.forEach(row => {
+                    if (!row.l && !row.w && !row.t && !row.p && (!row.u || row.u === '')) return; 
+                    const existing = newRows.find(r => r.l === row.l && r.w === row.w && r.t === row.t && r.p === row.p && r.c === row.c);
+                    if (existing) {
+                        existing.q = String((parseInt(existing.q) || 1) + (parseInt(row.q) || 1));
+                    } else {
+                        newRows.push({ ...row, q: row.q || '1' });
+                    }
+                });
+                while (newRows.length < ROW_COUNT) {
+                    newRows.push({ l: '', w: '', t: '', p: '', q: '1', u: '', c: '' });
+                }
+                setCalcRows(newRows);
+            };
+
+            const handleFullDateChange = (newYStr, newMStr, newDStr) => {
+                const newY = parseInt(newYStr);
+                const newM = parseInt(newMStr);
+                const maxDays = new Date(newY, newM, 0).getDate();
+                let newD = parseInt(newDStr);
+                if (newD > maxDays) newD = maxDays;
+                
+                const newContext = { ...calcContext, date: newD };
+                const hasData = calcRows.some(r => r.l !== '' || r.w !== '' || r.t !== '' || r.p !== '');
+
+                if (hasData && (year !== newY || month !== newM || calcContext.date !== newD)) {
+                    setMoveModal({
+                        isOpen: true,
+                        fromYear: year, fromMonth: month, fromDate: calcContext.date, fromGroup: calcContext.group, fromCustomer: calcContext.customer,
+                        toYear: newY, toMonth: newM, toDate: newD, toGroup: calcContext.group, toCustomer: calcContext.customer,
+                        pendingAction: () => {
+                            if (year !== newY) setYear(newY);
+                            if (month !== newM) setMonth(newM);
+                            setCalcContext(newContext);
+                            setFocusedCalcRow(null);
+                        }
+                    });
+                } else {
+                    if (year !== newY) setYear(newY);
+                    if (month !== newM) setMonth(newM);
+                    setCalcContext(newContext);
+                    setFocusedCalcRow(null);
+                }
+            };
+
+            const handleContextChange = (field, value) => {
+                const newContext = { ...calcContext, [field]: field === 'date' ? parseInt(value) : value };
+                if (field === 'group' && value === 'shipping' && !newContext.customer) {
+                    newContext.customer = '1';
+                }
+
+                const hasData = calcRows.some(r => r.l !== '' || r.w !== '' || r.t !== '' || r.p !== '');
+
+                if (hasData && (calcContext.group !== newContext.group || (newContext.group === 'shipping' && calcContext.customer !== newContext.customer))) {
+                    setMoveModal({
+                        isOpen: true,
+                        fromYear: year, fromMonth: month, fromDate: calcContext.date, fromGroup: calcContext.group, fromCustomer: calcContext.customer,
+                        toYear: year, toMonth: month, toDate: newContext.date, toGroup: newContext.group, toCustomer: newContext.customer,
+                        pendingAction: () => {
+                            setCalcContext(newContext);
+                            setFocusedCalcRow(null);
+                        }
+                    });
+                } else {
+                    setCalcContext(newContext);
+                    setFocusedCalcRow(null);
+                }
+            };
+
+            const handleSaveDetailsOnly = async () => {
+                if (calcContext.group === 'calc_only') return;
+
+                const isShipping = calcContext.group === 'shipping';
+                const currentKey = isShipping 
+                    ? `${calcContext.date}-shipping-${calcContext.customer}`
+                    : `${calcContext.date}-${calcContext.group}`;
+                    
+                const isMoved = loadedContext && (
+                    loadedContext.year !== year || loadedContext.month !== month || loadedContext.date !== calcContext.date || 
+                    loadedContext.group !== calcContext.group || (isShipping && loadedContext.customer !== calcContext.customer)
+                );
+                
+                if (isMoved && (loadedContext.year !== year || loadedContext.month !== month)) {
+                    removeDataFromOldMonth(loadedContext);
+                }
+
+                const isSameMonthMove = isMoved && loadedContext.year === year && loadedContext.month === month;
+                const oldKey = isSameMonthMove ? (
+                    loadedContext.group === 'shipping' 
+                        ? `${loadedContext.date}-shipping-${loadedContext.customer}`
+                        : `${loadedContext.date}-${loadedContext.group}`
+                ) : null;
+
+                const newDetailsData = { ...detailsData, [currentKey]: calcRows };
+                if (oldKey) {
+                    newDetailsData[oldKey] = Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '1', u: '', c: '' }));
+                }
+
+                setDetailsData(newDetailsData);
+                setLoadedContext({ year, month, ...calcContext });
+
+                if (isShipping) {
+                    setActiveTab('shipping_report');
+                }
+
+                setSyncStatus('🔄 儲存中...');
+                try {
+                    const rowsWithTotals = reportRows.map(r => {
+                        const dt = (parseFloat(r.g1)||0) + (parseFloat(r.g2)||0) + (parseFloat(r.g3)||0);
+                        return { ...r, dailyTotal: Number(dt.toFixed(2)) };
+                    });
+                    await performFirebaseSave(rowsWithTotals, newDetailsData);
+                    setSyncStatus('✅ 已儲存');
+                    setTimeout(() => setSyncStatus('💾 手動儲存'), 3000);
+                } catch(err) {
+                    console.error("Save Details Error:", err);
+                    setSyncStatus('⚠️ 儲存失敗');
+                }
+            };
+
+            const handleSyncReportClick = () => {
+                if (calcContext.group === 'calc_only' || calcContext.group === 'shipping') return;
+
+                const hasMissingCustomer = computedCalcRows.some(r => r.isValid && (!r.c || r.c.trim() === ''));
+                if (hasMissingCustomer) {
+                    setWarningModal({
+                        isOpen: true,
+                        message: '有明細資料未輸入客戶代碼！\n這可能會導致無法正確計算該客戶的庫存。\n若未填寫，系統將預設歸類為「0：德冠」。',
+                        confirmAction: () => {
+                            setWarningModal({ isOpen: false, message: '', confirmAction: null });
+                            checkOverwriteAndSync();
+                        }
+                    });
+                    return; 
+                }
+
+                checkOverwriteAndSync();
+            };
+
+            const checkOverwriteAndSync = () => {
+                const total = Math.round(calcTotalVolume);
+                const targetRow = reportRows[calcContext.date - 1];
+                const existingValue = targetRow ? targetRow[calcContext.group] : '';
+
+                if (existingValue !== '' && parseFloat(existingValue) !== total) {
+                    setOverwriteModal({
+                        isOpen: true,
+                        newTotal: total,
+                        existingTotal: existingValue,
+                        targetDate: calcContext.date,
+                        targetGroup: calcContext.group
+                    });
+                } else {
+                    executeSyncReport(total);
+                }
+            };
+
+            const executeSyncReport = async (totalOverride) => {
+                const total = totalOverride !== undefined ? totalOverride : Math.round(calcTotalVolume);
+                const currentKey = `${calcContext.date}-${calcContext.group}`;
+                    
+                const isMoved = loadedContext && (
+                    loadedContext.year !== year || loadedContext.month !== month ||
+                    loadedContext.date !== calcContext.date || loadedContext.group !== calcContext.group
+                );
+                
+                if (isMoved && (loadedContext.year !== year || loadedContext.month !== month)) {
+                    removeDataFromOldMonth(loadedContext);
+                }
+
+                const isSameMonthMove = isMoved && loadedContext.year === year && loadedContext.month === month;
+                const oldKey = isSameMonthMove ? `${loadedContext.date}-${loadedContext.group}` : null;
+
+                const newDetailsData = { ...detailsData, [currentKey]: calcRows };
+                if (oldKey) {
+                    newDetailsData[oldKey] = Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '1', u: '', c: '' }));
+                }
+
+                const newReportRows = reportRows.map(r => {
+                    let newRow = { ...r };
+                    if (newRow.date === calcContext.date) {
+                        newRow[calcContext.group] = total > 0 ? total.toString() : '';
+                    }
+                    if (isSameMonthMove && newRow.date === loadedContext.date && loadedContext.group !== 'calc_only' && loadedContext.group !== 'shipping') {
+                        newRow[loadedContext.group] = ''; 
+                    }
+                    return newRow;
+                });
+
+                setDetailsData(newDetailsData);
+                setReportRows(newReportRows);
+                setLoadedContext({ year, month, ...calcContext });
+                setOverwriteModal({ isOpen: false });
+                setActiveTab('report');
+
+                setSyncStatus('🔄 同步儲存中...');
+                try {
+                    const rowsWithTotals = newReportRows.map(r => {
+                        const dt = (parseFloat(r.g1)||0) + (parseFloat(r.g2)||0) + (parseFloat(r.g3)||0);
+                        return { ...r, dailyTotal: Number(dt.toFixed(2)) };
+                    });
+                    await performFirebaseSave(rowsWithTotals, newDetailsData);
+                    setSyncStatus('✅ 已同步存檔');
+                    setTimeout(() => setSyncStatus('💾 手動儲存'), 3000);
+                } catch(err) {
+                    console.error("Sync Report Error:", err);
+                    setSyncStatus('⚠️ 儲存失敗');
+                }
+            };
+
+            const handleClearCalcClick = () => {
+                if (confirmClearCalc) {
+                    setCalcRows(Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '1', u: '', c: '' })));
+                    setLoadedContext(null); 
+                    setConfirmClearCalc(false);
+                } else {
+                    setConfirmClearCalc(true);
+                    setTimeout(() => setConfirmClearCalc(false), 3000);
+                }
+            };
+
+            // ==========================================
+            // 4. UI 渲染模組 (Render Functions)
+            // ==========================================
+
+            const ContextSelector = ({ title, icon, modeBadge }) => {
+                if (!isHeaderOpen) {
+                    return (
+                        <div onClick={() => setIsHeaderOpen(true)} className="bg-indigo-600 px-4 py-2 flex justify-center items-center text-indigo-100 text-xs cursor-pointer shadow-sm hover:bg-indigo-700 transition-colors z-30 flex-shrink-0 w-full">
+                            <span className="font-bold tracking-widest text-center w-full">🔽 點擊展開標題欄位</span>
+                        </div>
+                    );
+                }
+                return (
+                    <div className="bg-indigo-700 text-white p-3 shadow-md z-20 flex-shrink-0 animate-fade-in flex flex-col justify-between relative min-h-[110px] w-full">
+                        {title && (
+                            <div className="flex items-center justify-between mb-2">
+                                <h2 className="text-lg font-black tracking-wide flex items-center gap-2">
+                                    {icon} {title}
+                                    {modeBadge}
+                                </h2>
+                                <button onClick={() => setIsHeaderOpen(false)} className="bg-indigo-800 hover:bg-indigo-900 text-white px-3 py-1.5 rounded-lg text-[11px] shadow-sm font-bold active:scale-95 transition-colors z-50">🔼 隱藏</button>
+                            </div>
+                        )}
+                        <div className="flex gap-1 sm:gap-2 bg-indigo-800/50 p-2 rounded-lg border border-indigo-600/50 mt-auto">
+                            <div className="flex-[3] flex flex-col">
+                                <label className="text-[10px] text-indigo-300 font-bold mb-0.5 pl-1 flex items-center justify-between">
+                                    目標日期 <span className="text-[8px] bg-indigo-500 px-1 rounded text-white font-normal shadow-sm hidden sm:inline-block">對應日報表</span>
+                                </label>
+                                <div className="flex gap-1 w-full">
+                                    <select value={year} onChange={(e) => handleFullDateChange(e.target.value, month, calcContext.date)} className="bg-white text-indigo-900 font-bold px-0.5 py-1.5 rounded outline-none shadow-inner flex-[1.2] text-center text-[11px] sm:text-xs">
+                                        {availableYears.map(y => <option key={y} value={y}>{y}年</option>)}
+                                    </select>
+                                    <select value={month} onChange={(e) => handleFullDateChange(year, e.target.value, calcContext.date)} className="bg-white text-indigo-900 font-bold px-0.5 py-1.5 rounded outline-none shadow-inner flex-1 text-center text-[11px] sm:text-xs">
+                                        {Array.from({length: 12}, (_, i) => <option key={i+1} value={i+1}>{i+1}月</option>)}
+                                    </select>
+                                    <select value={calcContext.date} onChange={(e) => handleFullDateChange(year, month, e.target.value)} className="bg-white text-indigo-900 font-bold px-0.5 py-1.5 rounded outline-none shadow-inner flex-1 text-center text-[11px] sm:text-xs">
+                                        {Array.from({length: new Date(year, month, 0).getDate() || 31}, (_, i) => <option key={i+1} value={i+1}>{i+1}日</option>)}
+                                    </select>
+                                </div>
+                            </div>
+                            <div className="flex-[2] flex flex-col">
+                                <label className="text-[10px] text-indigo-300 font-bold mb-0.5 pl-1">目標組別</label>
+                                <select value={calcContext.group} onChange={(e) => handleContextChange('group', e.target.value)} className="bg-white text-indigo-900 font-bold px-1 py-1.5 rounded outline-none shadow-inner w-full text-center text-[11px] sm:text-xs">
+                                    <option value="calc_only">計算用</option>
+                                    <option value="g1">第一組</option>
+                                    <option value="g2">第二組</option>
+                                    <option value="g3">第三組</option>
+                                    <option value="shipping">出貨用</option>
+                                </select>
+                            </div>
+                            {calcContext.group === 'shipping' && (
+                                <div className="flex-[1.5] flex flex-col animate-fade-in">
+                                    <label className="text-[10px] text-amber-300 font-bold mb-0.5 pl-1">出貨客戶</label>
+                                    <select value={calcContext.customer} onChange={(e) => handleContextChange('customer', e.target.value)} className="bg-amber-100 text-amber-900 font-bold px-1 py-1.5 rounded outline-none shadow-inner w-full text-center text-[11px] sm:text-xs">
+                                        {Object.entries(CUSTOMERS).filter(([id]) => id !== 'all').map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+                                    </select>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+            };
+
+            return (
+                <div className="flex flex-col h-full bg-slate-50 w-full max-w-4xl mx-auto shadow-xl relative">
+                    
+                    {/* ========================================================= */}
+                    {/* 視圖 1：生產日報表 (原報表總覽) */}
+                    {/* ========================================================= */}
+                    <div className={`flex-col h-full overflow-hidden w-full ${activeTab === 'report' ? 'flex' : 'hidden'}`}>
+                        {!isHeaderOpen ? (
+                            <div onClick={() => setIsHeaderOpen(true)} className="bg-emerald-600 px-4 py-2 flex justify-between items-center text-emerald-100 text-xs cursor-pointer shadow-sm hover:bg-emerald-700 transition-colors z-30 flex-shrink-0 w-full">
+                                <span className="font-bold tracking-widest flex-1 text-center">🔽 點擊展開標題欄位</span>
+                                <button onClick={(e) => { e.stopPropagation(); handleManualSave(); }} className={`text-[10px] px-2 py-1 rounded font-bold shadow-sm active:scale-95 flex items-center gap-1 ml-2 ${syncStatus.includes('⚠️') ? 'bg-red-500 text-white' : 'bg-emerald-100 text-emerald-900'}`}>
+                                    {syncStatus}
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="bg-emerald-700 text-white p-3 shadow-md z-20 flex-shrink-0 min-h-[110px] flex flex-col justify-between relative animate-fade-in w-full">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h1 className="text-lg font-black tracking-wide flex items-center gap-2"><TableIcon /> 生產日報表</h1>
+                                    <div className="flex items-center gap-2">
+                                        <button onClick={handleManualSave} className={`text-[10px] sm:text-xs px-2 sm:px-3 py-1.5 rounded-lg font-bold shadow-sm transition-all active:scale-95 flex items-center gap-1.5 ${syncStatus.includes('⚠️') ? 'bg-red-500 text-white border border-red-400' : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200 border border-emerald-400'}`}>
+                                            {syncStatus}
+                                        </button>
+                                        <button onClick={() => setIsHeaderOpen(false)} className="bg-emerald-800 hover:bg-emerald-900 text-white px-3 py-1.5 rounded-lg text-[11px] shadow-sm font-bold active:scale-95 transition-colors z-50">🔼 隱藏</button>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2 bg-emerald-800/50 p-2 rounded-lg border border-emerald-600/50 mt-auto">
+                                    <div className="flex-1 flex flex-col">
+                                        <label className="text-[10px] text-emerald-300 font-bold mb-0.5 pl-1">查詢年份</label>
+                                        <select value={year} onChange={(e) => requestGlobalDateChange(parseInt(e.target.value), month)} className="bg-white text-emerald-900 font-bold px-2 py-1.5 rounded outline-none shadow-inner w-full">
+                                            {availableYears.map(y => <option key={y} value={y}>{y}年</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="flex-1 flex flex-col">
+                                        <label className="text-[10px] text-emerald-300 font-bold mb-0.5 pl-1">查詢月份</label>
+                                        <select value={month} onChange={(e) => requestGlobalDateChange(year, parseInt(e.target.value))} className="bg-white text-emerald-900 font-bold px-2 py-1.5 rounded outline-none shadow-inner w-full">
+                                            {Array.from({length: 12}, (_, i) => <option key={i+1} value={i+1}>{i+1} 月</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex-1 overflow-auto bg-slate-50 relative pb-4 no-scrollbar">
+                            {isLoadingData ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-20">
+                                    <div className="animate-spin text-4xl mb-2 text-emerald-600">⌛</div>
+                                    <div className="font-bold text-slate-500">載入當月資料中...</div>
+                                </div>
+                            ) : (
+                                <div id="report-capture-target" className="bg-white w-full">
+                                    <table className="w-full border-collapse table-fixed select-none">
+                                        <thead className="bg-slate-100 text-slate-700 sticky-header shadow-sm text-sm">
+                                            <tr className="bg-emerald-800 text-white">
+                                                <th colSpan="5" className="py-2 text-center text-lg font-black tracking-widest border border-emerald-900">
+                                                    {year} 年 {month} 月
+                                                </th>
+                                            </tr>
+                                            <tr className="bg-slate-200">
+                                                <th className="w-[15%] border border-slate-300 py-3 font-bold align-middle">日期</th>
+                                                <th className="w-[22%] border border-slate-300 py-3 font-bold text-blue-800 bg-white align-middle">第一組</th>
+                                                <th className="w-[22%] border border-slate-300 py-3 font-bold text-orange-800 bg-white align-middle">第二組</th>
+                                                <th className="w-[22%] border border-slate-300 py-3 font-bold text-purple-800 bg-white align-middle">第三組</th>
+                                                <th className="w-[19%] border border-slate-300 py-3 font-black text-slate-900 align-middle">合計</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {enrichedReportRows.map((r) => {
+                                                if (r.type === 'week_total') {
+                                                    return (
+                                                        <tr key={r.key} className="bg-indigo-50 border-b-2 border-indigo-200">
+                                                            <td className="border border-slate-300 text-center font-bold text-indigo-700 bg-indigo-100 py-2 text-xs align-middle">{r.label}</td>
+                                                            <td className="border border-slate-300 bg-indigo-50/50"></td>
+                                                            <td className="border border-slate-300 bg-indigo-50/50"></td>
+                                                            <td className="border border-slate-300 bg-indigo-50/50"></td>
+                                                            <td className="border border-slate-300 text-center align-middle bg-indigo-100/50 py-2">
+                                                                <div className="font-mono font-black text-sm text-indigo-800 w-full">{r.total > 0 ? Number(r.total.toFixed(2)).toLocaleString() : ''}</div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                }
+                                                
+                                                if (r.type === 'month_total') {
+                                                    return (
+                                                        <tr key={r.key} className="bg-emerald-100 border-b-4 border-emerald-400">
+                                                            <td className="border border-slate-300 text-center font-black text-emerald-900 bg-emerald-300 py-3 text-sm align-middle">{r.label}</td>
+                                                            <td className="border border-slate-300 text-center align-middle font-mono font-black text-blue-900">{r.g1 > 0 ? Number(r.g1.toFixed(2)).toLocaleString() : ''}</td>
+                                                            <td className="border border-slate-300 text-center align-middle font-mono font-black text-orange-900">{r.g2 > 0 ? Number(r.g2.toFixed(2)).toLocaleString() : ''}</td>
+                                                            <td className="border border-slate-300 text-center align-middle font-mono font-black text-purple-900">{r.g3 > 0 ? Number(r.g3.toFixed(2)).toLocaleString() : ''}</td>
+                                                            <td className="border border-slate-300 text-center align-middle bg-emerald-200/80 py-3">
+                                                                <div className="font-mono font-black text-base text-emerald-900 w-full">{r.total > 0 ? Number(r.total.toFixed(2)).toLocaleString() : ''}</div>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                }
+
+                                                const dayInfo = getDayInfo(r.date);
+                                                const idx = r.originalIndex;
+                                                return (
+                                                <tr key={`day-${r.date}`} className={`${focusedReportRow === idx ? 'bg-emerald-50' : 'even:bg-slate-50/50'} hover:bg-emerald-50/50 transition-colors`} onClick={() => setFocusedReportRow(idx)}>
+                                                    <td className={`border border-slate-300 text-center font-black bg-slate-100/50 text-sm align-middle ${dayInfo.isHoliday ? 'text-red-600' : 'text-slate-700'}`}>
+                                                        {dayInfo.label}
+                                                    </td>
+                                                    {['g1', 'g2', 'g3'].map(g => {
+                                                        const hasDetails = detailsData[`${r.date}-${g}`] && detailsData[`${r.date}-${g}`].some(item => item.l);
+                                                        return (
+                                                            <td key={g} className="border border-slate-300 p-0 relative group align-middle h-[44px]">
+                                                                {hasDetails ? (
+                                                                    <div 
+                                                                        onClick={(e) => { e.stopPropagation(); openDetailModal(r.date, g); }}
+                                                                        className={`w-full h-full min-h-[44px] flex items-center justify-center cursor-pointer font-bold text-[16px] transition-colors underline decoration-emerald-400 decoration-2 underline-offset-4 hover:bg-emerald-100/50 ${g==='g1'?'text-blue-800':g==='g2'?'text-orange-800':'text-purple-800'}`}
+                                                                    >
+                                                                        {r[g]}
+                                                                    </div>
+                                                                ) : (
+                                                                    <input 
+                                                                        type="text" 
+                                                                        inputMode="decimal" 
+                                                                        value={r[g]} 
+                                                                        onChange={(e) => handleReportChange(idx, g, e.target.value)} 
+                                                                        onFocus={() => setFocusedReportRow(idx)} 
+                                                                        onKeyDown={(e) => handleEnterToNext(e, 'report-input')}
+                                                                        className={`report-input ${g==='g1'?'text-blue-800':g==='g2'?'text-orange-800':'text-purple-800'}`} 
+                                                                    />
+                                                                )}
+                                                            </td>
+                                                        )
+                                                    })}
+                                                    <td className="border border-slate-300 text-center p-0 align-middle bg-slate-100/50">
+                                                        <div className={`font-mono font-black text-sm px-1 truncate w-full ${r.dailyTotal > 0 ? 'text-slate-900' : 'text-slate-300'}`}>{r.dailyTotal > 0 ? Number(r.dailyTotal.toFixed(2)).toLocaleString() : ''}</div>
+                                                    </td>
+                                                </tr>
+                                            )})}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ========================================================= */}
+                    {/* 視圖 3：材積計算機 (明細表格) */}
+                    {/* ========================================================= */}
+                    <div className={`flex-col h-full overflow-hidden w-full ${activeTab === 'calculator' ? 'flex' : 'hidden'}`}>
+                        <ContextSelector 
+                            title="目標設定區" 
+                            icon={<CalculatorIcon />} 
+                            modeBadge={
+                                calcContext.group === 'shipping' ? <span className="bg-sky-500 text-white px-1.5 py-0.5 rounded text-[9px] ml-1">🚚 出貨模式</span> : 
+                                (calcContext.group === 'calc_only' ? <span className="bg-slate-500 text-white px-1.5 py-0.5 rounded text-[9px] ml-1">🧮 僅計算</span> : 
+                                <span className="bg-emerald-500 text-white px-1.5 py-0.5 rounded text-[9px] ml-1">🏭 生產模式</span>)
+                            }
+                        />
+
+                        <div className="bg-indigo-50 border-b border-indigo-100 p-1.5 flex-shrink-0 flex items-center justify-between shadow-sm z-10 px-3">
+                            <div className="text-[10px] sm:text-xs text-indigo-500 font-medium tracking-wide">明細輸入區</div>
+                            <div className="flex items-center gap-1.5">
+                                <button onClick={handleMergeIdentical} className="flex items-center gap-1 bg-white border border-indigo-200 px-2 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-50 text-indigo-600 transition-all shadow-sm active:scale-95">
+                                    ✨ 合併同規格
+                                </button>
+                                <button onClick={handleClearCalcClick} className={`flex items-center gap-1 bg-white border px-2 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95 ${confirmClearCalc ? 'border-red-500 bg-red-100 text-red-600' : 'border-rose-200 hover:bg-rose-50 text-rose-600'}`}>
+                                    <TrashIcon /> {confirmClearCalc ? '清空?' : '一鍵清空'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-auto bg-white relative">
+                            <table className="w-full border-collapse table-fixed select-none">
+                                <thead className="bg-slate-100 text-slate-700 sticky-header shadow-sm text-[11px] sm:text-xs">
+                                    <tr>
+                                        <th className="w-7 border border-slate-300 py-2 font-normal text-slate-500 bg-slate-200">#</th>
+                                        <th className="w-[11%] border border-slate-300 py-2 text-indigo-700">客戶</th>
+                                        <th className="w-[12%] border border-slate-300 py-2">長度</th>
+                                        <th className="w-[11%] border border-slate-300 py-2">寬度</th>
+                                        <th className="w-[11%] border border-slate-300 py-2">厚度<span className="text-[9px] block text-amber-600">打a或Δ</span></th>
+                                        <th className="w-[10%] border border-slate-300 py-2 text-blue-700">支數</th>
+                                        <th className="w-[10%] border border-slate-300 py-2 text-emerald-700">件數</th>
+                                        <th className="w-[10%] border border-slate-300 py-2 text-purple-700">單價</th>
+                                        <th className="w-[18%] border border-slate-300 py-2 text-rose-700 bg-slate-50">材積</th>
+                                        <th className="w-10 border border-slate-300 py-2 text-red-600 bg-red-50/50">刪除</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {computedCalcRows.map((row, idx) => (
+                                        <tr key={idx} className={`${focusedCalcRow === idx ? 'bg-indigo-50/70' : 'even:bg-slate-50/50'} hover:bg-indigo-50/50 transition-colors`} onClick={() => setFocusedCalcRow(idx)}>
+                                            <td className="border border-slate-300 text-center text-[10px] text-slate-400 bg-slate-100/50 relative p-0">
+                                                <div className="flex flex-col h-full justify-center items-center py-1">
+                                                    <span>{idx + 1}</span>
+                                                    {idx > 0 && (
+                                                        <button onClick={(e) => { e.stopPropagation(); handleCopyAbove(idx); }} className="mt-0.5 text-[14px] leading-none opacity-60 hover:opacity-100 active:scale-90 transition-transform p-1 rounded-md bg-white border border-slate-200 shadow-sm">⬇️</button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="border border-slate-300 bg-indigo-50/20 p-0">
+                                                <input type="text" value={row.c} onChange={(e) => handleCalcInputChange(idx, 'c', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-indigo-700" placeholder="代碼" />
+                                            </td>
+                                            <td className="border border-slate-300 bg-white p-0"><input type="text" inputMode="decimal" value={row.l} onChange={(e) => handleCalcInputChange(idx, 'l', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-slate-800" /></td>
+                                            <td className="border border-slate-300 bg-white p-0"><input type="text" inputMode="decimal" value={row.w} onChange={(e) => handleCalcInputChange(idx, 'w', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-slate-800" /></td>
+                                            <td className="border border-slate-300 bg-amber-50/30 p-0"><input type="text" inputMode="decimal" value={row.t} onChange={(e) => handleCalcInputChange(idx, 't', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-amber-800 font-bold" /></td>
+                                            <td className="border border-slate-300 bg-blue-50/30 p-0"><input type="number" inputMode="numeric" value={row.p} onChange={(e) => handleCalcInputChange(idx, 'p', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-blue-800" /></td>
+                                            <td className="border border-slate-300 bg-emerald-50/30 p-0"><input type="number" inputMode="numeric" value={row.q} onChange={(e) => handleCalcInputChange(idx, 'q', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-emerald-800 bg-emerald-100/50" /></td>
+                                            <td className="border border-slate-300 bg-purple-50/30 p-0"><input type="number" inputMode="decimal" value={row.u} onChange={(e) => handleCalcInputChange(idx, 'u', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-purple-800 bg-purple-100/50" /></td>
+                                            
+                                            <td className="border border-slate-300 bg-slate-50 text-center p-0 align-middle">
+                                                {row.volume > 0 ? (
+                                                    <div className="flex flex-col items-center justify-center py-1">
+                                                        <span className="text-[9px] text-slate-400 font-mono leading-none mb-0.5 whitespace-nowrap">
+                                                            {fmtNum(row.parsedL)}×{fmtNum(row.parsedW)}×{fmtNum(row.parsedT)}×{row.p}
+                                                        </span>
+                                                        <div className="font-mono font-bold text-[11px] md:text-sm px-1 truncate text-rose-600">
+                                                            {row.volume.toFixed(2)}
+                                                        </div>
+                                                    </div>
+                                                ) : '-'}
+                                            </td>
+                                            
+                                            <td className="border border-slate-300 bg-slate-50 text-center align-middle p-0">
+                                                {(row.l !== '' || row.w !== '' || row.t !== '' || row.p !== '') ? (
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (confirmDeleteRowIdx === idx) {
+                                                                handleClearRow(idx);
+                                                                setConfirmDeleteRowIdx(null);
+                                                            } else {
+                                                                setConfirmDeleteRowIdx(idx);
+                                                                setTimeout(() => setConfirmDeleteRowIdx(null), 3000);
+                                                            }
+                                                        }}
+                                                        className={`w-full h-full min-h-[44px] flex items-center justify-center transition-colors ${confirmDeleteRowIdx === idx ? 'bg-red-500 text-white' : 'text-slate-300 hover:text-red-500 hover:bg-red-50'}`}
+                                                    >
+                                                        {confirmDeleteRowIdx === idx ? <span className="text-[11px] font-black tracking-widest">確定?</span> : <TrashIcon />}
+                                                    </button>
+                                                ) : null}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    <tr><td colSpan={10} className="h-10 bg-white border-t border-slate-200"></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {!isKeyboardOpen && (
+                            <div onClick={() => setIsSummaryOpen(!isSummaryOpen)} className="bg-indigo-100 border-t border-indigo-200 px-4 py-1.5 flex justify-center items-center text-indigo-500 text-[10px] sm:text-xs cursor-pointer hover:bg-indigo-200 transition-colors z-20 flex-shrink-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                                <span className="font-bold tracking-widest">{isSummaryOpen ? '🔽 點擊隱藏下方合計與儲存面板 🔽' : '🔼 點擊展開下方合計與儲存面板 🔼'}</span>
+                            </div>
+                        )}
+
+                        {(!isKeyboardOpen && isSummaryOpen) && (
+                            <div className="bg-white border-t border-indigo-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] flex-shrink-0 z-20 p-2 sm:p-3 flex flex-col">
+                                <div className="flex items-center justify-between gap-2 sm:gap-4 mb-2">
+                                    <div className="flex gap-2 w-[180px]">
+                                        <div className="bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-100 flex flex-col justify-center w-full">
+                                            <div className="text-[10px] text-rose-500 font-bold mb-0.5">總材積</div>
+                                            <div className="text-lg font-black text-rose-700 font-mono leading-none truncate">{Number(calcTotalVolume.toFixed(2)).toLocaleString()}</div>
+                                        </div>
+                                        <div className="bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-100 flex flex-col justify-center w-full">
+                                            <div className="text-[10px] text-emerald-600 font-bold mb-0.5">總件數</div>
+                                            <div className="text-lg font-black text-emerald-700 font-mono leading-none truncate">{calcTotalQuantity}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    {calcContext.group !== 'calc_only' && (
+                                        calcContext.group === 'shipping' ? (
+                                            <button onClick={handleSaveDetailsOnly} className="flex-1 bg-sky-600 hover:bg-sky-700 text-white py-2 rounded-xl font-bold shadow-md transition-all active:scale-[0.98] flex items-center justify-center gap-1.5">
+                                                <SaveIcon /> 儲存出貨單
+                                            </button>
+                                        ) : (
+                                            <div className="flex gap-2 flex-1">
+                                                <button onClick={handleSaveDetailsOnly} className="flex-1 bg-amber-500 hover:bg-amber-600 text-white py-1.5 rounded-xl shadow-md transition-all active:scale-[0.98] flex flex-col items-center justify-center leading-tight">
+                                                    <span className="flex items-center gap-1 font-bold"><SaveIcon /> 儲存明細</span>
+                                                    <span className="text-[9px] font-medium tracking-wide text-amber-100 mt-0.5">(背景同步雲端)</span>
+                                                </button>
+                                                <button onClick={handleSyncReportClick} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-xl shadow-md transition-all active:scale-[0.98] flex flex-col items-center justify-center leading-tight">
+                                                    <span className="flex items-center gap-1 font-bold text-[11px] sm:text-xs"><TableIcon /> 同步總表</span>
+                                                    <span className="text-[9px] font-medium tracking-wide text-emerald-200 mt-0.5">(背景同步雲端)</span>
+                                                </button>
+                                            </div>
+                                        )
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* ========================================================= */}
+                    {/* 視圖 4：庫存管理 (原出貨統計) */}
+                    {/* ========================================================= */}
+                    <div className={`flex-col h-full overflow-hidden w-full ${activeTab === 'inventory' ? 'flex' : 'hidden'}`}>
+                        {!isHeaderOpen ? (
+                            <div onClick={() => setIsHeaderOpen(true)} className="bg-amber-600 px-4 py-2 flex justify-center items-center text-amber-100 text-xs cursor-pointer shadow-sm hover:bg-amber-700 transition-colors z-30 flex-shrink-0 w-full">
+                                <span className="font-bold tracking-widest text-center w-full">🔽 點擊展開標題欄位</span>
+                            </div>
+                        ) : (
+                            <div className="bg-amber-700 text-white p-3 shadow-md z-20 flex-shrink-0 min-h-[110px] flex flex-col justify-between relative animate-fade-in w-full">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h2 className="text-lg font-black tracking-wide flex items-center gap-2"><BoxIcon /> 庫存管理系統</h2>
+                                    <button onClick={() => setIsHeaderOpen(false)} className="bg-amber-800 hover:bg-amber-900 text-white px-3 py-1.5 rounded-lg text-[11px] shadow-sm font-bold active:scale-95 transition-colors z-50">🔼 隱藏</button>
+                                </div>
+                                <div className="flex gap-2 bg-amber-800/50 p-2 rounded-lg border border-amber-600/50 mt-auto">
+                                    <div className="flex-1 flex flex-col">
+                                        <label className="text-[10px] text-amber-300 font-bold mb-0.5 pl-1">目標客戶</label>
+                                        <select value={invCustomer} onChange={(e) => setInvCustomer(e.target.value)} className="bg-white text-amber-900 font-bold px-2 py-1.5 rounded outline-none shadow-inner">
+                                            <option value="all">👉 總覽 (全部客戶)</option>
+                                            {Object.entries(CUSTOMERS).map(([id, name]) => <option key={id} value={id}>{id}：{name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="flex-1 flex flex-col">
+                                        <label className="text-[10px] text-amber-300 font-bold mb-0.5 pl-1">排版方式</label>
+                                        <select value={invSort} onChange={(e) => setInvSort(e.target.value)} className="bg-white text-amber-900 font-bold px-2 py-1.5 rounded outline-none shadow-inner">
+                                            <option value="date">依日期顯示 (預設)</option>
+                                            <option value="dim">依尺寸整合</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex-1 overflow-y-auto p-4 bg-slate-100 relative">
+                            {(() => {
+                                const invData = generateInventoryData(invCustomer, invSort);
+                                const isEmpty = Object.keys(invData).length === 0;
+
+                                if (isEmpty) {
+                                    return (
+                                        <div className="flex flex-col items-center justify-center h-full text-slate-400 opacity-60">
+                                            <BoxIcon />
+                                            <p className="mt-2 font-bold">目前無剩餘庫存</p>
+                                        </div>
+                                    );
+                                }
+
+                                if (invSort === 'date') {
+                                    const sortedDates = Object.keys(invData).sort((a,b) => parseInt(a) - parseInt(b));
+                                    return (
+                                        <div className="pb-20">
+                                            {sortedDates.map(d => {
+                                                const groupsInDate = {};
+                                                invData[d].forEach(item => {
+                                                    if (!groupsInDate[item.group]) groupsInDate[item.group] = [];
+                                                    groupsInDate[item.group].push(item);
+                                                });
+                                                
+                                                const isExpanded = expandedDates[d] || false;
+
+                                                return (
+                                                <div key={d} className="mb-5 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden transition-all">
+                                                    <div 
+                                                        onClick={() => toggleDateExpand(d)} 
+                                                        className="bg-slate-200 text-slate-700 px-4 py-2 font-black text-sm border-b border-slate-300 flex items-center justify-between cursor-pointer hover:bg-slate-300/80 transition-colors"
+                                                    >
+                                                        <span>📅 {month}月 {d}日 生產庫存</span>
+                                                        <span className="text-xs bg-slate-300 px-2 py-0.5 rounded shadow-inner">{isExpanded ? '🔼 隱藏' : '🔽 展開'}</span>
+                                                    </div>
+                                                    
+                                                    {isExpanded && Object.entries(groupsInDate).map(([group, items]) => (
+                                                        <div key={group} className="border-b border-slate-100 last:border-0">
+                                                            <div className="bg-amber-50 px-3 py-1.5 flex justify-between items-center text-xs text-amber-800 border-b border-amber-100/50">
+                                                                <span className="font-bold flex items-center gap-1"><TableIcon /> 來自：{group==='g1'?'第一組':group==='g2'?'第二組':'第三組'}</span>
+                                                                <button onClick={() => openDetailModal(d, group)} className="flex items-center gap-1 bg-amber-600 text-white px-2 py-1 rounded shadow-sm hover:bg-amber-700 transition-colors active:scale-95 font-bold">
+                                                                    <TableIcon /> 檢視生產明細
+                                                                </button>
+                                                            </div>
+                                                            <div className="p-0 bg-white">
+                                                                <table className="w-full text-center text-sm table-fixed">
+                                                                    <thead className="text-slate-500 text-[10px] sm:text-[11px] border-b border-amber-100/50 bg-amber-50/20">
+                                                                        <tr>
+                                                                            {invCustomer === 'all' && <th className="w-[14%] pb-1 pt-2">客戶</th>}
+                                                                            <th className="w-[14%] pb-1 pt-2">長</th>
+                                                                            <th className="w-[14%] pb-1 pt-2">寬</th>
+                                                                            <th className="w-[14%] pb-1 pt-2">厚</th>
+                                                                            <th className="w-[14%] pb-1 pt-2 text-blue-700">支數</th>
+                                                                            <th className="w-[16%] pb-1 pt-2 text-blue-700 font-bold">總支數</th>
+                                                                            <th className="w-[14%] pb-1 pt-2 text-emerald-700">件數</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody className="text-xs sm:text-sm font-mono text-slate-700">
+                                                                        {items.map((item, idx) => (
+                                                                            <tr key={idx} className="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
+                                                                                {invCustomer === 'all' && (
+                                                                                    <td className="py-2.5 px-0.5">
+                                                                                        {item.cId && item.cId !== '0' && (
+                                                                                            <span className="bg-slate-700 text-white text-[11px] px-1 py-0.5 rounded-sm font-bold truncate block mx-auto w-fit">{item.cId}</span>
+                                                                                        )}
+                                                                                    </td>
+                                                                                )}
+                                                                                <td className="py-2.5">{item.origL}</td>
+                                                                                <td className="py-2.5">{item.origW}</td>
+                                                                                <td className="py-2.5 font-bold text-amber-700">{item.origT}</td>
+                                                                                <td className="py-2.5">{item.p}</td>
+                                                                                <td className="py-2.5 font-black text-blue-600">{item.p * item.q}</td>
+                                                                                <td className="py-2.5 font-black text-emerald-600">{item.q}</td>
+                                                                            </tr>
+                                                                        ))}
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )})}
+                                        </div>
+                                    );
+                                } else {
+                                    return (
+                                        <div className="pb-20">
+                                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                                <div className="bg-slate-200 text-slate-700 px-4 py-2 font-black text-sm border-b border-slate-300 flex justify-between items-center">
+                                                    <span>📦 總庫存清單 (依尺寸)</span>
+                                                    <span className="text-[10px] text-slate-500 font-normal">* 此模式僅供檢視，編輯請切換為日期排序</span>
+                                                </div>
+                                                <div className="p-0">
+                                                    <table className="w-full text-center text-sm table-fixed">
+                                                        <thead className="text-slate-500 text-[10px] sm:text-[11px] border-b border-slate-200 bg-slate-50">
+                                                            <tr>
+                                                                {invCustomer === 'all' && <th className="w-[14%] py-2">客戶</th>}
+                                                                <th className="w-[14%] py-2">長</th>
+                                                                <th className="w-[14%] py-2">寬</th>
+                                                                <th className="w-[14%] py-2">厚</th>
+                                                                <th className="w-[14%] py-2 text-blue-700">支數</th>
+                                                                <th className="w-[16%] py-2 text-blue-700 font-bold">總支數</th>
+                                                                <th className="w-[14%] py-2 text-emerald-700">件數</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="text-xs sm:text-sm font-mono text-slate-700">
+                                                            {Object.values(invData).map((item, idx) => (
+                                                                <tr key={idx} className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+                                                                    {invCustomer === 'all' && (
+                                                                        <td className="py-3 px-0.5">
+                                                                            {item.cId && item.cId !== '0' && (
+                                                                                <span className="bg-slate-700 text-white text-[11px] px-1 py-0.5 rounded-sm font-bold truncate block mx-auto w-fit">{item.cId}</span>
+                                                                            )}
+                                                                        </td>
+                                                                    )}
+                                                                    <td className="py-3">{item.origL}</td>
+                                                                    <td className="py-3">{item.origW}</td>
+                                                                    <td className="py-3 font-bold text-amber-700">{item.origT}</td>
+                                                                    <td className="py-3">{item.p}</td>
+                                                                    <td className="py-3 font-black text-blue-600">{item.p * item.q}</td>
+                                                                    <td className="py-3 font-black text-emerald-600">{item.q}</td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                }
+                            })()}
+                        </div>
+                    </div>
+
+                    {/* ========================================================= */}
+                    {/* 視圖 5：出貨日報表 */}
+                    {/* ========================================================= */}
+                    <div className={`flex-col h-full overflow-hidden w-full ${activeTab === 'shipping_report' ? 'flex' : 'hidden'}`}>
+                        {!isHeaderOpen ? (
+                            <div onClick={() => setIsHeaderOpen(true)} className="bg-sky-600 px-4 py-2 flex justify-center items-center text-sky-100 text-xs cursor-pointer shadow-sm hover:bg-sky-700 transition-colors z-30 flex-shrink-0 w-full">
+                                <span className="font-bold tracking-widest text-center w-full">🔽 點擊展開標題欄位</span>
+                            </div>
+                        ) : (
+                            <div className="bg-sky-700 text-white p-3 shadow-md z-20 flex-shrink-0 min-h-[110px] flex flex-col justify-between relative animate-fade-in w-full">
+                                <div className="flex items-center justify-between mb-2">
+                                    <h2 className="text-lg font-black tracking-wide flex items-center gap-2"><TruckIcon /> 出貨日報表</h2>
+                                    <button onClick={() => setIsHeaderOpen(false)} className="bg-sky-800 hover:bg-sky-900 text-white px-3 py-1.5 rounded-lg text-[11px] shadow-sm font-bold active:scale-95 transition-colors z-50">🔼 隱藏</button>
+                                </div>
+                                <div className="bg-sky-800/50 p-2 rounded-lg border border-sky-600/50 flex flex-col mt-auto">
+                                    <label className="text-[10px] text-sky-300 font-bold mb-0.5 pl-1">查詢日期</label>
+                                    <div className="flex gap-2 w-full">
+                                        <select value={year} onChange={(e) => {
+                                            const y = parseInt(e.target.value);
+                                            requestGlobalDateChange(y, month, () => {
+                                                const maxDays = new Date(y, month, 0).getDate();
+                                                if (shippingReportDate > maxDays) setShippingReportDate(maxDays);
+                                            });
+                                        }} className="bg-white text-sky-900 font-bold px-2 py-1.5 rounded outline-none shadow-inner flex-1 text-center text-xs sm:text-sm">
+                                            {availableYears.map(y => <option key={y} value={y}>{y}年</option>)}
+                                        </select>
+                                        <select value={month} onChange={(e) => {
+                                            const m = parseInt(e.target.value);
+                                            requestGlobalDateChange(year, m, () => {
+                                                const maxDays = new Date(year, m, 0).getDate();
+                                                if (shippingReportDate > maxDays) setShippingReportDate(maxDays);
+                                            });
+                                        }} className="bg-white text-sky-900 font-bold px-2 py-1.5 rounded outline-none shadow-inner flex-1 text-center text-xs sm:text-sm">
+                                            {Array.from({length: 12}, (_, i) => <option key={i+1} value={i+1}>{i+1}月</option>)}
+                                        </select>
+                                        <select value={shippingReportDate} onChange={(e) => setShippingReportDate(parseInt(e.target.value))} className="bg-white text-sky-900 font-bold px-2 py-1.5 rounded outline-none shadow-inner flex-1 text-center text-xs sm:text-sm">
+                                            {Array.from({length: new Date(year, month, 0).getDate() || 31}, (_, i) => <option key={i+1} value={i+1}>{i+1}日</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex-1 overflow-y-auto p-3 bg-slate-100">
+                            {(() => {
+                                const shippingRows = [];
+                                Object.keys(CUSTOMERS).forEach(cId => {
+                                    const rows = detailsData[`${shippingReportDate}-shipping-${cId}`] || [];
+                                    rows.forEach(r => {
+                                        if (r.l && (r.w || r.p)) {
+                                            shippingRows.push({ 
+                                                ...r, 
+                                                cId,
+                                                origL: String(r.l).trim(), 
+                                                origW: String(r.w).trim(), 
+                                                origT: String(r.t).trim(), 
+                                                customerName: CUSTOMERS[cId] 
+                                            });
+                                        }
+                                    });
+                                });
+
+                                if (shippingRows.length === 0) {
+                                    return (
+                                        <div className="flex flex-col items-center justify-center h-full text-slate-400 opacity-60">
+                                            <TruckIcon />
+                                            <p className="mt-2 font-bold">該日尚未有任何出貨單紀錄</p>
+                                        </div>
+                                    );
+                                }
+
+                                const groupedByCustomer = {};
+                                shippingRows.forEach(r => {
+                                    if (!groupedByCustomer[r.cId]) groupedByCustomer[r.cId] = { name: r.customerName, rows: [] };
+                                    groupedByCustomer[r.cId].rows.push(r);
+                                });
+
+                                return (
+                                    <div className="pb-24">
+                                        {Object.entries(groupedByCustomer).map(([cId, groupData], idx) => (
+                                            <div key={idx} className="mb-6 bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden">
+                                                <div className="bg-sky-700 text-white px-3 py-2 font-black flex justify-between items-center text-sm">
+                                                    <span className="flex items-center gap-2 text-sky-100">🚚 {groupData.name}</span>
+                                                    <div className="flex gap-2 items-center">
+                                                        <span className="text-[10px] bg-sky-900/50 px-2 py-0.5 rounded-full">單數: {groupData.rows.length}</span>
+                                                        <button onClick={() => jumpToCalculator(shippingReportDate, 'shipping', cId)} className="flex items-center gap-1 bg-white/20 hover:bg-white/30 text-white px-2 py-1 rounded shadow-sm transition-colors active:scale-95 text-xs font-bold">
+                                                            <EditIcon /> 編輯出貨明細
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <table className="w-full text-center text-sm table-fixed">
+                                                    <thead className="bg-slate-50 text-slate-500 text-[10px] sm:text-[11px] border-b border-slate-200">
+                                                        <tr>
+                                                            <th className="w-[18%] py-2">長</th>
+                                                            <th className="w-[18%] py-2">寬</th>
+                                                            <th className="w-[18%] py-2">厚</th>
+                                                            <th className="w-[15%] py-2 text-blue-700">支數</th>
+                                                            <th className="w-[16%] py-2 text-blue-700 font-bold">總支數</th>
+                                                            <th className="w-[15%] py-2 text-emerald-700">件數</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="text-xs sm:text-sm font-mono text-slate-700">
+                                                        {groupData.rows.map((r, rIdx) => (
+                                                            <tr key={rIdx} className="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
+                                                                <td className="py-2.5">{r.origL}</td>
+                                                                <td className="py-2.5">{r.origW}</td>
+                                                                <td className="py-2.5 font-bold text-amber-700">{r.origT}</td>
+                                                                <td className="py-2.5">{r.p}</td>
+                                                                <td className="py-2.5 font-black text-blue-600">{parseInt(r.p||0) * parseInt(r.q||1)}</td>
+                                                                <td className="py-2.5 font-black text-emerald-600">{r.q}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        ))}
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    </div>
+
+                    {/* ========================================================= */}
+                    {/* 彈出視窗：明細檢視 (唯讀) */}
+                    {/* ========================================================= */}
+                    {viewDetailModal.isOpen && (
+                        <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col overflow-hidden animate-fade-in">
+                                <div className="bg-emerald-600 text-white p-4 flex justify-between items-center flex-shrink-0">
+                                    <h3 className="font-bold text-lg flex items-center gap-2">
+                                        <TableIcon /> {month}月 {viewDetailModal.date}日 - 第{viewDetailModal.group.replace('g','')}組生產明細
+                                    </h3>
+                                    <button onClick={() => setViewDetailModal({ isOpen: false, date: null, group: null })} className="text-white hover:text-emerald-200 text-2xl leading-none">&times;</button>
+                                </div>
+                                
+                                <div className="flex-1 overflow-auto bg-slate-50 p-2">
+                                    <table className="w-full border-collapse table-fixed text-sm">
+                                        <thead className="bg-slate-200 text-slate-700 sticky top-0 shadow-sm text-xs">
+                                            <tr>
+                                                <th className="py-2 border border-slate-300 w-[15%]">長</th>
+                                                <th className="py-2 border border-slate-300 w-[15%]">寬</th>
+                                                <th className="py-2 border border-slate-300 w-[15%]">厚</th>
+                                                <th className="py-2 border border-slate-300 w-[20%] text-blue-700">支/件</th>
+                                                <th className="py-2 border border-slate-300 w-[35%] text-rose-700">材積</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {detailsData[`${viewDetailModal.date}-${viewDetailModal.group}`]
+                                                ?.filter(r => r.l !== '' || r.volume > 0)
+                                                .map((r, i) => {
+                                                    let displayT = String(r.t);
+                                                    let parsedTVal = 0;
+                                                    if (displayT && ['a', '=', '同', 'δ', '△', 'Δ'].includes(displayT.toLowerCase())) {
+                                                        displayT = r.w;
+                                                        parsedTVal = parseWT(r.w);
+                                                    } else {
+                                                        parsedTVal = parseWT(r.t);
+                                                    }
+                                                    return (
+                                                    <tr key={i} className="bg-white even:bg-slate-50 border-b border-slate-200">
+                                                        <td className="py-2 px-1 text-center font-mono text-slate-800">{r.l}</td>
+                                                        <td className="py-2 px-1 text-center font-mono text-slate-800">{r.w}</td>
+                                                        <td className="py-2 px-1 text-center font-mono text-amber-700 font-bold">{r.t}</td>
+                                                        <td className="py-2 px-1 text-center font-mono text-blue-700">{r.p}<span className="text-[10px] text-emerald-600 block">×{r.q}件</span></td>
+                                                        <td className="py-2 px-1 text-center font-mono text-rose-600 font-bold text-base bg-rose-50/50">
+                                                            {r.l ? Number((parseL(r.l)*parseWT(r.w)*(parsedTVal)*(parseInt(r.p)||0)*(parseInt(r.q)||1)).toFixed(2)) : ''}
+                                                        </td>
+                                                    </tr>
+                                                )})}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div className="p-3 bg-white border-t border-slate-200 flex-shrink-0 flex flex-col gap-2">
+                                    <p className="text-[10px] text-center text-slate-500 font-bold">⚠️ 提示：若要扣除庫存請使用 [出貨報表]，此處修改將會變動生產產能。</p>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setViewDetailModal({ isOpen: false, date: null, group: null })} className="flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-bold transition-colors">關閉</button>
+                                        <button onClick={() => jumpToCalculator(viewDetailModal.date, viewDetailModal.group)} className="flex-[2] py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors shadow-sm flex items-center justify-center gap-2"><EditIcon/> 前往修改生產明細</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ========================================================= */}
+                    {/* 彈出視窗：覆蓋防呆確認視窗 */}
+                    {/* ========================================================= */}
+                    {overwriteModal.isOpen && (
+                        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden animate-fade-in">
+                                <div className="bg-amber-500 text-white p-4 flex justify-between items-center flex-shrink-0">
+                                    <h3 className="font-black text-lg flex items-center gap-2">
+                                        ⚠️ 覆蓋確認
+                                    </h3>
+                                </div>
+                                <div className="p-6 text-center">
+                                    <p className="text-slate-700 font-bold mb-4">
+                                        {month}月 {overwriteModal.targetDate}日 - 第{overwriteModal.targetGroup.replace('g','')}組<br/>日報表已存在資料！
+                                    </p>
+                                    <div className="flex justify-center items-center gap-4 mb-4">
+                                        <div className="bg-slate-100 p-3 rounded-xl min-w-[80px]">
+                                            <div className="text-xs text-slate-500 font-bold mb-1">原本材數</div>
+                                            <div className="text-2xl font-black text-slate-700">{overwriteModal.existingTotal}</div>
+                                        </div>
+                                        <div className="text-amber-500 font-black text-xl">➔</div>
+                                        <div className="bg-rose-50 p-3 rounded-xl border border-rose-200 min-w-[80px]">
+                                            <div className="text-xs text-rose-500 font-bold mb-1">目前材數</div>
+                                            <div className="text-2xl font-black text-rose-700">{overwriteModal.newTotal}</div>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-red-500 font-bold">請問是否要用「目前材數」強行覆蓋原本日報表的資料？</p>
+                                </div>
+                                <div className="p-3 bg-slate-50 border-t border-slate-200 flex gap-2">
+                                    <button onClick={() => setOverwriteModal({ isOpen: false })} className="flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-bold transition-colors">取消</button>
+                                    <button onClick={() => executeSyncReport(overwriteModal.newTotal)} className="flex-[2] py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition-colors shadow-sm">確定覆蓋</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ========================================================= */}
+                    {/* 彈出視窗：移動資料確認視窗 */}
+                    {/* ========================================================= */}
+                    {moveModal.isOpen && (
+                        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden animate-fade-in">
+                                <div className="bg-indigo-600 text-white p-4 flex justify-between items-center flex-shrink-0">
+                                    <h3 className="font-black text-lg flex items-center gap-2">
+                                        🔄 更改儲存目的地
+                                    </h3>
+                                </div>
+                                <div className="p-6 text-center">
+                                    <p className="text-slate-700 font-bold mb-4">
+                                        是否將目前表格的資料改存到新位置？
+                                    </p>
+                                    <div className="flex justify-center items-center gap-2 mb-4">
+                                        <div className="bg-slate-100 p-3 rounded-xl min-w-[80px] flex-1">
+                                            <div className="text-[10px] text-slate-500 font-bold mb-1">原本位置</div>
+                                            <div className="text-base font-black text-slate-700">
+                                                {moveModal.fromYear}年{moveModal.fromMonth}月{moveModal.fromDate}日<br/>
+                                                {moveModal.fromGroup === 'g1' ? '第一組' : moveModal.fromGroup === 'g2' ? '第二組' : moveModal.fromGroup === 'g3' ? '第三組' : moveModal.fromGroup === 'shipping' ? `出貨(${CUSTOMERS[moveModal.fromCustomer] || moveModal.fromCustomer})` : '計算用'}
+                                            </div>
+                                        </div>
+                                        <div className="text-indigo-500 font-black text-xl">➔</div>
+                                        <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-200 min-w-[80px] flex-1">
+                                            <div className="text-[10px] text-indigo-500 font-bold mb-1">目標位置</div>
+                                            <div className="text-base font-black text-indigo-700">
+                                                {moveModal.toYear}年{moveModal.toMonth}月{moveModal.toDate}日<br/>
+                                                {moveModal.toGroup === 'g1' ? '第一組' : moveModal.toGroup === 'g2' ? '第二組' : moveModal.toGroup === 'g3' ? '第三組' : moveModal.toGroup === 'shipping' ? `出貨(${CUSTOMERS[moveModal.toCustomer] || moveModal.toCustomer})` : '計算用'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-indigo-600 font-bold">確定要更改目的地嗎？<br/><span className="text-xs text-slate-500 font-normal mt-1 block">(點選確認後，記得按下儲存才會正式生效喔)</span></p>
+                                </div>
+                                <div className="p-3 bg-slate-50 border-t border-slate-200 flex gap-2">
+                                    <button onClick={() => setMoveModal({ ...moveModal, isOpen: false })} className="flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-bold transition-colors">取消</button>
+                                    <button onClick={() => {
+                                        if (moveModal.pendingAction) moveModal.pendingAction();
+                                        setMoveModal({ ...moveModal, isOpen: false });
+                                    }} className="flex-[2] py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors shadow-sm">確定更改</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ========================================================= */}
+                    {/* 彈出視窗：統一警告防呆視窗 */}
+                    {/* ========================================================= */}
+                    {warningModal.isOpen && (
+                        <div className="absolute inset-0 z-[70] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm flex flex-col overflow-hidden animate-fade-in">
+                                <div className="bg-amber-500 text-white p-4 font-black flex items-center gap-2">⚠️ 系統提示</div>
+                                <div className="p-6 text-slate-700 font-bold text-center whitespace-pre-line leading-relaxed">
+                                    {warningModal.message}
+                                </div>
+                                <div className="p-3 bg-slate-50 border-t border-slate-200 flex gap-2">
+                                    {warningModal.confirmAction ? (
+                                        <>
+                                            <button onClick={() => setWarningModal({ isOpen: false, message: '', confirmAction: null })} className="flex-1 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-bold transition-colors">取消並檢查</button>
+                                            <button onClick={warningModal.confirmAction} className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold shadow-sm transition-colors">確認執行</button>
+                                        </>
+                                    ) : (
+                                        <button onClick={() => setWarningModal({ isOpen: false, message: '', confirmAction: null })} className="w-full py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl font-bold transition-colors">我知道了</button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ========================================================= */}
+                    {/* 底部全局導覽列 (四大核心分頁) */}
+                    {/* ========================================================= */}
+                    <div className={`bg-white border-t border-slate-200 pb-4 sm:pb-0 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] ${isKeyboardOpen ? 'hidden' : 'flex'}`}>
+                        <button onClick={() => { setActiveTab('calculator'); }} className={`flex-1 py-2 sm:py-3 flex flex-col items-center justify-center gap-1 transition-colors ${activeTab === 'calculator' ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>
+                            <CalculatorIcon /> <span className="text-[10px] sm:text-[11px] font-bold">明細表格</span>
+                        </button>
+                        <div className="w-[1px] bg-slate-200 my-2"></div>
+                        <button onClick={() => { setActiveTab('inventory'); }} className={`flex-1 py-2 sm:py-3 flex flex-col items-center justify-center gap-1 transition-colors ${activeTab === 'inventory' ? 'text-amber-600' : 'text-slate-400 hover:text-slate-600'}`}>
+                            <BoxIcon /> <span className="text-[10px] sm:text-[11px] font-bold">庫存管理</span>
+                        </button>
+                        <div className="w-[1px] bg-slate-200 my-2"></div>
+                        <button onClick={() => { setActiveTab('shipping_report'); }} className={`flex-1 py-2 sm:py-3 flex flex-col items-center justify-center gap-1 transition-colors ${activeTab === 'shipping_report' ? 'text-sky-600' : 'text-slate-400 hover:text-slate-600'}`}>
+                            <TruckIcon /> <span className="text-[10px] sm:text-[11px] font-bold">出貨報表</span>
+                        </button>
+                        <div className="w-[1px] bg-slate-200 my-2"></div>
+                        <button onClick={() => { setActiveTab('report'); }} className={`flex-1 py-2 sm:py-3 flex flex-col items-center justify-center gap-1 transition-colors ${activeTab === 'report' ? 'text-emerald-600' : 'text-slate-400 hover:text-slate-600'}`}>
+                            <TableIcon /> <span className="text-[10px] sm:text-[11px] font-bold">生產報表</span>
+                        </button>
+                    </div>
+
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
