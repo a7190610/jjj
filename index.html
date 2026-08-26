@@ -152,6 +152,72 @@
             const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
             // ==========================================
+            // 🌟 加入 GAS Webhook 與背景發送機制
+            // ==========================================
+            const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyF_em3qc5rMwC3xpYLwR4Ev-naWhyFNiouw2VfkhPjGYfz8IPH87SLXzj00bI8EJhq/exec";
+            const prevRowsRef = useRef(null);
+            const isInitialLoadRef = useRef(true);
+
+            const sendLineNotification = async (changedRow, allProcessedRows) => {
+                if (!GAS_WEBHOOK_URL) return;
+
+                const dateObj = new Date(year, month - 1, changedRow.date);
+                const dayOfWeek = dateObj.getDay();
+                const weekStr = ['日','一','二','三','四','五','六'][dayOfWeek];
+                const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(changedRow.date).padStart(2, '0')}`;
+
+                // 找本週起點與終點 (星期一 ~ 星期日)
+                let currentWeekStart = changedRow.date;
+                while (currentWeekStart > 1 && new Date(year, month - 1, currentWeekStart).getDay() !== 1) {
+                    currentWeekStart--;
+                }
+                let currentWeekEnd = changedRow.date;
+                while (currentWeekEnd < allProcessedRows.length && new Date(year, month - 1, currentWeekEnd).getDay() !== 0) {
+                    currentWeekEnd++;
+                }
+
+                // 找上週起點與終點
+                let prevWeekStart = -1, prevWeekEnd = -1;
+                if (currentWeekStart > 1) {
+                    prevWeekEnd = currentWeekStart - 1;
+                    prevWeekStart = prevWeekEnd;
+                    while (prevWeekStart > 1 && new Date(year, month - 1, prevWeekStart).getDay() !== 1) {
+                        prevWeekStart--;
+                    }
+                }
+
+                let weekTotal = 0, prevWeekTotal = 0, monthTotal = 0;
+                allProcessedRows.forEach(r => {
+                    monthTotal += r.dailyTotal;
+                    if (r.date >= currentWeekStart && r.date <= currentWeekEnd) weekTotal += r.dailyTotal;
+                    if (prevWeekStart !== -1 && r.date >= prevWeekStart && r.date <= prevWeekEnd) prevWeekTotal += r.dailyTotal;
+                });
+
+                const formatNum = (num) => num > 0 ? Number(num.toFixed(2)).toLocaleString() : '-';
+                const formatInput = (val) => (val && val !== '') ? val : '-';
+
+                // 🌟 嚴格遵守無圖示純文字格式
+                let msg = `生產日報表更新\n`;
+                msg += `日期：${dateStr} (${weekStr})\n\n`;
+                msg += `第一組：${formatInput(changedRow.g1)}\n`;
+                msg += `第二組：${formatInput(changedRow.g2)}\n`;
+                msg += `第三組：${formatInput(changedRow.g3)}\n`;
+                msg += `本日小計：${formatInput(changedRow.dailyTotal)}\n`;
+                msg += `【本週累計】：${formatNum(weekTotal)}\n`;
+                msg += `【上週總計】：${formatNum(prevWeekTotal)}\n`;
+                msg += `【本月總計】：${formatNum(monthTotal)}`;
+
+                try {
+                    await fetch(GAS_WEBHOOK_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ message: msg })
+                    });
+                } catch (e) {
+                    console.error("發送通知失敗", e);
+                }
+            };
+
+            // ==========================================
             // [新增] Enter 自動跳到下一個輸入框功能
             // ==========================================
             const handleEnterToNext = (e, className) => {
@@ -250,7 +316,7 @@
                 return rows;
             }, [computedReport, year, month]);
 
-            // Firebase 初始化
+            // Firebase 初始化 (加入 onSnapshot)
             useEffect(() => {
                 let isMounted = true;
                 const initFirebase = async () => {
@@ -258,7 +324,8 @@
                         const loadModule = (url) => new Function(`return import("${url}")`)();
                         const { initializeApp } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js');
                         const { getAuth, signInWithEmailAndPassword, onAuthStateChanged } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
-                        const { getFirestore, doc, setDoc, getDoc } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+                        // 🌟 加入 onSnapshot
+                        const { getFirestore, doc, setDoc, getDoc, onSnapshot } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
                         
                         const app = initializeApp(USER_FIREBASE_CONFIG);
                         const auth = getAuth(app);
@@ -275,7 +342,7 @@
                             return;
                         }
 
-                        window.db = db; window.setDoc = setDoc; window.doc = doc;
+                        window.db = db; window.setDoc = setDoc; window.doc = doc; window.onSnapshot = onSnapshot;
                         
                         onAuthStateChanged(auth, (currentUser) => {
                             if (!isMounted) return;
@@ -294,33 +361,63 @@
                 return () => { isMounted = false; };
             }, []);
 
-            // 讀取資料 
+            // 🌟 讀取資料改為 onSnapshot 即時監聽與背景推播
             useEffect(() => {
-                if (!user || !firebaseReady || !window.db) return;
+                if (!user || !firebaseReady || !window.db || !window.onSnapshot) return;
 
                 setIsLoadingData(true);
+                isInitialLoadRef.current = true; // 切換月份時重置為 true
 
                 const docId = `report_${year}_${month}`;
                 const docPath = window.doc(window.db, 'users', user.uid, 'app_data', docId);
 
-                new Function('return import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js")')().then(({ getDoc }) => {
-                    getDoc(docPath).then(snap => {
-                        if (snap.exists()) {
-                            const data = snap.data();
-                            setReportRows(data.reportRows || []);
-                            setDetailsData(data.detailsData || {});
-                        } else {
-                            const days = new Date(year, month, 0).getDate() || 31;
-                            setReportRows(Array.from({ length: days }, (_, i) => ({ date: i + 1, g1: '', g2: '', g3: '' })));
-                            setDetailsData({});
+                const unsubscribe = window.onSnapshot(docPath, (snap) => {
+                    const days = new Date(year, month, 0).getDate() || 31;
+                    let newDataRows = Array.from({ length: days }, (_, i) => ({ date: i + 1, g1: '', g2: '', g3: '' }));
+                    let newDetailsData = {};
+
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        if(data.reportRows) newDataRows = data.reportRows;
+                        if(data.detailsData) newDetailsData = data.detailsData;
+                    }
+
+                    // 預先計算好每日總和方便比對
+                    const getNum = (val) => parseFloat(val) || 0;
+                    const processedNewRows = newDataRows.map(row => ({
+                        ...row,
+                        dailyTotal: getNum(row.g1) + getNum(row.g2) + getNum(row.g3)
+                    }));
+
+                    // 如果不是第一次載入，代表有新資料輸入 (可能是另一個後台，或是本地剛存檔完)，進行比對發送
+                    if (!isInitialLoadRef.current && prevRowsRef.current) {
+                        const changedRow = processedNewRows.find((r, idx) => {
+                            const oldR = prevRowsRef.current[idx];
+                            return r.g1 !== oldR.g1 || r.g2 !== oldR.g2 || r.g3 !== oldR.g3;
+                        });
+
+                        // 若有修改且小計大於 0 才發送通知
+                        if (changedRow && changedRow.dailyTotal > 0) {
+                            sendLineNotification(changedRow, processedNewRows);
                         }
-                        setIsLoadingData(false);
-                        setSyncStatus('💾 手動儲存');
-                    }).catch(e => {
-                        setIsLoadingData(false);
-                        setSyncStatus('⚠️ 讀取失敗');
-                    });
+                    }
+
+                    prevRowsRef.current = processedNewRows;
+                    isInitialLoadRef.current = false;
+
+                    setReportRows(newDataRows);
+                    setDetailsData(newDetailsData);
+                    
+                    setIsLoadingData(false);
+                    // 為了不干擾手動存檔的使用者介面，只有在載入中才重置為手動儲存
+                    setSyncStatus(prev => prev.includes('載入') || prev.includes('連線') ? '💾 手動儲存' : prev);
+                }, (error) => {
+                    console.error("即時監聽失敗:", error);
+                    setIsLoadingData(false);
+                    setSyncStatus('⚠️ 讀取失敗');
                 });
+
+                return () => unsubscribe(); // 離開時取消監聽
             }, [user, firebaseReady, year, month]);
 
             // 智慧日期初始化
@@ -860,7 +957,7 @@
                 }
             };
 
-            // 🌟 點擊「同步總表」時，直接背景自動寫入 Firebase，無痛流暢
+            // 🌟 點擊「同步總表」時，直接背景自動寫入 Firebase
             const executeSyncReport = async (totalOverride) => {
                 const total = totalOverride !== undefined ? totalOverride : Math.round(calcTotalVolume);
                 const currentKey = `${calcContext.date}-${calcContext.group}`;
