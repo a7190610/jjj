@@ -53,12 +53,14 @@
         const fmtNum = (n) => Number(Number(n).toFixed(4));
 
         const App = () => {
-            // 輸入狀態 (取消件數 q 的預設值 1，改為空白)
+            // 輸入狀態
             const [input, setInput] = useState({ l: '', w: '', t: '', p: '', q: '' });
             // 目前正在輸入的欄位
             const [activeField, setActiveField] = useState('l');
             // 明細紀錄
             const [records, setRecords] = useState([]);
+            // 複製狀態提示
+            const [copyStatus, setCopyStatus] = useState(false);
             
             const listEndRef = useRef(null);
 
@@ -93,12 +95,6 @@
                 } else if (direction === 'prev' && currentIndex > 0) {
                     setActiveField(fields[currentIndex - 1]);
                 }
-            };
-
-            // 快捷填入 a / 同 (厚度專用)
-            const handleSameAsW = () => {
-                setInput(prev => ({ ...prev, t: 'a' }));
-                setActiveField('p'); // 自動跳到支數
             };
 
             // 計算並加入清單
@@ -137,6 +133,54 @@
                 setActiveField('l');
             };
 
+            // 複製到 Excel 功能 (TSV 格式)
+            const handleCopyToExcel = () => {
+                if (records.length === 0) return;
+
+                // 產生每筆明細
+                const tsvRows = records.map(r => {
+                    // 如果厚度輸入 a 或是同等符號，替換成寬度的數字
+                    let outT = r.t;
+                    if (['a', '=', '同', 'δ', '△', 'Δ'].includes(String(r.t).toLowerCase())) {
+                        outT = r.w;
+                    }
+                    // 長 寬 厚 支數 件數
+                    return `${r.l}\t${r.w}\t${outT}\t${r.p}\t${r.parsedQ}`;
+                });
+
+                const totalBranches = records.reduce((sum, r) => sum + r.totalBranches, 0);
+                const totalPieces = records.reduce((sum, r) => sum + r.parsedQ, 0);
+
+                // 最底部的加總行 (跳過前三欄)
+                tsvRows.push(`\t\t\t${totalBranches}\t${totalPieces}`);
+
+                const tsvString = tsvRows.join('\n');
+
+                navigator.clipboard.writeText(tsvString)
+                    .then(() => {
+                        setCopyStatus(true);
+                        setTimeout(() => setCopyStatus(false), 2000);
+                    })
+                    .catch(err => {
+                        console.error('複製失敗:', err);
+                        // 針對較舊設備的 fallback
+                        const textArea = document.createElement("textarea");
+                        textArea.value = tsvString;
+                        document.body.appendChild(textArea);
+                        textArea.focus();
+                        textArea.select();
+                        try {
+                            document.execCommand('copy');
+                            setCopyStatus(true);
+                            setTimeout(() => setCopyStatus(false), 2000);
+                        } catch (err) {
+                            console.error('Fallback 複製失敗:', err);
+                            alert("複製失敗，請手動選取複製");
+                        }
+                        document.body.removeChild(textArea);
+                    });
+            };
+
             // === 加入實體鍵盤監聽 ===
             useEffect(() => {
                 const handleKeyDown = (e) => {
@@ -170,7 +214,8 @@
                     // 攔截 a 鍵 (如果在厚度欄位，自動帶入 a 並跳下一步)
                     else if (key.toLowerCase() === 'a' && activeField === 't') {
                         e.preventDefault();
-                        handleSameAsW();
+                        setInput(prev => ({ ...prev, t: 'a' }));
+                        setActiveField('p');
                     }
                 };
 
@@ -298,11 +343,10 @@
                             <button onClick={() => handleNumClick('5')} className="numpad-btn bg-white rounded-xl font-mono text-2xl font-bold text-slate-700 shadow-sm">5</button>
                             <button onClick={() => handleNumClick('6')} className="numpad-btn bg-white rounded-xl font-mono text-2xl font-bold text-slate-700 shadow-sm">6</button>
                             <button 
-                                onClick={handleSameAsW} 
-                                disabled={activeField !== 't'}
-                                className={`numpad-btn rounded-xl font-bold shadow-sm text-lg ${activeField === 't' ? 'bg-amber-100 text-amber-700 border border-amber-300' : 'bg-slate-100 text-slate-300'}`}
+                                onClick={handleCopyToExcel} 
+                                className={`numpad-btn rounded-xl font-bold shadow-sm text-sm border ${copyStatus ? 'bg-emerald-100 text-emerald-700 border-emerald-300' : 'bg-sky-100 text-sky-700 border-sky-300'}`}
                             >
-                                打a或同
+                                {copyStatus ? '✅ 複製成功' : '📋 複製明細'}
                             </button>
 
                             <button onClick={() => handleNumClick('1')} className="numpad-btn bg-white rounded-xl font-mono text-2xl font-bold text-slate-700 shadow-sm">1</button>
