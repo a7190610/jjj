@@ -112,11 +112,12 @@
             const [reportRows, setReportRows] = useState(Array.from({ length: 31 }, (_, i) => ({ date: i + 1, g1: '', g2: '', g3: '' })));
             const [detailsData, setDetailsData] = useState({});
             
-            const [calcContext, setCalcContext] = useState({ date: new Date().getDate(), group: 'calc_only', customer: '1' });
+            // 🌟 預設目標組別更改為第一組 (g1)
+            const [calcContext, setCalcContext] = useState({ date: new Date().getDate(), group: 'g1', customer: '1' });
             
             // 擴充 loadedContext 以支援跨月移動追蹤
-            const [loadedContext, setLoadedContext] = useState({ year: savedYear, month: savedMonth, date: new Date().getDate(), group: 'calc_only', customer: '1' });
-            const [calcRows, setCalcRows] = useState(Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '1', u: '', c: '' })));
+            const [loadedContext, setLoadedContext] = useState({ year: savedYear, month: savedMonth, date: new Date().getDate(), group: 'g1', customer: '1' });
+            const [calcRows, setCalcRows] = useState(Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '', u: '', c: '' })));
             
             // 五大標題欄位是否顯示
             const [isHeaderOpen, setIsHeaderOpen] = useState(true);
@@ -138,7 +139,7 @@
             const [overwriteModal, setOverwriteModal] = useState({ isOpen: false, newTotal: 0, existingTotal: '', targetDate: 1, targetGroup: 'g1' });
             const [warningModal, setWarningModal] = useState({ isOpen: false, message: '', confirmAction: null });
             
-            // 防呆跳窗統一整合：儲存 pendingAction 回呼函數，讓跳窗確認後可以直接執行所需修改
+            // 防呆跳窗統一整合
             const [moveModal, setMoveModal] = useState({ isOpen: false, fromYear: null, fromMonth: null, fromDate: null, fromGroup: null, fromCustomer: null, toYear: null, toMonth: null, toDate: null, toGroup: null, toCustomer: null, pendingAction: null });
 
             // 庫存管理專屬狀態
@@ -207,6 +208,16 @@
                 msg += `【上週總計】：${formatNum(prevWeekTotal)}\n`;
                 msg += `【本月總計】：${formatNum(monthTotal)}`;
 
+                // 🚀 防呆核心：利用 localStorage 阻擋同一設備多開分頁造成的重複發送 (10秒內重複內容只發送一次)
+                const lastSentMsg = localStorage.getItem('zy_last_line_msg');
+                const lastSentTime = parseInt(localStorage.getItem('zy_last_line_time') || '0');
+                if (lastSentMsg === msg && (Date.now() - lastSentTime < 10000)) {
+                    console.log("已自動阻擋短時間內的重複 LINE 通知");
+                    return;
+                }
+                localStorage.setItem('zy_last_line_msg', msg);
+                localStorage.setItem('zy_last_line_time', Date.now().toString());
+
                 try {
                     await fetch(GAS_WEBHOOK_URL, {
                         method: 'POST',
@@ -218,25 +229,23 @@
             };
 
             // ==========================================
-            // [新增] Enter 自動跳到下一個輸入框功能
+            // Enter 自動跳到下一個輸入框功能
             // ==========================================
             const handleEnterToNext = (e, className) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    // 尋找當前畫面上所有符合 className 的 input 元素
                     const inputs = Array.from(document.querySelectorAll(`.${className}`));
                     const index = inputs.indexOf(e.target);
-                    // 如果找到且不是最後一個
                     if (index > -1 && index < inputs.length - 1) {
                         inputs[index + 1].focus();
                         inputs[index + 1].select(); // 自動全選文字，方便覆蓋
                     } else if (index === inputs.length - 1) {
-                        e.target.blur(); // 最後一個按 Enter 則取消焦點
+                        e.target.blur(); 
                     }
                 }
             };
 
-            // 鍵盤與輸入焦點偵測 (自動隱藏下方區塊)
+            // 鍵盤與輸入焦點偵測
             useEffect(() => {
                 const handleFocusIn = (e) => {
                     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) setIsKeyboardOpen(true);
@@ -254,13 +263,12 @@
                 };
             }, []);
 
-            // 同步年份與月份的儲存與範圍檢查
+            // 同步年份與月份
             useEffect(() => {
                 localStorage.setItem('zy_year', year.toString());
                 localStorage.setItem('zy_month', month.toString());
                 
                 const daysInMonth = new Date(year, month, 0).getDate();
-                // 確保切換月份時，日曆的「日」不會超出該月上限 (如 2月沒有 31日)
                 setCalcContext(prev => prev.date > daysInMonth ? { ...prev, date: daysInMonth } : prev);
                 setShippingReportDate(prev => prev > daysInMonth ? daysInMonth : prev);
             }, [year, month]);
@@ -324,7 +332,6 @@
                         const loadModule = (url) => new Function(`return import("${url}")`)();
                         const { initializeApp } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js');
                         const { getAuth, signInWithEmailAndPassword, onAuthStateChanged } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
-                        // 🌟 加入 onSnapshot
                         const { getFirestore, doc, setDoc, getDoc, onSnapshot } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
                         
                         const app = initializeApp(USER_FIREBASE_CONFIG);
@@ -366,7 +373,7 @@
                 if (!user || !firebaseReady || !window.db || !window.onSnapshot) return;
 
                 setIsLoadingData(true);
-                isInitialLoadRef.current = true; // 切換月份時重置為 true
+                isInitialLoadRef.current = true; 
 
                 const docId = `report_${year}_${month}`;
                 const docPath = window.doc(window.db, 'users', user.uid, 'app_data', docId);
@@ -409,7 +416,6 @@
                     setDetailsData(newDetailsData);
                     
                     setIsLoadingData(false);
-                    // 為了不干擾手動存檔的使用者介面，只有在載入中才重置為手動儲存
                     setSyncStatus(prev => prev.includes('載入') || prev.includes('連線') ? '💾 手動儲存' : prev);
                 }, (error) => {
                     console.error("即時監聽失敗:", error);
@@ -436,12 +442,13 @@
                     if (targetDate > maxDays) targetDate = maxDays;
                     if (targetDate < 1) targetDate = 1;
 
-                    setCalcContext(prev => ({ ...prev, date: targetDate, group: 'calc_only', customer: '1' }));
-                    setLoadedContext({ year: checkY, month: checkM, date: targetDate, group: 'calc_only', customer: '1' });
+                    // 🌟 智慧日期初始化同樣改為預設第一組 (g1)
+                    setCalcContext(prev => ({ ...prev, date: targetDate, group: 'g1', customer: '1' }));
+                    setLoadedContext({ year: checkY, month: checkM, date: targetDate, group: 'g1', customer: '1' });
                     setShippingReportDate(targetDate);
                     
-                    const key = `${targetDate}-calc_only`;
-                    setCalcRows(detailsData[key] || Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '1', u: '', c: '' })));
+                    const key = `${targetDate}-g1`;
+                    setCalcRows(detailsData[key] || Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '', u: '', c: '' })));
                     
                     setHasInitializedDate(true);
                 }
@@ -467,7 +474,6 @@
                 }));
                 const cleanDetailsData = JSON.parse(JSON.stringify(payloadDetailsData));
 
-                // 重新精算總數 (避免誤差)
                 let currentWeekTotal = 0;
                 const weeklySubtotals = {};
                 cleanReportRows.forEach((r, idx) => {
@@ -503,7 +509,6 @@
                 return true;
             };
 
-            // 原：手動儲存按鈕處理器 (加上詳盡的錯誤防呆彈窗)
             const handleManualSave = async () => {
                 if (!user || !firebaseReady || !window.setDoc || !window.db) {
                     setWarningModal({
@@ -516,7 +521,6 @@
                 
                 setSyncStatus('🔄 儲存中...');
                 try {
-                    // 自動把當前計算台上的明細也存入 detailsData (防呆：使用者忘記在計算台按儲存就直接點手動儲存)
                     let currentDetailsData = { ...detailsData };
                     if (calcContext.group !== 'calc_only') {
                         const isShipping = calcContext.group === 'shipping';
@@ -547,7 +551,6 @@
                 }
             };
 
-            // 跨月刪除殘留資料機制 (Firebase非同步操作)
             const removeDataFromOldMonth = async (oldCtx) => {
                 if (!user || !window.db) return;
                 try {
@@ -560,10 +563,8 @@
                         const keyToRemove = oldCtx.group === 'shipping' ? `${oldCtx.date}-shipping-${oldCtx.customer}` : `${oldCtx.date}-${oldCtx.group}`;
 
                         if (data.detailsData && data.detailsData[keyToRemove]) {
-                            // 清空該天該組的資料
-                            data.detailsData[keyToRemove] = Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '1', u: '', c: '' }));
+                            data.detailsData[keyToRemove] = Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '', u: '', c: '' }));
                             
-                            // 若是生產組別，需要一併清空報表總表對應的欄位
                             if (oldCtx.group !== 'calc_only' && oldCtx.group !== 'shipping') {
                                 const rowIndex = data.reportRows.findIndex(r => r.date === oldCtx.date);
                                 if (rowIndex > -1) {
@@ -580,7 +581,6 @@
                 }
             };
 
-            // -- 數值解析邏輯 --
             const parseL = (val) => {
                 if (!val) return 0;
                 let str = String(val).trim();
@@ -638,7 +638,6 @@
                 return computedCalcRows.reduce((sum, r) => sum + (r.isValid && !isNaN(r.parsedQ) ? r.parsedQ : 0), 0);
             }, [computedCalcRows]);
 
-            // -- 庫存管理核心演算法 (FIFO) --
             const generateInventoryData = (cId, sortBy) => {
                 let inventory = [];
                 for (let d = 1; d <= 31; d++) {
@@ -723,7 +722,6 @@
                 setExpandedDates(prev => ({ ...prev, [dateStr]: !prev[dateStr] }));
             };
 
-            // 全域年份與月份修改的防呆攔截器 
             const requestGlobalDateChange = (newY, newM, customAction = null) => {
                 const hasData = calcRows.some(r => r.l !== '' || r.w !== '' || r.t !== '' || r.p !== '');
                 if (hasData && (year !== newY || month !== newM)) {
@@ -757,7 +755,7 @@
                 setCalcContext({ date, group, customer: targetCustomer });
                 setLoadedContext({ year, month, date, group, customer: targetCustomer });
                 const key = group === 'shipping' ? `${date}-shipping-${targetCustomer}` : `${date}-${group}`;
-                setCalcRows(detailsData[key] || Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '1', u: '', c: '' })));
+                setCalcRows(detailsData[key] || Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '', u: '', c: '' })));
                 setViewDetailModal({ isOpen: false, date: null, group: null });
                 setActiveTab('calculator');
                 setIsHeaderOpen(true);
@@ -780,7 +778,7 @@
 
             const handleClearRow = (index) => {
                 const newRows = [...calcRows];
-                newRows[index] = { l: '', w: '', t: '', p: '', q: '1', u: '', c: '' };
+                newRows[index] = { l: '', w: '', t: '', p: '', q: '', u: '', c: '' };
                 setCalcRows(newRows);
             };
 
@@ -807,7 +805,7 @@
                     }
                 });
                 while (newRows.length < ROW_COUNT) {
-                    newRows.push({ l: '', w: '', t: '', p: '', q: '1', u: '', c: '' });
+                    newRows.push({ l: '', w: '', t: '', p: '', q: '', u: '', c: '' });
                 }
                 setCalcRows(newRows);
             };
@@ -843,6 +841,12 @@
             };
 
             const handleContextChange = (field, value) => {
+                // 🌟 新增跳轉 R5-2 的邏輯
+                if (field === 'group' && value === 'calc_only') {
+                    window.location.href = 'zy-cbm.html';
+                    return; // 終止後續狀態變更
+                }
+
                 const newContext = { ...calcContext, [field]: field === 'date' ? parseInt(value) : value };
                 if (field === 'group' && value === 'shipping' && !newContext.customer) {
                     newContext.customer = '1';
@@ -866,7 +870,6 @@
                 }
             };
 
-            // 🌟 點擊「儲存明細/出貨」時，直接幫用戶背景存上 Firebase！避免遺失
             const handleSaveDetailsOnly = async () => {
                 if (calcContext.group === 'calc_only') return;
 
@@ -893,10 +896,9 @@
 
                 const newDetailsData = { ...detailsData, [currentKey]: calcRows };
                 if (oldKey) {
-                    newDetailsData[oldKey] = Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '1', u: '', c: '' }));
+                    newDetailsData[oldKey] = Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '', u: '', c: '' }));
                 }
 
-                // 立即更新前端記憶體狀態
                 setDetailsData(newDetailsData);
                 setLoadedContext({ year, month, ...calcContext });
 
@@ -904,7 +906,6 @@
                     setActiveTab('shipping_report');
                 }
 
-                // 直接背景發射到 Firebase
                 setSyncStatus('🔄 儲存中...');
                 try {
                     const rowsWithTotals = reportRows.map(r => {
@@ -957,7 +958,6 @@
                 }
             };
 
-            // 🌟 點擊「同步總表」時，直接背景自動寫入 Firebase
             const executeSyncReport = async (totalOverride) => {
                 const total = totalOverride !== undefined ? totalOverride : Math.round(calcTotalVolume);
                 const currentKey = `${calcContext.date}-${calcContext.group}`;
@@ -976,7 +976,7 @@
 
                 const newDetailsData = { ...detailsData, [currentKey]: calcRows };
                 if (oldKey) {
-                    newDetailsData[oldKey] = Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '1', u: '', c: '' }));
+                    newDetailsData[oldKey] = Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '', u: '', c: '' }));
                 }
 
                 const newReportRows = reportRows.map(r => {
@@ -990,14 +990,12 @@
                     return newRow;
                 });
 
-                // 更新前端視圖
                 setDetailsData(newDetailsData);
                 setReportRows(newReportRows);
                 setLoadedContext({ year, month, ...calcContext });
                 setOverwriteModal({ isOpen: false });
                 setActiveTab('report');
 
-                // 背景自動發射到 Firebase，精確保存總和與明細
                 setSyncStatus('🔄 同步儲存中...');
                 try {
                     const rowsWithTotals = newReportRows.map(r => {
@@ -1015,8 +1013,8 @@
 
             const handleClearCalcClick = () => {
                 if (confirmClearCalc) {
-                    setCalcRows(Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '1', u: '', c: '' })));
-                    setLoadedContext(null); // 打斷原有的資料關聯，避免清空後切換組別觸發「移動刪除」
+                    setCalcRows(Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '', u: '', c: '' })));
+                    setLoadedContext(null);
                     setConfirmClearCalc(false);
                 } else {
                     setConfirmClearCalc(true);
@@ -1067,11 +1065,12 @@
                             <div className="flex-[2] flex flex-col">
                                 <label className="text-[10px] text-indigo-300 font-bold mb-0.5 pl-1">目標組別</label>
                                 <select value={calcContext.group} onChange={(e) => handleContextChange('group', e.target.value)} className="bg-white text-indigo-900 font-bold px-1 py-1.5 rounded outline-none shadow-inner w-full text-center text-[11px] sm:text-xs">
-                                    <option value="calc_only">計算用</option>
+                                    {/* 🌟 選單調整：第一組移到最前面，計算用改為跳轉按鈕 */}
                                     <option value="g1">第一組</option>
                                     <option value="g2">第二組</option>
                                     <option value="g3">第三組</option>
                                     <option value="shipping">出貨用</option>
+                                    <option value="calc_only">計算用</option>
                                 </select>
                             </div>
                             {calcContext.group === 'shipping' && (
@@ -1280,7 +1279,7 @@
                                                 </div>
                                             </td>
                                             <td className="border border-slate-300 bg-indigo-50/20 p-0">
-                                                <input type="text" value={row.c} onChange={(e) => handleCalcInputChange(idx, 'c', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-indigo-700" placeholder="代碼" />
+                                                <input type="text" inputMode="numeric" pattern="[0-9]*" value={row.c} onChange={(e) => handleCalcInputChange(idx, 'c', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-indigo-700" placeholder="代碼" />
                                             </td>
                                             <td className="border border-slate-300 bg-white p-0"><input type="text" inputMode="decimal" value={row.l} onChange={(e) => handleCalcInputChange(idx, 'l', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-slate-800" /></td>
                                             <td className="border border-slate-300 bg-white p-0"><input type="text" inputMode="decimal" value={row.w} onChange={(e) => handleCalcInputChange(idx, 'w', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-slate-800" /></td>
