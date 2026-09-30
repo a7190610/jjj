@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -14,7 +14,12 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    body {
+    html, body {
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
       font-family: 'Noto Sans TC', sans-serif;
       user-select: none;
       -webkit-user-select: none;
@@ -40,11 +45,11 @@
       flex-shrink: 0;
     }
 
-    /* 電腦版 (Desktop) */
+    /* 電腦版 (Desktop) 尺寸 */
     body.device-desktop .rummi-tile {
-      width: 44px;
-      height: 62px;
-      font-size: 22px;
+      width: 42px;
+      height: 58px;
+      font-size: 21px;
       border-radius: 6px;
     }
     body.device-desktop .rummi-tile:hover {
@@ -52,27 +57,27 @@
       box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.35);
     }
 
-    /* 平板版 (Tablet) */
+    /* 平板版 (Tablet) 尺寸 */
     body.device-tablet .rummi-tile {
-      width: 38px;
-      height: 54px;
-      font-size: 19px;
+      width: 36px;
+      height: 50px;
+      font-size: 18px;
       border-radius: 5px;
     }
 
-    /* 手機版 (Mobile) - 緊湊高清晰尺寸 */
+    /* 手機版 (Mobile) 緊湊尺寸 (確保手牌架絕不超高) */
     body.device-mobile .rummi-tile {
-      width: 31px;
-      height: 44px;
-      font-size: 16px;
+      width: 29px;
+      height: 41px;
+      font-size: 15px;
       border-radius: 4px;
     }
 
     /* 選取中的牌 */
     .rummi-tile.selected {
-      transform: translateY(-6px) scale(1.08) !important;
+      transform: translateY(-5px) scale(1.08) !important;
       border: 2px solid #3b82f6 !important;
-      box-shadow: 0 0 12px rgba(59, 130, 246, 0.9), 0 6px 10px rgba(0,0,0,0.4) !important;
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.95), 0 4px 8px rgba(0,0,0,0.4) !important;
       z-index: 25;
     }
 
@@ -84,10 +89,15 @@
 
     /* 牌架外觀 */
     .tile-rack {
-      background: linear-gradient(180deg, #50311a 0%, #321c0c 100%);
-      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5), 0 6px 16px rgba(0, 0, 0, 0.4);
+      background: linear-gradient(180deg, #4d2f19 0%, #2f190a 100%);
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.35);
       border: 1.5px solid #6c3f1f;
       border-radius: 10px;
+      transition: box-shadow 0.25s, border-color 0.25s;
+    }
+    .tile-rack.my-turn-active {
+      border-color: #10b981;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.4), 0 0 16px rgba(16, 185, 129, 0.45);
     }
 
     /* 桌面綠呢絨質感 */
@@ -101,7 +111,7 @@
       background: rgba(255, 255, 255, 0.08);
       border: 1.5px dashed rgba(255, 255, 255, 0.28);
       border-radius: 8px;
-      padding: 4px 6px;
+      padding: 3px 5px;
       transition: all 0.15s;
       position: relative;
     }
@@ -136,58 +146,58 @@
     ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
   </style>
 </head>
-<body class="device-desktop text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden">
+<body class="device-desktop text-slate-100 flex flex-col justify-between overflow-hidden">
 
   <!-- ==================== 視圖 1：大廳與房間連線視圖 ==================== -->
   <div id="view-lobby" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center p-3 sm:p-4 overflow-y-auto">
-    <div class="max-w-md w-full bg-slate-800 border border-slate-700 rounded-3xl p-5 sm:p-7 shadow-2xl flex flex-col gap-5 text-center">
+    <div class="max-w-md w-full bg-slate-800 border border-slate-700 rounded-3xl p-5 sm:p-7 shadow-2xl flex flex-col gap-4 text-center">
       
       <div class="flex flex-col items-center gap-1.5">
-        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-3xl shadow-lg shadow-amber-500/20">
+        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-2xl sm:text-3xl shadow-lg shadow-amber-500/20">
           🀄
         </div>
-        <h1 class="text-2xl font-black bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent">
+        <h1 class="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent">
           拉密 Rummikub
         </h1>
-        <p class="text-xs text-slate-400">免綁帳號 · 亂碼房號連線 · 離線電腦自動託管</p>
+        <p class="text-[11px] sm:text-xs text-slate-400">免綁帳號 · 亂碼房號連線 · 離線電腦自動託管</p>
       </div>
 
-      <div class="bg-slate-900/80 p-3 rounded-2xl border border-slate-700/80 flex flex-col gap-1 text-left">
+      <div class="bg-slate-900/80 p-2.5 sm:p-3 rounded-2xl border border-slate-700/80 flex flex-col gap-1 text-left">
         <label class="text-xs font-bold text-slate-300 flex items-center justify-between">
-          <span>👤 我的隨機玩家名稱</span>
+          <span>👤 我的隨機名稱</span>
           <button onclick="netGame.randomizeNickname()" class="text-amber-400 hover:text-amber-300 text-[11px]">🎲 換一個</button>
         </label>
-        <input id="input-nickname" type="text" maxlength="10" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-1.5 text-sm text-white font-bold focus:outline-none focus:border-amber-500 transition" placeholder="輸入暱稱">
+        <input id="input-nickname" type="text" maxlength="10" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-white font-bold focus:outline-none focus:border-amber-500 transition" placeholder="輸入暱稱">
       </div>
 
-      <div id="lobby-menu-buttons" class="grid grid-cols-2 gap-3">
-        <button onclick="netGame.showCreateRoomPanel()" class="py-3 px-3 bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white font-extrabold rounded-2xl shadow-lg transition transform hover:scale-[1.02] flex flex-col items-center gap-1">
+      <div id="lobby-menu-buttons" class="grid grid-cols-2 gap-2.5">
+        <button onclick="netGame.showCreateRoomPanel()" class="py-2.5 px-3 bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white font-extrabold rounded-2xl shadow-lg transition transform hover:scale-[1.02] flex flex-col items-center gap-0.5">
           <span class="text-2xl">🏠</span>
-          <span class="text-sm">開設房間</span>
+          <span class="text-xs sm:text-sm">開設房間</span>
         </button>
-        <button onclick="netGame.showJoinRoomPanel()" class="py-3 px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold rounded-2xl shadow-lg transition transform hover:scale-[1.02] flex flex-col items-center gap-1">
+        <button onclick="netGame.showJoinRoomPanel()" class="py-2.5 px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold rounded-2xl shadow-lg transition transform hover:scale-[1.02] flex flex-col items-center gap-0.5">
           <span class="text-2xl">🚪</span>
-          <span class="text-sm">加入房間</span>
+          <span class="text-xs sm:text-sm">加入房間</span>
         </button>
       </div>
 
       <!-- 開設房間設定面板 -->
-      <div id="panel-create-room" class="flex flex-col gap-3.5 text-left hidden border-t border-slate-700 pt-3.5">
+      <div id="panel-create-room" class="flex flex-col gap-3 text-left hidden border-t border-slate-700 pt-3">
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">房間人數 (2 ~ 6 人):</label>
           <div class="grid grid-cols-5 gap-1" id="create-player-count">
-            <button type="button" onclick="netGame.setCreatePlayerCount(2)" class="btn-create-pcount py-1.5 rounded-lg text-xs font-bold border border-slate-600 bg-slate-700 text-white">2人</button>
-            <button type="button" onclick="netGame.setCreatePlayerCount(3)" class="btn-create-pcount py-1.5 rounded-lg text-xs font-bold border border-slate-600 bg-slate-700 text-white">3人</button>
-            <button type="button" onclick="netGame.setCreatePlayerCount(4)" class="btn-create-pcount py-1.5 rounded-lg text-xs font-bold border border-blue-500 bg-blue-600 text-white">4人</button>
-            <button type="button" onclick="netGame.setCreatePlayerCount(5)" class="btn-create-pcount py-1.5 rounded-lg text-xs font-bold border border-slate-600 bg-slate-700 text-white">5人</button>
-            <button type="button" onclick="netGame.setCreatePlayerCount(6)" class="btn-create-pcount py-1.5 rounded-lg text-xs font-bold border border-slate-600 bg-slate-700 text-white">6人</button>
+            <button type="button" onclick="netGame.setCreatePlayerCount(2)" class="btn-create-pcount py-1 rounded-lg text-xs font-bold border border-slate-600 bg-slate-700 text-white">2人</button>
+            <button type="button" onclick="netGame.setCreatePlayerCount(3)" class="btn-create-pcount py-1 rounded-lg text-xs font-bold border border-slate-600 bg-slate-700 text-white">3人</button>
+            <button type="button" onclick="netGame.setCreatePlayerCount(4)" class="btn-create-pcount py-1 rounded-lg text-xs font-bold border border-blue-500 bg-blue-600 text-white">4人</button>
+            <button type="button" onclick="netGame.setCreatePlayerCount(5)" class="btn-create-pcount py-1 rounded-lg text-xs font-bold border border-slate-600 bg-slate-700 text-white">5人</button>
+            <button type="button" onclick="netGame.setCreatePlayerCount(6)" class="btn-create-pcount py-1 rounded-lg text-xs font-bold border border-slate-600 bg-slate-700 text-white">6人</button>
           </div>
         </div>
 
         <div class="grid grid-cols-2 gap-2 text-xs">
           <div>
             <label class="block text-slate-300 font-bold mb-1">思考秒數:</label>
-            <select id="create-timer-sec" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-white">
+            <select id="create-timer-sec" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-2 py-1 text-white text-xs">
               <option value="60" selected>標準 60 秒</option>
               <option value="90">寬裕 90 秒</option>
               <option value="30">快節奏 30 秒</option>
@@ -196,40 +206,40 @@
           </div>
           <div>
             <label class="block text-slate-300 font-bold mb-1">電腦強度:</label>
-            <select id="create-ai-diff" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-2 py-1.5 text-white">
-              <option value="normal" selected>普通 (自動出牌)</option>
-              <option value="casual">休閒 (純手牌組合)</option>
+            <select id="create-ai-diff" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-2 py-1 text-white text-xs">
+              <option value="normal" selected>普通</option>
+              <option value="casual">休閒</option>
             </select>
           </div>
         </div>
 
-        <div class="flex items-center gap-2 pt-1.5">
-          <button onclick="netGame.hideSubPanels()" class="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-bold rounded-xl transition">返回</button>
-          <button onclick="netGame.createRoom()" class="flex-2 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold rounded-xl shadow transition">產生房號並開房</button>
+        <div class="flex items-center gap-2 pt-1">
+          <button onclick="netGame.hideSubPanels()" class="flex-1 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-bold rounded-xl transition">返回</button>
+          <button onclick="netGame.createRoom()" class="flex-2 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold rounded-xl shadow transition">產生房號並開房</button>
         </div>
       </div>
 
       <!-- 加入房間面板 -->
-      <div id="panel-join-room" class="flex flex-col gap-3 text-left hidden border-t border-slate-700 pt-3.5">
+      <div id="panel-join-room" class="flex flex-col gap-2.5 text-left hidden border-t border-slate-700 pt-3">
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">請輸入 5 碼亂碼房號:</label>
-          <input id="input-room-code" type="text" maxlength="6" class="w-full uppercase text-center font-mono tracking-widest text-lg font-black bg-slate-900 border border-slate-600 rounded-xl px-3 py-1.5 text-amber-300 focus:outline-none focus:border-blue-500 transition" placeholder="例如：78B4K">
+          <input id="input-room-code" type="text" maxlength="6" class="w-full uppercase text-center font-mono tracking-widest text-base sm:text-lg font-black bg-slate-900 border border-slate-600 rounded-xl px-3 py-1 text-amber-300 focus:outline-none focus:border-blue-500 transition" placeholder="例如：78B4K">
         </div>
         <div class="flex items-center gap-2 pt-1">
-          <button onclick="netGame.hideSubPanels()" class="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-bold rounded-xl transition">返回</button>
-          <button onclick="netGame.joinRoom()" class="flex-2 py-2 px-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold rounded-xl shadow transition">連線加入房間</button>
+          <button onclick="netGame.hideSubPanels()" class="flex-1 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-bold rounded-xl transition">返回</button>
+          <button onclick="netGame.joinRoom()" class="flex-2 py-1.5 px-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold rounded-xl shadow transition">連線加入房間</button>
         </div>
       </div>
 
       <!-- 等待大廳面板 -->
-      <div id="panel-waiting-room" class="flex flex-col gap-3.5 text-left hidden border-t border-slate-700 pt-3.5">
-        <div class="bg-slate-900/90 p-2.5 rounded-2xl border border-amber-500/40 flex items-center justify-between">
+      <div id="panel-waiting-room" class="flex flex-col gap-3 text-left hidden border-t border-slate-700 pt-3">
+        <div class="bg-slate-900/90 p-2 rounded-2xl border border-amber-500/40 flex items-center justify-between">
           <div class="flex flex-col">
             <span class="text-[10px] text-slate-400 uppercase tracking-wider">房間亂碼房號</span>
-            <span id="waiting-room-code" class="text-xl font-mono font-black text-amber-300 tracking-wider">------</span>
+            <span id="waiting-room-code" class="text-lg font-mono font-black text-amber-300 tracking-wider">------</span>
           </div>
-          <button onclick="netGame.copyRoomCode()" class="px-2.5 py-1 bg-amber-600/80 hover:bg-amber-500 text-white text-xs rounded-lg font-bold transition flex items-center gap-1">
-            <span>📋</span> 複製房號
+          <button onclick="netGame.copyRoomCode()" class="px-2 py-1 bg-amber-600/80 hover:bg-amber-500 text-white text-xs rounded-lg font-bold transition flex items-center gap-1">
+            <span>📋</span> 複製
           </button>
         </div>
 
@@ -241,12 +251,12 @@
           <div id="waiting-players-list" class="space-y-1"></div>
         </div>
 
-        <p class="text-[11px] text-slate-400 leading-tight">
+        <p class="text-[10px] text-slate-400 leading-tight">
           💡 房主可隨時點擊開始，未滿人數將自動由電腦 AI 補齊。
         </p>
 
-        <div class="pt-1 flex flex-col gap-2">
-          <button id="btn-host-start" onclick="netGame.hostStartGame()" class="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-sm font-black rounded-xl shadow-lg transition hidden flex items-center justify-center gap-2">
+        <div class="pt-1 flex flex-col gap-1.5">
+          <button id="btn-host-start" onclick="netGame.hostStartGame()" class="w-full py-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs sm:text-sm font-black rounded-xl shadow-lg transition hidden flex items-center justify-center gap-1.5">
             <span>🚀</span> 房主隨時開始遊戲
           </button>
           <div id="waiting-guest-hint" class="text-center text-xs text-slate-400 py-1 hidden">
@@ -259,35 +269,21 @@
     </div>
   </div>
 
-  <!-- ==================== 視圖 2：線上遊戲對戰桌面 ==================== -->
+  <!-- ==================== 視圖 2：線上遊戲對戰桌面 (100dvh 不滾動版面) ==================== -->
   
-  <!-- 頂部狀態列 (針對手機版極致緊湊高度) -->
-  <header class="bg-slate-800/95 backdrop-blur border-b border-slate-700 px-2 sm:px-4 py-1 sm:py-1.5 flex items-center justify-between gap-1.5 shadow-md z-30 min-h-[38px]">
-    <div class="flex items-center gap-1.5 sm:gap-3">
-      <div class="flex items-center gap-1">
-        <span class="text-lg sm:text-xl">🀄</span>
-        <h1 class="font-extrabold text-sm sm:text-base bg-gradient-to-r from-amber-200 to-yellow-400 bg-clip-text text-transparent hidden min-[380px]:inline">
-          拉密
-        </h1>
-      </div>
+  <!-- 1. 頂部狀態列 (高度 34px - 40px) -->
+  <header class="flex-shrink-0 bg-slate-800/95 backdrop-blur border-b border-slate-700 px-2 sm:px-4 py-1 flex items-center justify-between gap-1 shadow-md z-30 min-h-[34px] sm:min-h-[40px]">
+    <div class="flex items-center gap-1.5 sm:gap-2">
+      <span class="text-base sm:text-lg">🀄</span>
+      <h1 class="font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-200 to-yellow-400 bg-clip-text text-transparent">
+        拉密
+      </h1>
       <div class="flex items-center gap-1 text-[10px] sm:text-xs bg-slate-700/80 px-1.5 py-0.5 rounded border border-slate-600 text-slate-300">
-        <span>房號:</span>
+        <span>房:</span>
         <span id="game-room-code-tag" class="font-mono font-bold text-amber-300">-----</span>
         <span class="text-slate-500">|</span>
-        <span>牌:</span>
+        <span>牌池:</span>
         <span id="deck-count" class="font-bold text-amber-300">106</span>
-      </div>
-    </div>
-
-    <!-- 中間回合指示 -->
-    <div class="flex items-center gap-1.5">
-      <div id="turn-banner" class="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-blue-900/60 border border-blue-500/40 text-blue-200 text-xs font-bold shadow">
-        <span id="turn-avatar">👤</span>
-        <span id="turn-text" class="truncate max-w-[90px] sm:max-w-none">輪到：玩家</span>
-      </div>
-      <div id="timer-badge" class="text-[11px] sm:text-xs font-mono bg-slate-700/80 border border-slate-600 px-1.5 py-0.5 rounded text-amber-300 flex items-center gap-0.5">
-        <span>⏱️</span>
-        <span id="timer-text">--s</span>
       </div>
     </div>
 
@@ -299,62 +295,70 @@
       <button onclick="netGame.openRulesModal()" class="px-1.5 py-0.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs font-medium" title="規則">
         📖
       </button>
-      <button onclick="netGame.leaveRoomConfirm()" class="px-1.5 py-0.5 bg-rose-900/60 hover:bg-rose-800 text-rose-200 border border-rose-600/40 rounded text-xs font-bold" title="離開房間">
+      <button onclick="netGame.leaveRoomConfirm()" class="px-1.5 py-0.5 bg-rose-900/60 hover:bg-rose-800 text-rose-200 border border-rose-600/40 rounded text-xs font-bold" title="離開">
         🚪
       </button>
     </div>
   </header>
 
-  <!-- 對手資訊列 (手機版超薄膠囊條) -->
-  <section class="bg-slate-800/80 border-b border-slate-700/80 px-2 py-1 overflow-x-auto min-h-[30px] flex items-center">
+  <!-- 2. 對手膠囊列 (高度 28px) -->
+  <section class="flex-shrink-0 bg-slate-800/80 border-b border-slate-700/80 px-2 py-0.5 overflow-x-auto min-h-[28px] flex items-center">
     <div id="opponents-container" class="flex items-center gap-1.5 min-w-max mx-auto"></div>
   </section>
 
-  <!-- 桌面牌組區 (Tabletop) -->
-  <main class="flex-1 tabletop p-1.5 sm:p-3 overflow-y-auto min-h-[220px] relative flex flex-col justify-between">
+  <!-- 3. 【超顯眼回合指示橫幅】(解決不知道輪到誰) -->
+  <div id="big-turn-banner" class="flex-shrink-0 px-3 py-1 flex items-center justify-between text-xs font-black shadow transition-all duration-300 min-h-[30px] bg-slate-800 text-slate-300 border-y border-slate-700/80">
+    <div class="flex items-center gap-1.5">
+      <span id="big-turn-icon" class="text-sm sm:text-base">⏳</span>
+      <span id="big-turn-text" class="tracking-wide">等待遊戲開始...</span>
+    </div>
+    <div id="big-turn-timer-badge" class="font-mono text-[11px] px-2 py-0.5 rounded bg-black/40 text-amber-300 font-bold border border-slate-600/60 flex items-center gap-1">
+      <span>⏱️</span>
+      <span id="timer-text">--s</span>
+    </div>
+  </div>
+
+  <!-- 4. 桌面牌組區 (Tabletop) - 唯一可縱向滾動的彈性區域 -->
+  <main class="flex-1 min-h-0 overflow-y-auto tabletop p-1.5 sm:p-2.5 relative flex flex-col justify-between">
     <div class="max-w-7xl mx-auto w-full flex flex-col gap-1.5 h-full">
       
       <!-- 牌組放置容器 -->
-      <div id="table-melds" class="flex-1 flex flex-wrap content-start gap-1.5 sm:gap-2.5 p-2 rounded-xl min-h-[180px] border border-dashed border-emerald-500/20 bg-emerald-950/20 overflow-y-auto" onclick="netGame.onTableBackgroundClick(event)">
+      <div id="table-melds" class="flex-1 flex flex-wrap content-start gap-1.5 sm:gap-2.5 p-1.5 rounded-xl border border-dashed border-emerald-500/20 bg-emerald-950/20 overflow-y-auto" onclick="netGame.onTableBackgroundClick(event)">
         <!-- 動態渲染桌面牌組 -->
       </div>
 
-      <!-- 桌面牌被選取時的快速控制條 (解決桌面牌移動失誤) -->
-      <div id="table-tile-actions-bar" class="w-full bg-slate-900/95 border border-blue-400 rounded-xl px-3 py-1.5 shadow-2xl flex flex-wrap items-center justify-between gap-2 transition-all duration-150 hidden">
-        <div class="flex items-center gap-1.5 text-xs">
-          <span class="text-base">📌</span>
-          <span>已選桌面牌：</span>
+      <!-- 桌面牌選取時的操作浮條 -->
+      <div id="table-tile-actions-bar" class="w-full bg-slate-900/95 border border-blue-400 rounded-xl px-2.5 py-1 shadow-2xl flex flex-wrap items-center justify-between gap-1.5 transition-all duration-150 hidden">
+        <div class="flex items-center gap-1 text-xs">
+          <span>📌 已選桌面牌:</span>
           <span id="selected-table-tile-desc" class="font-black text-amber-300">--</span>
-          <span class="text-slate-400 text-[10px] hidden sm:inline">(點選其他牌組可直接移入)</span>
         </div>
-        <div class="flex items-center gap-1.5">
-          <button onclick="netGame.extractSelectedTableTileToNewMeld()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold shadow flex items-center gap-1">
-            <span>➕</span> 獨立為新組
+        <div class="flex items-center gap-1">
+          <button onclick="netGame.extractSelectedTableTileToNewMeld()" class="px-2 py-0.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold shadow">
+            ➕ 獨立新組
           </button>
-          <button id="btn-take-back-tile" onclick="netGame.takeBackSelectedTableTile()" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold shadow flex items-center gap-1 hidden">
-            <span>📥</span> 收回手牌
+          <button id="btn-take-back-tile" onclick="netGame.takeBackSelectedTableTile()" class="px-2 py-0.5 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold shadow hidden">
+            📥 收回手牌
           </button>
-          <button onclick="netGame.clearSelection()" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs">
+          <button onclick="netGame.clearSelection()" class="px-2 py-0.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded text-xs">
             ✕ 取消
           </button>
         </div>
       </div>
 
       <!-- 手牌多選時的「快速打出列」 -->
-      <div id="quick-play-bar" class="w-full bg-slate-900/95 border border-amber-400/80 rounded-xl px-2.5 py-1.5 shadow-2xl flex flex-wrap items-center justify-between gap-2 transition-all duration-150 hidden">
-        <div class="flex items-center gap-1.5 text-xs">
-          <span class="text-base">✨</span>
-          <span class="text-slate-300">已選手牌：</span>
+      <div id="quick-play-bar" class="w-full bg-slate-900/95 border border-amber-400/80 rounded-xl px-2 py-1 shadow-2xl flex flex-wrap items-center justify-between gap-1 transition-all duration-150 hidden">
+        <div class="flex items-center gap-1 text-xs">
+          <span>✨ 已選:</span>
           <span id="quick-selected-names" class="font-black text-amber-300">0 張</span>
           <span id="quick-meld-validation" class="ml-1 px-1.5 py-0.2 rounded-full font-bold bg-slate-700 text-slate-300 text-[10px]">檢驗中</span>
         </div>
-
         <div class="flex items-center gap-1">
-          <button onclick="netGame.playSelectedAsNewMeld()" id="btn-quick-play" class="px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-lg text-xs font-black shadow flex items-center gap-1">
-            <span>🚀</span> 打出成新牌組
+          <button onclick="netGame.playSelectedAsNewMeld()" id="btn-quick-play" class="px-2.5 py-0.5 bg-gradient-to-r from-emerald-600 to-teal-500 text-white rounded text-xs font-black shadow">
+            🚀 打出成新組
           </button>
-          <button onclick="netGame.clearSelection()" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-xs font-semibold">
-            ✕ 取消
+          <button onclick="netGame.clearSelection()" class="px-2 py-0.5 bg-slate-700 text-slate-300 rounded text-xs">
+            ✕
           </button>
         </div>
       </div>
@@ -363,16 +367,16 @@
   </main>
 
   <!-- 浮動提示 Toast -->
-  <div id="toast" class="fixed top-14 left-1/2 -translate-x-1/2 bg-slate-900/95 text-white border border-amber-500/60 px-3.5 py-1.5 rounded-xl shadow-2xl text-xs font-semibold pointer-events-none transition-all duration-200 opacity-0 transform -translate-y-3 z-50 flex items-center gap-1.5">
+  <div id="toast" class="fixed top-12 left-1/2 -translate-x-1/2 bg-slate-900/95 text-white border border-amber-500/60 px-3 py-1 rounded-xl shadow-2xl text-xs font-semibold pointer-events-none transition-all duration-200 opacity-0 transform -translate-y-2 z-50 flex items-center gap-1">
     <span id="toast-icon">⚠️</span>
     <span id="toast-msg">提示訊息</span>
   </div>
 
-  <!-- 底部手牌架與操作面板 (精簡高度) -->
-  <footer class="bg-slate-800 border-t border-slate-700 shadow-2xl p-1.5 sm:p-2.5 z-30">
-    <div class="max-w-7xl mx-auto flex flex-col gap-1.5">
+  <!-- 5. 【底部手牌架與操作面板】(100% 固定在手機畫面底端，絕不出螢幕外) -->
+  <footer class="flex-shrink-0 bg-slate-800 border-t border-slate-700 shadow-2xl p-1 sm:p-2 z-30">
+    <div class="max-w-7xl mx-auto flex flex-col gap-1">
       
-      <!-- 玩家狀態與破冰提示 -->
+      <!-- 手牌數量與破冰狀態一行搞定 -->
       <div class="flex items-center justify-between gap-1 px-1 text-xs">
         <div class="flex items-center gap-1.5 flex-wrap">
           <span class="font-bold text-amber-300 text-xs flex items-center gap-0.5">
@@ -384,40 +388,37 @@
           <span id="turn-played-info" class="text-emerald-300 font-bold hidden text-[10px]">
             已出 <span id="turn-played-count">0</span> 張 (<span id="turn-played-points">0</span>分)
           </span>
-          <span id="ai-takeover-warning" class="text-amber-400 font-bold hidden text-[10px] bg-amber-950 px-1.5 py-0.2 rounded border border-amber-500/40 animate-pulse">
-            🤖 電腦託管中
-          </span>
         </div>
-        <div class="text-slate-400 text-[10px] hidden sm:inline">
-          點選牌直接點桌面即可出牌；點擊已出的牌可移動或獨立
+        <div id="ai-takeover-warning" class="text-amber-400 font-bold hidden text-[10px] bg-amber-950 px-1 rounded animate-pulse">
+          🤖 電腦託管中
         </div>
       </div>
 
-      <!-- 手牌架本體 (橫向滾動) -->
-      <div class="tile-rack p-1.5 sm:p-2 min-h-[58px] sm:min-h-[76px] flex items-center overflow-x-auto shadow-inner" ondragover="netGame.onDragOver(event)" ondrop="netGame.onDropToHand(event)">
+      <!-- 手牌架本體 (緊湊固定高度橫向滑動) -->
+      <div id="tile-rack-container" class="tile-rack p-1 sm:p-1.5 min-h-[50px] sm:min-h-[66px] flex items-center overflow-x-auto shadow-inner" ondragover="netGame.onDragOver(event)" ondrop="netGame.onDropToHand(event)">
         <div id="player-hand" class="flex flex-nowrap items-center gap-1 sm:gap-1.5 min-w-full"></div>
       </div>
 
       <!-- 控制按鈕列 -->
-      <div class="flex items-center justify-between gap-1.5 pt-0.5">
+      <div class="flex items-center justify-between gap-1 pt-0.5">
         <div class="flex items-center gap-1">
-          <button onclick="netGame.sortHand('number')" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-semibold border border-slate-600 transition flex items-center gap-0.5 shadow">
-            <span>🔢</span> 數字
+          <button onclick="netGame.sortHand('number')" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs font-semibold border border-slate-600 shadow">
+            🔢 數字
           </button>
-          <button onclick="netGame.sortHand('color')" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-semibold border border-slate-600 transition flex items-center gap-0.5 shadow">
-            <span>🎨</span> 顏色
+          <button onclick="netGame.sortHand('color')" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs font-semibold border border-slate-600 shadow">
+            🎨 顏色
           </button>
-          <button onclick="netGame.undoTurn()" id="btn-undo" class="px-2 py-1 bg-rose-900/60 hover:bg-rose-800 text-rose-200 rounded-lg text-xs font-semibold border border-rose-500/40 transition flex items-center gap-0.5 shadow" title="還原本回合">
-            <span>↩️</span> 還原
+          <button onclick="netGame.undoTurn()" id="btn-undo" class="px-2 py-1 bg-rose-900/60 hover:bg-rose-800 text-rose-200 rounded text-xs font-semibold border border-rose-500/40 shadow" title="還原本回合">
+            ↩️ 還原
           </button>
         </div>
 
         <div>
-          <button onclick="netGame.handleUnifiedEndTurn()" id="btn-end-turn" class="px-4 sm:px-6 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black shadow-lg transition flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white">
+          <button onclick="netGame.handleUnifiedEndTurn()" id="btn-end-turn" class="px-3.5 sm:px-6 py-1 sm:py-1.5 rounded-xl text-xs sm:text-sm font-black shadow-lg transition flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white">
             <span id="end-turn-icon">🃏</span>
-            <div class="flex flex-col text-left leading-tight">
+            <div class="flex flex-col text-left leading-none">
               <span id="end-turn-title">結束回合</span>
-              <span id="end-turn-sub" class="text-[9px] font-normal opacity-90">自動摸牌</span>
+              <span id="end-turn-sub" class="text-[9px] font-normal opacity-90 mt-0.5">自動摸牌</span>
             </div>
           </button>
         </div>
@@ -427,31 +428,18 @@
 
   <!-- 規則彈窗 Modal -->
   <div id="modal-rules" class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 z-50 hidden">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-4 sm:p-5 shadow-2xl flex flex-col gap-3 max-h-[85vh] overflow-y-auto">
-      <div class="flex items-center justify-between border-b border-slate-700 pb-2">
-        <h2 class="text-base sm:text-lg font-black text-amber-300 flex items-center gap-1.5">
-          <span>📖</span> 拉密 (Rummikub) 線上版規則
-        </h2>
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-4 shadow-2xl flex flex-col gap-2.5 max-h-[85vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-1.5">
+        <h2 class="text-base font-black text-amber-300">📖 拉密遊戲規則</h2>
         <button onclick="netGame.closeRulesModal()" class="text-slate-400 hover:text-white text-base">✕</button>
       </div>
-
-      <div class="space-y-2.5 text-xs text-slate-300 leading-relaxed">
-        <div>
-          <h3 class="font-bold text-amber-200 mb-0.5">1. 線上房間與隨機用戶</h3>
-          <p>免登入、免註冊，產生 5 碼亂碼房號分享給朋友即可加入對戰；房主可隨時點擊開始遊戲，未滿人數自動由 AI 補滿。</p>
-        </div>
-        <div>
-          <h3 class="font-bold text-amber-200 mb-0.5">2. 畫面跳出與離線託管</h3>
-          <p>若玩家切換應用程式、分頁關閉或網路斷線，系統會<b>自動由電腦 AI 接手託管遊玩</b>；重新打開網頁或輸入同房號即可無縫恢復親自操控。</p>
-        </div>
-        <div>
-          <h3 class="font-bold text-amber-200 mb-0.5">3. 遊戲核心規則</h3>
-          <p>首次出牌需破冰（>= 30 點）；合法牌型為同數不同色（群組 3~4 張）或同色連續數（順組 3 張以上）；所有出的牌皆會自動排列整齊。</p>
-        </div>
+      <div class="space-y-2 text-xs text-slate-300 leading-relaxed">
+        <p>1. <b>破冰規則：</b>首次出牌點數需 >= 30 分，且僅限使用自己手牌，不可更動桌面。</p>
+        <p>2. <b>合法牌組：</b>群組（同數不同色 3~4 張）或順組（同色連號 3 張以上）。</p>
+        <p>3. <b>牌池與離線託管：</b>全場牌池即時同步；斷線或切換視窗由 AI 自動託管，重新連線立即恢復操作。</p>
       </div>
-
-      <div class="pt-2 border-t border-slate-700 text-right">
-        <button onclick="netGame.closeRulesModal()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition">我知道了</button>
+      <div class="pt-1.5 border-t border-slate-700 text-right">
+        <button onclick="netGame.closeRulesModal()" class="px-3 py-1 bg-blue-600 text-white rounded text-xs font-bold">我知道了</button>
       </div>
     </div>
   </div>
@@ -462,25 +450,18 @@
       <div class="text-4xl animate-bounce">🏆</div>
       <h2 id="gameover-title" class="text-xl font-black text-amber-300">遊戲結束</h2>
       <p id="gameover-desc" class="text-slate-300 text-xs">某某玩家率先出完手牌！</p>
-
-      <div class="w-full bg-slate-900/80 rounded-xl p-3 border border-slate-700 text-left">
-        <h4 class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 border-b border-slate-700 pb-1">本局積分結算</h4>
+      <div class="w-full bg-slate-900/80 rounded-xl p-2.5 border border-slate-700 text-left">
         <div id="gameover-scores" class="space-y-1 text-xs"></div>
       </div>
-
-      <button onclick="netGame.returnToLobby()" class="w-full py-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-black rounded-xl shadow-lg transition">
+      <button onclick="netGame.returnToLobby()" class="w-full py-2 bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-black rounded-xl shadow-lg transition">
         返回大廳
       </button>
     </div>
   </div>
 
-  <!-- 核心邏輯腳本 -->
   <script>
     class SoundEngine {
-      constructor() {
-        this.ctx = null;
-        this.enabled = true;
-      }
+      constructor() { this.ctx = null; this.enabled = true; }
       init() {
         if (!this.ctx) {
           const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -516,6 +497,11 @@
         this.playTone(659, 'sine', 0.1, 0.08);
         this.playTone(783, 'sine', 0.18, 0.16);
       }
+      myTurnChime() {
+        this.playTone(440, 'sine', 0.12, 0);
+        this.playTone(554.37, 'sine', 0.12, 0.1);
+        this.playTone(659.25, 'sine', 0.22, 0.2);
+      }
       win() {
         [523, 659, 783, 1046].forEach((f, i) => {
           this.playTone(f, 'triangle', 0.2, i * 0.12);
@@ -547,18 +533,18 @@
         this.inGame = false;
         this.players = [];
         this.turnIndex = 0;
+        this.lastTurnIndex = -1;
         this.tableMelds = [];
         this.deck = [];
+        this.deckCount = 106; // 牌池即時同步變數
         this.currentSeconds = 60;
         this.timerInterval = null;
 
-        // 手牌與理牌喜好模式 (解決新加入玩家理牌問題)
-        this.handSortMode = null; // 'number' | 'color' | null
+        this.handSortMode = null;
         this.myHand = [];
 
-        // 選取狀態 (以安全 tile.id 為準，徹底解決移動失誤)
         this.selectedHandIndices = new Set();
-        this.selectedTableTile = null; // { id, tile, meldIndex, tileIndex }
+        this.selectedTableTile = null;
         this.playedTilesThisTurn = [];
         this.turnSnapshot = { hand: [], tableMelds: [], playerBrokenIce: false };
 
@@ -605,7 +591,7 @@
       randomizeNickname() {
         this.myNickname = this.generateRandomNickname();
         document.getElementById('input-nickname').value = this.myNickname;
-        this.showToast(`已換暱稱為：${this.myNickname}`, '🎲');
+        this.showToast(`暱稱換為：${this.myNickname}`, '🎲');
       }
 
       detectAndApplyDevice() {
@@ -637,8 +623,8 @@
         document.querySelectorAll('.btn-create-pcount').forEach((btn, idx) => {
           const num = idx + 2;
           btn.className = (num === count)
-            ? 'btn-create-pcount py-1.5 rounded-lg text-xs font-bold border border-blue-500 bg-blue-600 text-white'
-            : 'btn-create-pcount py-1.5 rounded-lg text-xs font-bold border border-slate-600 bg-slate-700 text-white';
+            ? 'btn-create-pcount py-1 rounded-lg text-xs font-bold border border-blue-500 bg-blue-600 text-white'
+            : 'btn-create-pcount py-1 rounded-lg text-xs font-bold border border-slate-600 bg-slate-700 text-white';
         });
       }
 
@@ -828,7 +814,8 @@
                 aiDifficulty: this.aiDifficulty
               },
               players: this.sanitizePlayersForClient(),
-              myId: newPlayer.id
+              myId: newPlayer.id,
+              deckCount: this.targetPlayerCount >= 5 ? 160 : 106
             });
 
             this.broadcastLobbyUpdate();
@@ -843,14 +830,14 @@
               if (!data.visible) {
                 player.isAITakeover = true;
                 player.isOnline = false;
-                this.showToast(`${player.name} 畫面切出，已自動轉由電腦託管`, '🤖');
+                this.showToast(`${player.name} 切換視窗，已轉由電腦託管`, '🤖');
                 if (this.inGame && this.turnIndex === player.id) {
                   this.executeAITurn(player);
                 }
               } else {
                 player.isAITakeover = false;
                 player.isOnline = true;
-                this.showToast(`${player.name} 恢復畫面，已取消電腦託管`, '👤');
+                this.showToast(`${player.name} 恢復畫面，取消託管`, '👤');
               }
               this.broadcastState();
             }
@@ -858,7 +845,6 @@
           }
 
           case 'CLIENT_HAND_ORDER': {
-            // 房客儲存理牌後的順序
             const player = this.players.find(p => p.uid === data.uid);
             if (player && Array.isArray(data.hand)) {
               player.hand = data.hand;
@@ -888,7 +874,7 @@
             if (player) {
               player.isOnline = false;
               player.isAITakeover = true;
-              this.showToast(`${player.name} 斷線，已自動啟動電腦託管`, '🤖');
+              this.showToast(`${player.name} 離線，已由電腦託管`, '🤖');
               this.broadcastState();
               if (this.inGame && this.turnIndex === player.id) {
                 this.executeAITurn(player);
@@ -967,6 +953,7 @@
             this.aiDifficulty = data.roomSettings.aiDifficulty;
             this.myPlayerId = data.myId;
             this.players = data.players;
+            this.deckCount = data.deckCount !== undefined ? data.deckCount : (this.targetPlayerCount >= 5 ? 160 : 106);
 
             if (data.inGame) {
               this.inGame = true;
@@ -975,7 +962,7 @@
               this.currentSeconds = data.currentSeconds;
               this.myHand = data.myHand || [];
               this.enterGameView();
-              this.showToast('已恢復連線並同步房間牌局！', '🟢');
+              this.showToast('已恢復連線！', '🟢');
             } else {
               this.enterWaitingRoom();
               this.updateWaitingRoomUI();
@@ -984,7 +971,7 @@
             break;
 
           case 'JOIN_FAIL':
-            this.showToast(data.reason || '加入房間失敗', '❌');
+            this.showToast(data.reason || '加入失敗', '❌');
             this.leaveRoom();
             break;
 
@@ -1000,20 +987,26 @@
             this.inGame = true;
             this.tableMelds = data.tableMelds || [];
             this.myHand = data.myHand || [];
+            this.deckCount = data.deckCount !== undefined ? data.deckCount : (this.players.length >= 5 ? 160 : 106);
             this.turnIndex = data.turnIndex;
             this.currentSeconds = data.currentSeconds;
             this.players = data.players;
             this.enterGameView();
-            this.sortHand('number'); // 開局自動理牌
+            this.sortHand('number');
             this.renderAll();
             this.showToast('對局開始！', '🎮');
             break;
 
           case 'GAME_STATE_SYNC': {
+            // 【牌池即時同步】
+            if (data.deckCount !== undefined) {
+              this.deckCount = data.deckCount;
+            }
+
             const isCurrentlyMyTurn = (data.turnIndex === this.myPlayerId);
             const hasUnfinishedTurnMoves = (this.playedTilesThisTurn.length > 0);
 
-            // 若是我正在出牌且有出牌暫態動作，絕不覆蓋手牌與桌面牌組，杜絕定時同步將出掉的牌塞回手牌！
+            // 若是我正在出牌且有暫態動作，絕不覆蓋手牌與桌面牌組，防止定時心跳覆蓋！
             if (isCurrentlyMyTurn && hasUnfinishedTurnMoves) {
               this.currentSeconds = data.currentSeconds;
               this.players = data.players;
@@ -1021,7 +1014,7 @@
               return;
             }
 
-            // 若剛好輪到我的新回合開始 (Turn 切換)
+            // 若切換到了我的回合
             if (data.turnIndex === this.myPlayerId && this.turnIndex !== this.myPlayerId) {
               this.turnIndex = data.turnIndex;
               this.currentSeconds = data.currentSeconds;
@@ -1040,6 +1033,7 @@
               this.playedTilesThisTurn = [];
               this.selectedHandIndices.clear();
               this.selectedTableTile = null;
+              this.sound.myTurnChime();
               this.showToast('輪到您的回合！', '🔔');
               this.renderAll();
               return;
@@ -1076,12 +1070,6 @@
             this.triggerGameOverUI(data.winnerName, data.scoresSummary);
             break;
         }
-      }
-
-      hasDifferentCards(arrA, arrB) {
-        if (arrA.length !== arrB.length) return true;
-        const setA = new Set(arrA.map(t => t.id));
-        return arrB.some(t => !setA.has(t.id));
       }
 
       handlePlayerVisibility(visible) {
@@ -1133,11 +1121,11 @@
 
         const listEl = document.getElementById('waiting-players-list');
         listEl.innerHTML = this.players.map(p => `
-          <div class="flex items-center justify-between p-2 rounded-xl bg-slate-800/90 border border-slate-700">
-            <span class="flex items-center gap-2 text-xs font-bold ${p.uid === this.myUserId ? 'text-amber-300' : 'text-slate-200'}">
+          <div class="flex items-center justify-between p-1.5 rounded-xl bg-slate-800/90 border border-slate-700">
+            <span class="flex items-center gap-1.5 text-xs font-bold ${p.uid === this.myUserId ? 'text-amber-300' : 'text-slate-200'}">
               <span>${p.isHost ? '👑' : '👤'}</span> ${p.name}
             </span>
-            <span class="text-[10px] px-2 py-0.5 rounded-full ${p.isOnline ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-500/40' : 'bg-slate-700 text-slate-400'}">
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full ${p.isOnline ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-500/40' : 'bg-slate-700 text-slate-400'}">
               ${p.isOnline ? '已就緒' : '離線中'}
             </span>
           </div>
@@ -1175,6 +1163,7 @@
         }
 
         this.deck = this.generateDeck();
+        this.deckCount = this.deck.length;
         this.tableMelds = [];
         this.turnIndex = 0;
 
@@ -1186,6 +1175,7 @@
           }
         }
 
+        this.deckCount = this.deck.length;
         this.inGame = true;
         this.myHand = this.players[0].hand;
         this.enterGameView();
@@ -1408,6 +1398,7 @@
             tableMelds: JSON.parse(JSON.stringify(this.tableMelds)),
             playerBrokenIce: curPlayer.hasBrokenIce
           };
+          this.sound.myTurnChime();
           this.startTimerHost();
         } else if (curPlayer.isAI || curPlayer.isAITakeover || !curPlayer.isOnline) {
           clearInterval(this.timerInterval);
@@ -1450,7 +1441,7 @@
       }
 
       // ========================================================
-      // 【出牌與桌面牌移動系統 (徹底消除失誤)】
+      // 【出牌操作與手牌過濾 (防重複出牌)】
       // ========================================================
 
       onHandTileClick(tileIndex) {
@@ -1472,7 +1463,6 @@
         this.renderAll();
       }
 
-      // 點擊桌面背景：將選取的手牌或桌面牌獨立為新牌組
       onTableBackgroundClick(event) {
         if (!this.isMyTurn()) return;
         if (event.target.id === 'table-melds' || event.target.classList.contains('new-meld-zone')) {
@@ -1501,6 +1491,7 @@
 
         if (tilesToPlay.length === 0) return;
 
+        // 嚴格 ID 集合過濾扣減手牌
         const newHand = hand.filter(t => !tileIds.has(t.id));
         if (this.isHost) this.players[0].hand = newHand;
         else this.myHand = newHand;
@@ -1516,12 +1507,10 @@
         this.renderAll();
       }
 
-      // 點擊桌面牌組外框：加入選取的手牌或移動的桌面牌
       onMeldGroupClick(targetMeldIdx, event) {
         if (!this.isMyTurn()) return;
         if (event) event.stopPropagation();
 
-        // 1. 若手牌有多選 -> 加入並自動排序
         if (this.selectedHandIndices.size > 0) {
           const hand = this.getMyHand();
           const tilesToAdd = [];
@@ -1552,7 +1541,6 @@
           return;
         }
 
-        // 2. 若桌面牌被選取 -> 安全以 tile.id 移動至目標牌組
         if (this.selectedTableTile) {
           const tileId = this.selectedTableTile.id;
           this.moveTableTileById(tileId, targetMeldIdx);
@@ -1562,13 +1550,11 @@
         }
       }
 
-      // 點擊桌面牌：選取該牌，或若已選取其他牌則進行重組
       onTableTileClick(meldIndex, tileIndex, event) {
         if (!this.isMyTurn()) return;
         event.stopPropagation();
         this.sound.tileClick();
 
-        // 若手牌已有多選 -> 將手牌加入該組
         if (this.selectedHandIndices.size > 0) {
           this.onMeldGroupClick(meldIndex, event);
           return;
@@ -1578,10 +1564,8 @@
 
         if (this.selectedTableTile) {
           if (this.selectedTableTile.id === clickedTile.id) {
-            // 點擊同一張牌 -> 取消選取
             this.selectedTableTile = null;
           } else {
-            // 將先前選取的牌移動至當前點擊的牌組
             const tileId = this.selectedTableTile.id;
             this.moveTableTileById(tileId, meldIndex, tileIndex);
             this.selectedTableTile = null;
@@ -1598,7 +1582,6 @@
         this.renderAll();
       }
 
-      // 100% 絕對安全以 tile.id 移動桌面牌 (杜絕 index 偏差)
       moveTableTileById(tileId, targetMeldIdx, targetTileIdx = null) {
         let foundTile = null;
         let srcMeldIdx = -1;
@@ -1633,7 +1616,6 @@
         this.cleanEmptyMelds();
       }
 
-      // 將選取的桌面牌獨立為新牌組
       extractSelectedTableTileToNewMeld() {
         if (!this.selectedTableTile) return;
         this.moveTableTileById(this.selectedTableTile.id, -1);
@@ -1643,7 +1625,6 @@
         this.renderAll();
       }
 
-      // 收回選取的桌面牌到手牌
       takeBackSelectedTableTile() {
         if (!this.selectedTableTile) return;
         const tileId = this.selectedTableTile.id;
@@ -1721,7 +1702,8 @@
           this.tableMelds = JSON.parse(JSON.stringify(this.turnSnapshot.tableMelds));
           this.players[0].hasBrokenIce = this.turnSnapshot.playerBrokenIce;
         } else {
-          this.broadcastState();
+          this.myHand = JSON.parse(JSON.stringify(this.turnSnapshot.hand));
+          this.tableMelds = JSON.parse(JSON.stringify(this.turnSnapshot.tableMelds));
         }
         this.playedTilesThisTurn = [];
         this.selectedHandIndices.clear();
@@ -1730,15 +1712,11 @@
         this.renderAll();
       }
 
-      // ========================================================
-      // 【理牌系統：完美支援所有房客與房主】
-      // ========================================================
       sortHand(mode) {
         this.handSortMode = mode;
         const hand = this.getMyHand();
         this.executeSortHandArray(hand, mode);
 
-        // 若是房客，將排序後的順序同步給房主
         if (!this.isHost && this.hostConn && this.hostConn.open) {
           this.hostConn.send({
             type: 'CLIENT_HAND_ORDER',
@@ -1771,9 +1749,6 @@
         }
       }
 
-      // ========================================================
-      // 【結束回合整合邏輯 (自動判斷摸牌與出牌)】
-      // ========================================================
       handleUnifiedEndTurn() {
         if (!this.isMyTurn()) return;
 
@@ -1840,7 +1815,6 @@
           this.showToast('出牌成功！回合結束', '✅');
           this.advanceTurnHost();
         } else {
-          // 房客提交
           if (this.hostConn && this.hostConn.open) {
             this.hostConn.send({
               type: 'ACTION_END_TURN',
@@ -1850,6 +1824,7 @@
               tableMelds: this.tableMelds,
               remainingHand: this.myHand
             });
+            this.playedTilesThisTurn = [];
           }
         }
       }
@@ -1916,7 +1891,7 @@
             aiPlayer.hasBrokenIce = true;
             playedAny = true;
             this.sound.iceBreak();
-            this.showToast(`${aiPlayer.name} (託管) 破冰打出 ${totalVal} 分！`, '☀️');
+            this.showToast(`${aiPlayer.name} 破冰打出 ${totalVal} 分！`, '☀️');
           }
         } else {
           const handMelds = this.findHandMelds(aiPlayer.hand);
@@ -1957,7 +1932,7 @@
         if (!playedAny) {
           if (this.deck.length > 0) {
             aiPlayer.hand.push(this.deck.pop());
-            this.showToast(`${aiPlayer.name} (託管) 摸了一張牌`, '🃏');
+            this.showToast(`${aiPlayer.name} 摸了一張牌`, '🃏');
           }
         }
 
@@ -2062,7 +2037,7 @@
       }
 
       // ========================================================
-      // 【UI 畫面渲染與超精簡手機佈局】
+      // 【UI 即時渲染：牌池同步 + 大字回合橫幅 + 牌架高亮】
       // ========================================================
       renderAll() {
         this.renderTurnInfo();
@@ -2076,25 +2051,40 @@
       renderTurnInfo() {
         if (!this.inGame || this.players.length === 0) return;
         const curPlayer = this.players[this.turnIndex] || { name: '等待中' };
-        const avatarEl = document.getElementById('turn-avatar');
-        const textEl = document.getElementById('turn-text');
-        const bannerEl = document.getElementById('turn-banner');
-
         const isMine = this.isMyTurn();
-        avatarEl.textContent = isMine ? '👤' : (curPlayer.isAI || curPlayer.isAITakeover ? '🤖' : '👥');
-        textEl.textContent = isMine ? '您的回合' : `${curPlayer.name}`;
+
+        // 1. 【核心修復：精確同步牌池數量】
+        const displayDeck = this.isHost ? this.deck.length : (this.deckCount !== undefined ? this.deckCount : 0);
+        document.getElementById('deck-count').textContent = displayDeck;
+
+        // 2. 【核心修復：極致顯眼之當前行動指示橫幅】
+        const bigBanner = document.getElementById('big-turn-banner');
+        const bigIcon = document.getElementById('big-turn-icon');
+        const bigText = document.getElementById('big-turn-text');
+        const timerText = document.getElementById('timer-text');
+        const rackEl = document.getElementById('tile-rack-container');
 
         if (isMine) {
-          bannerEl.className = 'flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-900/80 border border-emerald-500/50 text-emerald-200 text-xs font-bold shadow animate-pulse';
+          // 輪到我：璀璨綠色高亮動畫 + 牌架發光
+          bigBanner.className = 'flex-shrink-0 px-3 py-1 flex items-center justify-between text-xs sm:text-sm font-black shadow transition-all duration-300 min-h-[30px] bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white animate-pulse border-y border-emerald-400/60';
+          bigIcon.textContent = '🎯';
+          bigText.textContent = '【輪到您了！】點選手牌出牌，或點「結束回合」';
+          rackEl.classList.add('my-turn-active');
           document.getElementById('btn-end-turn').disabled = false;
           document.getElementById('btn-undo').disabled = false;
         } else {
-          bannerEl.className = 'flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-700/80 border border-slate-600 text-slate-300 text-xs font-bold shadow';
+          // 輪到別人：深藍沉穩提示
+          bigBanner.className = 'flex-shrink-0 px-3 py-1 flex items-center justify-between text-xs sm:text-sm font-bold shadow transition-all duration-300 min-h-[30px] bg-slate-800 text-slate-300 border-y border-slate-700/80';
+          bigIcon.textContent = (curPlayer.isAI || curPlayer.isAITakeover) ? '🤖' : '⏳';
+          bigText.textContent = `等待【${curPlayer.name}】出牌中...`;
+          rackEl.classList.remove('my-turn-active');
           document.getElementById('btn-end-turn').disabled = true;
           document.getElementById('btn-undo').disabled = true;
         }
 
-        document.getElementById('deck-count').textContent = this.deck.length || (this.players.length >= 5 ? 160 : 106);
+        timerText.textContent = (this.currentSeconds > 0) ? `${this.currentSeconds}s` : '無限制';
+
+        // 3. 手牌數與破冰提示
         const myHand = this.getMyHand();
         document.getElementById('player-tile-count').textContent = myHand.length;
 
@@ -2122,8 +2112,6 @@
         } else {
           playedInfoEl.classList.add('hidden');
         }
-
-        document.getElementById('timer-text').textContent = (this.currentSeconds > 0) ? `${this.currentSeconds}s` : '無限制';
       }
 
       renderUnifiedEndTurnButton() {
@@ -2133,19 +2121,18 @@
         const sub = document.getElementById('end-turn-sub');
 
         if (this.playedTilesThisTurn.length > 0) {
-          btn.className = 'px-4 sm:px-6 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black shadow-lg transition flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white';
+          btn.className = 'px-3.5 sm:px-6 py-1 sm:py-1.5 rounded-xl text-xs sm:text-sm font-black shadow-lg transition flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white';
           icon.textContent = '✅';
           title.textContent = '結束回合';
           sub.textContent = `送出 ${this.playedTilesThisTurn.length} 張`;
         } else {
-          btn.className = 'px-4 sm:px-6 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-black shadow-lg transition flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white';
+          btn.className = 'px-3.5 sm:px-6 py-1 sm:py-1.5 rounded-xl text-xs sm:text-sm font-black shadow-lg transition flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white';
           icon.textContent = '🃏';
           title.textContent = '結束回合';
           sub.textContent = '自動摸牌';
         }
       }
 
-      // 手機版超精簡對手列膠囊樣式
       renderOpponents() {
         const container = document.getElementById('opponents-container');
         const otherPlayers = this.players.filter(p => p.uid !== this.myUserId);
@@ -2156,11 +2143,12 @@
           return `
             <div class="flex items-center gap-1 px-2 py-0.5 rounded-full border transition text-[11px] ${
               isCurrentTurn 
-                ? 'bg-amber-950/80 border-amber-500 shadow ring-1 ring-amber-400' 
+                ? 'bg-amber-950/90 border-amber-400 shadow-md ring-1 ring-amber-400' 
                 : 'bg-slate-800 border-slate-700'
             }">
               <span class="text-xs">${p.isAITakeover ? '🤖' : (p.isOnline ? '👤' : '💤')}</span>
               <span class="font-bold text-slate-200 truncate max-w-[65px] sm:max-w-[100px]">${p.name}</span>
+              ${isCurrentTurn ? '<span class="text-[9px] px-1 rounded bg-amber-500 text-slate-900 font-black animate-pulse">出牌中</span>' : ''}
               <span class="font-mono text-amber-300 font-extrabold">${handCount}張</span>
               <span class="text-[9px] px-1 rounded ${p.hasBrokenIce ? 'bg-amber-900/60 text-amber-300' : 'bg-cyan-950 text-cyan-400'}">
                 ${p.hasBrokenIce ? '☀️' : '❄️'}
@@ -2178,7 +2166,7 @@
           const check = this.validateMeld(meld);
           const isInvalid = !check.valid && meld.length > 0;
           html += `
-            <div class="meld-group flex flex-wrap items-center gap-1 min-h-[52px] sm:min-h-[64px] min-w-[90px] ${isInvalid ? 'invalid' : ''}" 
+            <div class="meld-group flex flex-wrap items-center gap-1 min-h-[46px] sm:min-h-[58px] min-w-[80px] ${isInvalid ? 'invalid' : ''}" 
                  onclick="netGame.onMeldGroupClick(${meldIdx}, event)" 
                  ondragover="netGame.onDragOver(event)" 
                  ondrop="netGame.onDropToMeld(event, ${meldIdx})">
@@ -2216,10 +2204,10 @@
 
         const hasSelection = (this.selectedHandIndices.size > 0 || this.selectedTableTile !== null);
         html += `
-          <div class="new-meld-zone flex items-center justify-center p-2 min-h-[52px] sm:min-h-[64px] min-w-[90px] cursor-pointer ${hasSelection ? 'highlight animate-pulse' : ''}"
+          <div class="new-meld-zone flex items-center justify-center p-1.5 min-h-[46px] sm:min-h-[58px] min-w-[80px] cursor-pointer ${hasSelection ? 'highlight animate-pulse' : ''}"
                onclick="netGame.onTableBackgroundClick(event)"
                title="點擊此處建立新牌組">
-            <span class="text-[11px] font-bold text-emerald-300 flex items-center gap-0.5 pointer-events-none">
+            <span class="text-[10px] sm:text-xs font-bold text-emerald-300 flex items-center gap-0.5 pointer-events-none">
               <span>➕</span> ${hasSelection ? '點此打出為新組' : '新牌區'}
             </span>
           </div>
@@ -2249,7 +2237,6 @@
       }
 
       renderQuickBars() {
-        // 1. 桌面牌快速控制列
         const tableBar = document.getElementById('table-tile-actions-bar');
         if (this.selectedTableTile && this.isMyTurn()) {
           tableBar.classList.remove('hidden');
@@ -2264,7 +2251,6 @@
           tableBar.classList.add('hidden');
         }
 
-        // 2. 手牌多選快速出牌列
         const quickBar = document.getElementById('quick-play-bar');
         const count = this.selectedHandIndices.size;
 
@@ -2287,11 +2273,11 @@
         if (check.valid) {
           validationEl.className = 'ml-1 px-1.5 py-0.2 rounded-full font-bold bg-emerald-900 text-emerald-200 border border-emerald-500/40 text-[10px]';
           validationEl.textContent = `✅ 合法${check.type === 'run' ? '順組' : '群組'} (${check.value || 0}分)`;
-          btnPlay.className = 'px-3 py-1 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white rounded-lg text-xs font-black shadow flex items-center gap-1 animate-pulse';
+          btnPlay.className = 'px-2.5 py-0.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white rounded text-xs font-black shadow';
         } else {
           validationEl.className = 'ml-1 px-1.5 py-0.2 rounded-full font-medium bg-slate-700 text-amber-300 border border-slate-600 text-[10px]';
-          validationEl.textContent = `⚠️ 可打出或點擊桌面牌組接牌`;
-          btnPlay.className = 'px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-semibold';
+          validationEl.textContent = `⚠️ 可直接打出或接牌`;
+          btnPlay.className = 'px-2 py-0.5 bg-slate-700 text-slate-200 rounded text-xs font-semibold';
         }
       }
 
@@ -2300,8 +2286,8 @@
         if (tile.isJoker) {
           return `
             <div class="rummi-tile ${isSelected ? 'selected' : ''}" onclick="${clickHandlerStr}" ${dragAttr}>
-              <span class="text-base sm:text-xl leading-none">😊</span>
-              <span class="text-[7px] sm:text-[8px] uppercase tracking-tighter text-purple-600 font-black mt-0.2">JOKER</span>
+              <span class="text-sm sm:text-lg leading-none">😊</span>
+              <span class="text-[7px] sm:text-[8px] uppercase tracking-tighter text-purple-600 font-black">JOKER</span>
             </div>
           `;
         }
@@ -2321,12 +2307,12 @@
         const toast = document.getElementById('toast');
         document.getElementById('toast-msg').textContent = msg;
         document.getElementById('toast-icon').textContent = icon;
-        toast.classList.remove('opacity-0', '-translate-y-3');
+        toast.classList.remove('opacity-0', '-translate-y-2');
         toast.classList.add('opacity-100', 'translate-y-0');
         clearTimeout(this.toastTimeout);
         this.toastTimeout = setTimeout(() => {
           toast.classList.remove('opacity-100', 'translate-y-0');
-          toast.classList.add('opacity-0', '-translate-y-3');
+          toast.classList.add('opacity-0', '-translate-y-2');
         }, 2200);
       }
     }
