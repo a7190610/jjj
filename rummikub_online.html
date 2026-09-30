@@ -239,14 +239,29 @@
 
       <!-- 等待大廳面板 -->
       <div id="panel-waiting-room" class="flex flex-col gap-3 text-left hidden border-t border-slate-700 pt-3">
-        <div class="bg-slate-900/90 p-2 rounded-2xl border border-amber-500/40 flex items-center justify-between">
-          <div class="flex flex-col">
-            <span class="text-[10px] text-slate-400 uppercase tracking-wider">房間亂碼房號</span>
-            <span id="waiting-room-code" class="text-lg font-mono font-black text-amber-300 tracking-wider">------</span>
+        <!-- 房號與雙重分享卡片 (保留複製純房號 + 新增一鍵分享/複製網址) -->
+        <div class="bg-slate-900/90 p-2.5 rounded-2xl border border-amber-500/40 flex flex-col gap-2">
+          <div class="flex items-center justify-between">
+            <div class="flex flex-col">
+              <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">房間亂碼房號</span>
+              <span id="waiting-room-code" class="text-xl font-mono font-black text-amber-300 tracking-wider">------</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <!-- 保留原本的複製純房號按鈕 -->
+              <button onclick="netGame.copyRoomCode()" class="px-2.5 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs rounded-xl font-bold transition flex items-center gap-1 border border-slate-600 shadow" title="複製 5 碼純房號代碼">
+                <span>📋</span> 複製房號
+              </button>
+              <!-- 新增分享房間專屬連結按鈕 (支援原生分享或一鍵複製完整網址) -->
+              <button onclick="netGame.shareRoomLink()" class="px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 text-white text-xs rounded-xl font-black transition flex items-center gap-1 shadow-lg transform hover:scale-[1.02]" title="直接分享專屬房間連結">
+                <span>🔗</span> 分享房間連結
+              </button>
+            </div>
           </div>
-          <button onclick="netGame.copyRoomCode()" class="px-2 py-1 bg-amber-600/80 hover:bg-amber-500 text-white text-xs rounded-lg font-bold transition flex items-center gap-1">
-            <span>📋</span> 複製
-          </button>
+          <!-- 專屬連結預覽與一鍵複製列 -->
+          <div class="bg-slate-800/80 px-2 py-1.5 rounded-xl border border-slate-700 text-[10px] text-slate-300 flex items-center justify-between gap-1 overflow-hidden">
+            <span class="truncate font-mono text-slate-400" id="waiting-room-url-preview">https://...</span>
+            <button onclick="netGame.copyRoomLink()" class="text-amber-400 hover:text-amber-300 font-bold whitespace-nowrap text-[10px] bg-slate-700 px-1.5 py-0.5 rounded border border-slate-600">複製網址</button>
+          </div>
         </div>
 
         <div>
@@ -286,7 +301,8 @@
       </h1>
       <div class="flex items-center gap-1 text-[10px] sm:text-xs bg-slate-700/80 px-1.5 py-0.5 rounded border border-slate-600 text-slate-300">
         <span>房:</span>
-        <span id="game-room-code-tag" class="font-mono font-bold text-amber-300">-----</span>
+        <span id="game-room-code-tag" class="font-mono font-bold text-amber-300 cursor-pointer hover:underline" onclick="netGame.shareRoomLink()" title="點擊分享專屬邀請連結">-----</span>
+        <button onclick="netGame.shareRoomLink()" class="text-amber-400 hover:text-amber-300 ml-0.5" title="分享房間連結">🔗</button>
         <span class="text-slate-500">|</span>
         <span>牌池:</span>
         <span id="deck-count" class="font-bold text-amber-300">106</span>
@@ -495,6 +511,57 @@
     </div>
   </div>
 
+  <!-- 專屬分享房間彈窗 Modal (開啟房間後自動彈出，好友點擊直達房間) -->
+  <div id="modal-share-room" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-[75] hidden">
+    <div class="bg-slate-800 border-2 border-amber-500/80 rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl flex flex-col gap-3.5 text-center">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+        <h2 class="text-base sm:text-lg font-black text-amber-300 flex items-center gap-2">
+          <span>🎉</span> 房間已開啟！邀請好友加入
+        </h2>
+        <button onclick="netGame.closeShareModal()" class="text-slate-400 hover:text-white text-lg font-bold p-1">✕</button>
+      </div>
+
+      <!-- 房號大字顯示 -->
+      <div class="bg-slate-900/90 p-3 rounded-2xl border border-slate-700 flex flex-col items-center gap-0.5">
+        <span class="text-xs text-slate-400 font-bold">房間代碼</span>
+        <span id="modal-share-room-code" class="text-3xl font-mono font-black text-amber-300 tracking-widest">------</span>
+      </div>
+
+      <!-- 專屬直達邀請網址框 -->
+      <div class="flex flex-col gap-1 text-left">
+        <label class="text-xs font-bold text-slate-300 flex items-center justify-between">
+          <span>🔗 專屬直達網址（點擊自動帶入房號）</span>
+        </label>
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-2.5 flex items-center justify-between gap-2">
+          <input id="modal-share-url-input" type="text" readonly class="bg-transparent text-xs font-mono text-emerald-300 w-full focus:outline-none select-all" value="">
+        </div>
+        <p class="text-[11px] text-slate-400 leading-tight">
+          💡 好友點開此連結，系統將<b>直接自動帶入房號並進入房間</b>，無須手動輸入！
+        </p>
+      </div>
+
+      <!-- 操作按鈕：複製邀請網址、分享至 LINE / 原生分享 -->
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button onclick="netGame.copyRoomLink()" class="py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white font-extrabold rounded-xl shadow-lg transition flex items-center justify-center gap-1.5 text-xs sm:text-sm">
+          <span>🔗</span> 複製邀請網址
+        </button>
+        <button onclick="netGame.shareRoomNativeOrLine()" class="py-2.5 px-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 text-white font-extrabold rounded-xl shadow-lg transition flex items-center justify-center gap-1.5 text-xs sm:text-sm">
+          <span>💬</span> 分享至 LINE
+        </button>
+      </div>
+
+      <!-- 原本的複製純房號按鈕 (100% 保留) -->
+      <div class="pt-2 border-t border-slate-700/80 flex items-center justify-between gap-2">
+        <button onclick="netGame.copyRoomCode()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs rounded-xl font-bold transition flex items-center gap-1 border border-slate-600 shadow">
+          <span>📋</span> 保留原功能：僅複製純房號
+        </button>
+        <button onclick="netGame.closeShareModal()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-xl font-bold transition">
+          我知道了
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- 獲勝結算彈窗 Modal -->
   <div id="modal-gameover" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 z-50 hidden">
     <div class="bg-slate-800 border-2 border-amber-500 rounded-3xl max-w-md w-full p-5 shadow-2xl flex flex-col items-center gap-3 text-center">
@@ -652,6 +719,36 @@
         if (lastRoom) {
           document.getElementById('input-room-code').value = lastRoom;
         }
+
+        // 偵測網址參數是否帶入房號 (?room=XXXXX 或 ?r=XXXXX 或 #XXXXX)
+        this.checkUrlRoomParam();
+      }
+
+      checkUrlRoomParam() {
+        const urlParams = new URLSearchParams(window.location.search);
+        let code = urlParams.get('room') || urlParams.get('r');
+        if (!code && window.location.hash) {
+          const hashVal = window.location.hash.replace('#', '').trim();
+          if (hashVal.startsWith('room=')) code = hashVal.replace('room=', '');
+          else if (hashVal.length >= 4 && hashVal.length <= 8) code = hashVal;
+        }
+
+        if (code) {
+          code = code.trim().toUpperCase();
+          const roomInput = document.getElementById('input-room-code');
+          if (roomInput) roomInput.value = code;
+
+          // 自動切換到加入房間面板並提示
+          this.showJoinRoomPanel();
+          this.showToast(`已自動帶入邀請房號【${code}】！`, '🔗');
+
+          // 自動連線加入房間
+          setTimeout(() => {
+            if (!this.inGame && !this.roomCode) {
+              this.joinRoom(code);
+            }
+          }, 600);
+        }
       }
 
       generateRandomNickname() {
@@ -734,6 +831,8 @@
           this.enterWaitingRoom();
           sessionStorage.setItem('rmk_current_room', this.roomCode);
           this.showToast(`房間已建立！房號：${this.roomCode}`, '🎉');
+          // 開啟房間後直接自動彈出專屬直達網址分享視窗！
+          setTimeout(() => { this.openShareModal(); }, 250);
         });
 
         this.peer.on('error', (err) => {
@@ -746,8 +845,12 @@
         });
       }
 
-      joinRoom() {
-        const codeInput = document.getElementById('input-room-code').value.trim().toUpperCase();
+      joinRoom(targetCode = null) {
+        let codeInput = (typeof targetCode === 'string' && targetCode) ? targetCode : null;
+        if (!codeInput) {
+          const inputEl = document.getElementById('input-room-code');
+          codeInput = inputEl ? inputEl.value.trim().toUpperCase() : '';
+        }
         if (codeInput.length < 4) {
           this.showToast('請輸入有效房號！', '⚠️');
           return;
@@ -1203,6 +1306,10 @@
         document.getElementById('waiting-room-code').textContent = this.roomCode;
         document.getElementById('game-room-code-tag').textContent = this.roomCode;
 
+        const shareUrl = this.getRoomShareUrl();
+        const previewEl = document.getElementById('waiting-room-url-preview');
+        if (previewEl) previewEl.textContent = shareUrl;
+
         if (this.isHost) {
           document.getElementById('btn-host-start').classList.remove('hidden');
           document.getElementById('waiting-guest-hint').classList.add('hidden');
@@ -1229,12 +1336,81 @@
         `).join('');
       }
 
+      getRoomShareUrl() {
+        const origin = window.location.origin;
+        const pathname = window.location.pathname;
+        if (origin && origin !== 'null' && !origin.startsWith('file:')) {
+          return `${origin}${pathname}?room=${this.roomCode}`;
+        }
+        // 若在本地 file:// 測試，直接採用您實際部屬之 GitHub Pages 網址
+        return `https://a7190610.github.io/jjj/rummikub_online.html?room=${this.roomCode}`;
+      }
+
+      openShareModal() {
+        const modal = document.getElementById('modal-share-room');
+        if (!modal) return;
+        document.getElementById('modal-share-room-code').textContent = this.roomCode;
+        const shareUrl = this.getRoomShareUrl();
+        const urlInput = document.getElementById('modal-share-url-input');
+        if (urlInput) urlInput.value = shareUrl;
+        modal.classList.remove('hidden');
+      }
+
+      closeShareModal() {
+        const modal = document.getElementById('modal-share-room');
+        if (modal) modal.classList.add('hidden');
+      }
+
+      shareRoomNativeOrLine() {
+        const shareUrl = this.getRoomShareUrl();
+        const shareText = `快來加入我的拉密 (Rummikub) 線上房間！房號【${this.roomCode}】，點擊連結立即進入：\n${shareUrl}`;
+
+        // 若支援原生分享選單 (手機)，優先開啟原生分享
+        if (navigator.share && navigator.canShare && navigator.canShare({ title: '拉密房間邀請', text: shareText, url: shareUrl })) {
+          navigator.share({
+            title: '拉密房間邀請',
+            text: shareText,
+            url: shareUrl
+          }).catch((err) => {
+            if (err.name !== 'AbortError') {
+              // 轉至 LINE 分享
+              window.open(`https://line.me/R/msg/text/?${encodeURIComponent(shareText)}`, '_blank');
+            }
+          });
+        } else {
+          // 直接透過 LINE 分享協定開啟
+          window.open(`https://line.me/R/msg/text/?${encodeURIComponent(shareText)}`, '_blank');
+        }
+      }
+
+      shareRoomLink() {
+        // 直接彈出專屬直達邀請網址彈窗
+        this.openShareModal();
+      }
+
+      copyRoomLink() {
+        const shareUrl = this.getRoomShareUrl();
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(shareUrl).then(() => {
+            this.showToast(`已複製專屬邀請連結！`, '🔗');
+          }).catch(() => {
+            prompt('請複製以下專屬房間連結：', shareUrl);
+          });
+        } else {
+          prompt('請複製以下專屬房間連結：', shareUrl);
+        }
+      }
+
       copyRoomCode() {
-        navigator.clipboard.writeText(this.roomCode).then(() => {
-          this.showToast(`房號【${this.roomCode}】已複製！`, '📋');
-        }).catch(() => {
-          this.showToast(`房號為：${this.roomCode}`, '📋');
-        });
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(this.roomCode).then(() => {
+            this.showToast(`純房號【${this.roomCode}】已複製！`, '📋');
+          }).catch(() => {
+            prompt('請手動複製房號：', this.roomCode);
+          });
+        } else {
+          prompt('請手動複製房號：', this.roomCode);
+        }
       }
 
       hostStartGame() {
