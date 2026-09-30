@@ -136,7 +136,7 @@
       border-radius: 8px;
       transition: all 0.15s;
     }
-    .new-meld-zone:hover, .new-meld-zone.highlight {
+    .new-meld-zone:hover, .new-meld-zone.highlight, .new-meld-zone.drag-hover {
       border-color: rgba(16, 185, 129, 0.9);
       background: rgba(16, 185, 129, 0.2);
     }
@@ -180,6 +180,12 @@
           <span class="text-xs sm:text-sm">加入房間</span>
         </button>
       </div>
+
+      <!-- 大廳規則說明按鈕 -->
+      <button onclick="netGame.openRulesModal()" class="w-full py-2 px-3 bg-slate-700/80 hover:bg-slate-700 text-slate-200 border border-slate-600 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 shadow transition">
+        <span>📖</span>
+        <span>完整遊戲規則說明</span>
+      </button>
 
       <!-- 開設房間設定面板 -->
       <div id="panel-create-room" class="flex flex-col gap-3 text-left hidden border-t border-slate-700 pt-3">
@@ -372,11 +378,11 @@
     <span id="toast-msg">提示訊息</span>
   </div>
 
-  <!-- 5. 【底部手牌架與操作面板】(100% 固定在手機畫面底端，絕不出螢幕外) -->
-  <footer class="flex-shrink-0 bg-slate-800 border-t border-slate-700 shadow-2xl p-1 sm:p-2 z-30">
+  <!-- 5. 【底部手牌架與操作面板】(手機版雙層自適應 + 安全邊距防卡底 + 手牌直打按鈕) -->
+  <footer class="flex-shrink-0 bg-slate-800/98 backdrop-blur border-t border-slate-700 shadow-2xl p-1.5 sm:p-2 z-30 pb-[max(12px,env(safe-area-inset-bottom))]">
     <div class="max-w-7xl mx-auto flex flex-col gap-1">
       
-      <!-- 手牌數量與破冰狀態一行搞定 -->
+      <!-- 手牌數量、破冰狀態與快速出牌按鈕 -->
       <div class="flex items-center justify-between gap-1 px-1 text-xs">
         <div class="flex items-center gap-1.5 flex-wrap">
           <span class="font-bold text-amber-300 text-xs flex items-center gap-0.5">
@@ -389,14 +395,25 @@
             已出 <span id="turn-played-count">0</span> 張 (<span id="turn-played-points">0</span>分)
           </span>
         </div>
+
+        <!-- 手牌選取時直接浮現快速打出鍵 -->
+        <div id="hand-action-bar" class="flex items-center gap-1 hidden">
+          <button onclick="netGame.playSelectedAsNewMeld()" id="btn-play-from-hand" class="px-2.5 py-0.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white rounded-lg text-xs font-black shadow flex items-center gap-1 animate-pulse">
+            <span>🚀</span> <span>打出到桌面</span>
+          </button>
+          <button onclick="netGame.clearSelection()" class="px-1.5 py-0.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-xs">
+            ✕
+          </button>
+        </div>
+
         <div id="ai-takeover-warning" class="text-amber-400 font-bold hidden text-[10px] bg-amber-950 px-1 rounded animate-pulse">
           🤖 電腦託管中
         </div>
       </div>
 
-      <!-- 手牌架本體 (緊湊固定高度橫向滑動) -->
-      <div id="tile-rack-container" class="tile-rack p-1 sm:p-1.5 min-h-[50px] sm:min-h-[66px] flex items-center overflow-x-auto shadow-inner" ondragover="netGame.onDragOver(event)" ondrop="netGame.onDropToHand(event)">
-        <div id="player-hand" class="flex flex-nowrap items-center gap-1 sm:gap-1.5 min-w-full"></div>
+      <!-- 手牌架本體 (雙層自適應排列 + 觸控拖曳支援) -->
+      <div id="tile-rack-container" class="tile-rack p-1.5 sm:p-2 min-h-[52px] max-h-[105px] sm:max-h-[125px] flex items-start overflow-y-auto shadow-inner" ondragover="netGame.onDragOver(event)" ondrop="netGame.onDropToHand(event)">
+        <div id="player-hand" class="flex flex-wrap content-start items-center gap-1 sm:gap-1.5 w-full"></div>
       </div>
 
       <!-- 控制按鈕列 -->
@@ -426,20 +443,54 @@
     </div>
   </footer>
 
-  <!-- 規則彈窗 Modal -->
-  <div id="modal-rules" class="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 z-50 hidden">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-4 shadow-2xl flex flex-col gap-2.5 max-h-[85vh] overflow-y-auto">
-      <div class="flex items-center justify-between border-b border-slate-700 pb-1.5">
-        <h2 class="text-base font-black text-amber-300">📖 拉密遊戲規則</h2>
-        <button onclick="netGame.closeRulesModal()" class="text-slate-400 hover:text-white text-base">✕</button>
+  <!-- 規則彈窗 Modal (恢復完整拉密規則，提升至 z-[70] 確保大廳與遊戲中皆可顯示) -->
+  <div id="modal-rules" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-[70] hidden">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-xl w-full p-4 sm:p-6 shadow-2xl flex flex-col gap-3 max-h-[88vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+        <h2 class="text-base sm:text-lg font-black text-amber-300 flex items-center gap-2">
+          <span>📖</span> 拉密 (Rummikub) 遊戲規則說明
+        </h2>
+        <button onclick="netGame.closeRulesModal()" class="text-slate-400 hover:text-white text-lg font-bold p-1">✕</button>
       </div>
-      <div class="space-y-2 text-xs text-slate-300 leading-relaxed">
-        <p>1. <b>破冰規則：</b>首次出牌點數需 >= 30 分，且僅限使用自己手牌，不可更動桌面。</p>
-        <p>2. <b>合法牌組：</b>群組（同數不同色 3~4 張）或順組（同色連號 3 張以上）。</p>
-        <p>3. <b>牌池與離線託管：</b>全場牌池即時同步；斷線或切換視窗由 AI 自動託管，重新連線立即恢復操作。</p>
+
+      <div class="space-y-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
+        <div>
+          <h3 class="font-bold text-amber-200 mb-0.5">1. 遊戲目標</h3>
+          <p>率先將自己手牌架上的所有拉密牌全部出完者獲勝！每位玩家初始分發 14 張手牌。</p>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-amber-200 mb-0.5">2. 合法牌組 (至少 3 張)</h3>
+          <ul class="list-disc pl-4 space-y-1">
+            <li><b class="text-blue-300">群組 (Group)：</b>同數字、不同顏色，3 張或 4 張（例如：紅7 + 藍7 + 黑7）。</li>
+            <li><b class="text-emerald-300">順組 (Run)：</b>同顏色、連續數字，至少 3 張（例如：藍4 + 藍5 + 藍6）。數字 1 只能接在 2 前，不可接在 13 後面。</li>
+            <li><b class="text-purple-300">百搭牌 (Joker)：</b>可代替任何顏色與數字。</li>
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-amber-200 mb-0.5">3. 破冰 (Initial Meld)</h3>
+          <p>第一次出牌需破冰：出牌點數總和必須 <b class="text-rose-400 font-bold">>= 30 點</b>，且<b class="text-rose-400 font-bold">僅能使用自己手牌</b>，不可動用桌面上的牌。</p>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-amber-200 mb-0.5">4. 牌型重組、接牌與拆分 (破冰後)</h3>
+          <p>破冰後，可以任意利用桌面上的既有牌組進行接牌、拆分、加入新牌或抽換百搭牌，只要回合結束時桌面上的每一組牌皆符合合法群組或順組即可。</p>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-amber-200 mb-0.5">5. 自動排序與結束回合</h3>
+          <p>出牌或移動牌後系統會<b>自動將所有牌組排列整齊</b>。若有打出手牌，點擊「結束回合」會驗證出牌；若本回合未出牌，點擊「結束回合」會自動摸一張牌並換下一位。</p>
+        </div>
+
+        <div>
+          <h3 class="font-bold text-amber-200 mb-0.5">6. 線上對戰與離線託管</h3>
+          <p>支援 2~6 人線上連線對戰，未滿人數自動由電腦 AI 補齊。當玩家切換視窗或網路斷線時，系統將自動啟動 AI 託管出牌；玩家重返網頁時立即無縫接回操作！</p>
+        </div>
       </div>
-      <div class="pt-1.5 border-t border-slate-700 text-right">
-        <button onclick="netGame.closeRulesModal()" class="px-3 py-1 bg-blue-600 text-white rounded text-xs font-bold">我知道了</button>
+
+      <div class="pt-2 border-t border-slate-700 text-right">
+        <button onclick="netGame.closeRulesModal()" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs sm:text-sm font-bold shadow transition">我知道了</button>
       </div>
     </div>
   </div>
@@ -461,16 +512,27 @@
 
   <script>
     class SoundEngine {
-      constructor() { this.ctx = null; this.enabled = true; }
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
       init() {
         if (!this.ctx) {
           const AudioContext = window.AudioContext || window.webkitAudioContext;
-          if (AudioContext) this.ctx = new AudioContext();
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+      }
+      unlock() {
+        this.init();
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume().catch(() => {});
         }
       }
       playTone(freq, type, duration, delay = 0) {
         if (!this.enabled) return;
-        this.init();
+        this.unlock();
         if (!this.ctx) return;
         try {
           const osc = this.ctx.createOscillator();
@@ -478,7 +540,7 @@
           const startTime = this.ctx.currentTime + delay;
           osc.type = type;
           osc.frequency.setValueAtTime(freq, startTime);
-          gain.gain.setValueAtTime(0.12, startTime);
+          gain.gain.setValueAtTime(0.15, startTime);
           gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
           osc.connect(gain);
           gain.connect(this.ctx.destination);
@@ -486,16 +548,16 @@
           osc.stop(startTime + duration);
         } catch(e) {}
       }
-      tileClick() { this.playTone(600, 'triangle', 0.07); }
-      tilePlace() { this.playTone(420, 'sine', 0.09); }
+      tileClick() { this.playTone(600, 'triangle', 0.08); }
+      tilePlace() { this.playTone(420, 'sine', 0.1); }
       drawTile() { 
-        this.playTone(320, 'triangle', 0.08); 
-        this.playTone(480, 'triangle', 0.08, 0.06); 
+        this.playTone(320, 'triangle', 0.09); 
+        this.playTone(480, 'triangle', 0.09, 0.07); 
       }
       iceBreak() {
-        this.playTone(523, 'sine', 0.1, 0);
-        this.playTone(659, 'sine', 0.1, 0.08);
-        this.playTone(783, 'sine', 0.18, 0.16);
+        this.playTone(523, 'sine', 0.12, 0);
+        this.playTone(659, 'sine', 0.12, 0.1);
+        this.playTone(783, 'sine', 0.2, 0.2);
       }
       myTurnChime() {
         this.playTone(440, 'sine', 0.12, 0);
@@ -504,10 +566,12 @@
       }
       win() {
         [523, 659, 783, 1046].forEach((f, i) => {
-          this.playTone(f, 'triangle', 0.2, i * 0.12);
+          this.playTone(f, 'triangle', 0.25, i * 0.14);
         });
       }
-      error() { this.playTone(190, 'sawtooth', 0.2); }
+      error() {
+        this.playTone(190, 'sawtooth', 0.22);
+      }
     }
 
     class OnlineRummikubGame {
@@ -549,6 +613,18 @@
         this.turnSnapshot = { hand: [], tableMelds: [], playerBrokenIce: false };
 
         this.heartbeatTimer = null;
+        this.touchDragState = null;
+      }
+
+      toggleSound() {
+        this.sound.enabled = !this.sound.enabled;
+        const icon = document.getElementById('sound-icon');
+        if (icon) icon.textContent = this.sound.enabled ? '🔊' : '🔇';
+        this.showToast(this.sound.enabled ? '音效已開啟' : '音效已靜音', '🔔');
+        if (this.sound.enabled) {
+          this.sound.unlock();
+          this.sound.tileClick();
+        }
       }
 
       init() {
@@ -946,6 +1022,20 @@
         if (!data || !data.type) return;
 
         switch (data.type) {
+          case 'FORCE_TIMEOUT_UNDO':
+            this.showToast('回合時間已到！自動還原牌面並摸 1 張牌', '⏰');
+            this.sound.error();
+            this.myHand = data.hand || [];
+            this.tableMelds = data.tableMelds || [];
+            this.playedTilesThisTurn = [];
+            this.selectedHandIndices.clear();
+            this.selectedTableTile = null;
+            if (this.handSortMode) {
+              this.executeSortHandArray(this.myHand, this.handSortMode);
+            }
+            this.renderAll();
+            break;
+
           case 'JOIN_SUCCESS':
             this.roomCode = data.roomSettings.roomCode;
             this.targetPlayerCount = data.roomSettings.targetPlayerCount;
@@ -1012,6 +1102,13 @@
               this.players = data.players;
               this.renderTurnInfo();
               return;
+            }
+
+            // 若上一秒是我的回合，而現在不是我的回合 (例如超時被伺服端切換)，自動清空暫態出牌計數
+            if (this.turnIndex === this.myPlayerId && !isCurrentlyMyTurn) {
+              this.playedTilesThisTurn = [];
+              this.selectedHandIndices.clear();
+              this.selectedTableTile = null;
             }
 
             // 若切換到了我的回合
@@ -1392,12 +1489,14 @@
         this.selectedHandIndices.clear();
         this.selectedTableTile = null;
 
+        // 無論是房主還是訪客，都在房主端妥善保留本回合開始前的桌面與手牌快照！
+        this.turnSnapshot = {
+          hand: JSON.parse(JSON.stringify(curPlayer.hand || [])),
+          tableMelds: JSON.parse(JSON.stringify(this.tableMelds)),
+          playerBrokenIce: curPlayer.hasBrokenIce || false
+        };
+
         if (curPlayer.id === 0) {
-          this.turnSnapshot = {
-            hand: JSON.parse(JSON.stringify(curPlayer.hand)),
-            tableMelds: JSON.parse(JSON.stringify(this.tableMelds)),
-            playerBrokenIce: curPlayer.hasBrokenIce
-          };
           this.sound.myTurnChime();
           this.startTimerHost();
         } else if (curPlayer.isAI || curPlayer.isAITakeover || !curPlayer.isOnline) {
@@ -1431,12 +1530,33 @@
 
       handleTimeoutHost() {
         const curPlayer = this.players[this.turnIndex];
-        this.showToast(`${curPlayer.name} 回合超時，自動摸牌並換人`, '⏰');
+        this.showToast(`${curPlayer.name} 回合超時，自動還原牌面並摸牌`, '⏰');
         this.sound.error();
 
-        if (this.deck.length > 0) {
-          curPlayer.hand.push(this.deck.pop());
+        if (this.turnIndex === 0) {
+          // 房主自己回合超時：還原手牌與桌面牌組至本回合快照
+          this.undoTurn(false);
+          if (this.deck.length > 0) {
+            curPlayer.hand.push(this.deck.pop());
+          }
+        } else {
+          // 訪客回合超時：房主桌面還原至本回合快照，摸一張牌
+          this.tableMelds = JSON.parse(JSON.stringify(this.turnSnapshot.tableMelds));
+          if (this.deck.length > 0) {
+            curPlayer.hand.push(this.deck.pop());
+          }
+          // 通知訪客端立即同步還原手牌與桌面
+          const conn = this.connections.get(curPlayer.uid);
+          if (conn && conn.open) {
+            conn.send({
+              type: 'FORCE_TIMEOUT_UNDO',
+              playerId: curPlayer.id,
+              tableMelds: this.tableMelds,
+              hand: curPlayer.hand
+            });
+          }
         }
+
         this.advanceTurnHost();
       }
 
@@ -2252,7 +2372,13 @@
         }
 
         const quickBar = document.getElementById('quick-play-bar');
+        const handActionBar = document.getElementById('hand-action-bar');
         const count = this.selectedHandIndices.size;
+
+        if (handActionBar) {
+          if (count > 0 && this.isMyTurn()) handActionBar.classList.remove('hidden');
+          else handActionBar.classList.add('hidden');
+        }
 
         if (count === 0 || !this.isMyTurn()) {
           quickBar.classList.add('hidden');
@@ -2283,9 +2409,10 @@
 
       createTileHTML(tile, isSelected, clickHandlerStr, dragArgsStr = '') {
         const dragAttr = dragArgsStr ? `draggable="true" ondragstart="${dragArgsStr}"` : '';
+        const touchAttr = `ontouchstart="netGame.handleTouchTileStart(event)" ontouchmove="netGame.handleTouchTileMove(event)" ontouchend="netGame.handleTouchTileEnd(event)" data-tile-id="${tile.id}"`;
         if (tile.isJoker) {
           return `
-            <div class="rummi-tile ${isSelected ? 'selected' : ''}" onclick="${clickHandlerStr}" ${dragAttr}>
+            <div class="rummi-tile ${isSelected ? 'selected' : ''}" onclick="${clickHandlerStr}" ${dragAttr} ${touchAttr}>
               <span class="text-sm sm:text-lg leading-none">😊</span>
               <span class="text-[7px] sm:text-[8px] uppercase tracking-tighter text-purple-600 font-black">JOKER</span>
             </div>
@@ -2293,11 +2420,127 @@
         }
         const colorClass = `tile-${tile.color}`;
         return `
-          <div class="rummi-tile ${colorClass} ${isSelected ? 'selected' : ''}" onclick="${clickHandlerStr}" ${dragAttr}>
+          <div class="rummi-tile ${colorClass} ${isSelected ? 'selected' : ''}" onclick="${clickHandlerStr}" ${dragAttr} ${touchAttr}>
             <span>${tile.num}</span>
             <div class="w-1 sm:w-1.5 h-1 sm:h-1.5 rounded-full mt-0.5 bg-current opacity-70"></div>
           </div>
         `;
+      }
+
+      handleTouchTileStart(e) {
+        if (!this.isMyTurn()) return;
+        const touch = e.touches[0];
+        this.touchDragState = {
+          startX: touch.clientX,
+          startY: touch.clientY,
+          tileEl: e.currentTarget,
+          tileId: e.currentTarget.getAttribute('data-tile-id'),
+          isDragging: false,
+          startTime: Date.now()
+        };
+      }
+
+      handleTouchTileMove(e) {
+        if (!this.touchDragState) return;
+        const touch = e.touches[0];
+        const dx = touch.clientX - this.touchDragState.startX;
+        const dy = touch.clientY - this.touchDragState.startY;
+
+        if (!this.touchDragState.isDragging && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+          this.touchDragState.isDragging = true;
+          const proxy = this.touchDragState.tileEl.cloneNode(true);
+          proxy.id = 'touch-drag-proxy';
+          proxy.style.position = 'fixed';
+          proxy.style.pointerEvents = 'none';
+          proxy.style.zIndex = '9999';
+          proxy.style.opacity = '0.9';
+          proxy.style.transform = 'translate(-50%, -50%) scale(1.15)';
+          document.body.appendChild(proxy);
+        }
+
+        if (this.touchDragState.isDragging) {
+          e.preventDefault();
+          const proxy = document.getElementById('touch-drag-proxy');
+          if (proxy) {
+            proxy.style.left = `${touch.clientX}px`;
+            proxy.style.top = `${touch.clientY}px`;
+          }
+
+          const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+          document.querySelectorAll('.meld-group, .new-meld-zone').forEach(el => el.classList.remove('drag-hover'));
+          if (elemBelow) {
+            const targetMeld = elemBelow.closest('.meld-group, .new-meld-zone');
+            if (targetMeld) targetMeld.classList.add('drag-hover');
+          }
+        }
+      }
+
+      handleTouchTileEnd(e) {
+        if (!this.touchDragState) return;
+        const proxy = document.getElementById('touch-drag-proxy');
+        if (proxy) proxy.remove();
+        document.querySelectorAll('.meld-group, .new-meld-zone').forEach(el => el.classList.remove('drag-hover'));
+
+        if (this.touchDragState.isDragging) {
+          const touch = e.changedTouches[0];
+          const elemBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+          const tileId = this.touchDragState.tileId;
+
+          if (elemBelow) {
+            const meldGroup = elemBelow.closest('.meld-group');
+            const newZone = elemBelow.closest('.new-meld-zone') || elemBelow.closest('#table-melds');
+
+            if (meldGroup) {
+              const tagText = meldGroup.querySelector('span[class*="-top-1.5"]')?.textContent?.replace('#', '') || '0';
+              const meldIdx = parseInt(tagText) - 1;
+              if (meldIdx >= 0 && meldIdx < this.tableMelds.length) {
+                this.dropTileIdToMeld(tileId, meldIdx);
+              }
+            } else if (newZone) {
+              this.dropTileIdToNewMeld(tileId);
+            }
+          }
+        }
+        this.touchDragState = null;
+      }
+
+      dropTileIdToMeld(tileId, meldIdx) {
+        const hand = this.getMyHand();
+        const handIdx = hand.findIndex(t => t.id === tileId);
+        if (handIdx !== -1) {
+          const tile = hand.splice(handIdx, 1)[0];
+          this.playedTilesThisTurn.push(tile);
+          this.tableMelds[meldIdx].push(tile);
+          this.tableMelds[meldIdx] = this.sortMeldTiles(this.tableMelds[meldIdx]);
+          this.selectedHandIndices.clear();
+          this.sound.tilePlace();
+          this.showToast('已加入牌組 (自動排序)', '✨');
+          this.renderAll();
+          return;
+        }
+
+        this.moveTableTileById(tileId, meldIdx);
+        this.sound.tilePlace();
+        this.renderAll();
+      }
+
+      dropTileIdToNewMeld(tileId) {
+        const hand = this.getMyHand();
+        const handIdx = hand.findIndex(t => t.id === tileId);
+        if (handIdx !== -1) {
+          const tile = hand.splice(handIdx, 1)[0];
+          this.playedTilesThisTurn.push(tile);
+          this.tableMelds.push([tile]);
+          this.selectedHandIndices.clear();
+          this.sound.tilePlace();
+          this.showToast('已打出新牌組', '🚀');
+          this.renderAll();
+          return;
+        }
+
+        this.moveTableTileById(tileId, -1);
+        this.sound.tilePlace();
+        this.renderAll();
       }
 
       openRulesModal() { document.getElementById('modal-rules').classList.remove('hidden'); }
@@ -2318,8 +2561,19 @@
     }
 
     const netGame = new OnlineRummikubGame();
+    window.netGame = netGame;
+    window.game = netGame;
     window.addEventListener('DOMContentLoaded', () => {
       netGame.init();
+    });
+
+    // 全局手勢自動解鎖 Web Audio Context (相容 iOS Safari 與 Android 手機)
+    ['click', 'touchstart', 'touchend', 'pointerdown'].forEach(evtName => {
+      window.addEventListener(evtName, () => {
+        if (window.netGame && window.netGame.sound) {
+          window.netGame.sound.unlock();
+        }
+      }, { passive: true });
     });
   </script>
 </body>
