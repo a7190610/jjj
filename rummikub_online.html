@@ -324,11 +324,11 @@
 
   <!-- ==================== 視圖 2：線上遊戲對戰桌面 (100dvh 不滾動版面) ==================== -->
   
-  <!-- 1. 頂部狀態列 (高度 34px - 40px) -->
-  <header class="flex-shrink-0 bg-slate-800/95 backdrop-blur border-b border-slate-700 px-2 sm:px-4 py-1 flex items-center justify-between gap-1 shadow-md z-30 min-h-[34px] sm:min-h-[40px]">
-    <div class="flex items-center gap-1.5 sm:gap-2">
-      <!-- 經典拉密雙牌圖示 (替代撲克牌) -->
-      <div class="w-6 h-6 flex items-center justify-center flex-shrink-0">
+  <!-- 1. 頂部狀態列 (標題與按鈕整體適度調大，清晰大方好點選) -->
+  <header class="flex-shrink-0 bg-slate-800/95 backdrop-blur border-b border-slate-700 px-2.5 sm:px-4 py-1.5 flex items-center justify-between gap-1.5 shadow-md z-30 min-h-[44px] sm:min-h-[48px]">
+    <div class="flex items-center gap-2 sm:gap-2.5">
+      <!-- 經典拉密雙牌圖示 -->
+      <div class="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center flex-shrink-0">
         <svg viewBox="0 0 32 32" class="w-full h-full">
           <rect x="2" y="6" width="13" height="19" rx="2" fill="#fff" stroke="#d5c7b2" stroke-width="0.6"/>
           <text x="8.5" y="19" font-size="10" font-weight="900" fill="#dc2626" text-anchor="middle">7</text>
@@ -338,31 +338,31 @@
           <circle cx="19.5" cy="20" r="0.8" fill="#1d4ed8"/>
         </svg>
       </div>
-      <h1 class="font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-200 to-yellow-400 bg-clip-text text-transparent">
+      <h1 class="font-black text-sm sm:text-base bg-gradient-to-r from-amber-200 to-yellow-400 bg-clip-text text-transparent tracking-wide">
         拉密
       </h1>
-      <div class="flex items-center gap-1.5 text-[10px] sm:text-xs bg-slate-700/80 px-2 py-0.5 rounded border border-slate-600 text-slate-300">
+      <div class="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm bg-slate-700/80 px-2.5 py-1 rounded-lg border border-slate-600 text-slate-300">
         <span class="text-slate-400">房號:</span>
-        <span id="game-room-code-tag" class="font-mono font-bold text-amber-300 tracking-wider">-----</span>
+        <span id="game-room-code-tag" class="font-mono font-extrabold text-amber-300 tracking-wider">-----</span>
         <span class="text-slate-500">|</span>
         <span class="text-slate-400">牌池:</span>
-        <span id="deck-count" class="font-bold text-amber-300">106</span>
+        <span id="deck-count" class="font-extrabold text-amber-300">106</span>
       </div>
     </div>
 
-    <!-- 右側功能鍵 -->
-    <div class="flex items-center gap-1 sm:gap-1.5">
-      <!-- 電腦託管按鈕 (已移至音量開關左邊) -->
-      <button onclick="netGame.toggleManualTakeover()" id="btn-toggle-takeover" class="px-2 py-0.5 sm:py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs font-semibold border border-slate-600 shadow flex items-center gap-0.5" title="電腦託管：暫離/上洗手間時自動出牌">
+    <!-- 右側功能鍵 (按鈕尺寸稍微調大好點擊) -->
+    <div class="flex items-center gap-1.5 sm:gap-2">
+      <!-- 電腦託管按鈕 (位於音量開關左邊) -->
+      <button onclick="netGame.toggleManualTakeover()" id="btn-toggle-takeover" class="px-2.5 sm:px-3 py-1 sm:py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold border border-slate-600 shadow flex items-center gap-1 transition" title="電腦託管：暫離/上洗手間時自動出牌">
         <span>🤖</span> <span id="takeover-btn-label">電腦託管</span>
       </button>
-      <button id="btn-sound" onclick="netGame.toggleSound()" class="px-1.5 py-0.5 sm:py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-200 text-xs font-medium" title="音效">
+      <button id="btn-sound" onclick="netGame.toggleSound()" class="px-2 sm:px-2.5 py-1 sm:py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg sm:rounded-xl text-slate-200 text-sm sm:text-base font-medium transition" title="音效">
         <span id="sound-icon">🔊</span>
       </button>
-      <button onclick="netGame.openRulesModal()" class="px-1.5 py-0.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs font-medium" title="規則">
+      <button onclick="netGame.openRulesModal()" class="px-2 sm:px-2.5 py-1 sm:py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg sm:rounded-xl text-sm sm:text-base font-medium transition" title="規則">
         📖
       </button>
-      <button onclick="netGame.leaveRoomConfirm()" class="px-1.5 py-0.5 bg-rose-900/60 hover:bg-rose-800 text-rose-200 border border-rose-600/40 rounded text-xs font-bold" title="離開">
+      <button onclick="netGame.leaveRoomConfirm()" class="px-2 sm:px-2.5 py-1 sm:py-1.5 bg-rose-900/60 hover:bg-rose-800 text-rose-200 border border-rose-600/40 rounded-lg sm:rounded-xl text-sm sm:text-base font-bold transition" title="離開">
         🚪
       </button>
     </div>
@@ -495,11 +495,11 @@
         </div>
 
         <div>
-          <button onclick="netGame.handleUnifiedEndTurn()" id="btn-end-turn" class="px-3.5 sm:px-6 py-1 sm:py-1.5 rounded-xl text-xs sm:text-sm font-black shadow-lg transition flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white">
-            <span id="end-turn-icon">📥</span>
+          <button onclick="netGame.handleUnifiedEndTurn()" id="btn-end-turn" class="px-5 sm:px-8 py-2 sm:py-2.5 rounded-2xl text-sm sm:text-base font-black shadow-xl transition flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white ring-2 ring-amber-400/50 hover:scale-105 active:scale-95">
+            <span id="end-turn-icon" class="text-base sm:text-lg">📥</span>
             <div class="flex flex-col text-left leading-none">
               <span id="end-turn-title">結束回合</span>
-              <span id="end-turn-sub" class="text-[9px] font-normal opacity-90 mt-0.5">自動摸牌</span>
+              <span id="end-turn-sub" class="text-[10px] sm:text-xs font-normal opacity-90 mt-0.5">自動摸牌</span>
             </div>
           </button>
         </div>
@@ -764,6 +764,10 @@
         }
 
         this.myTakeoverState = false;
+        this.lastTakeoverToggleTime = 0;
+        this.aiTurnTimer = null;
+        this.clientTimerInterval = null;
+        this.startTurnIndex = 0;
         this.isRematchPhase = false;
         this.rematchReadyUids = new Set();
         this.rematchSecondsLeft = 30;
@@ -835,23 +839,35 @@
 
       recordUserAction() {
         this.lastUserActionTime = Date.now();
-        const myPlayerObj = this.players.find(p => p.uid === this.myUserId);
+        const myPlayerObj = this.players.find(p => p.uid === this.myUserId || p.id === (this.isHost ? 0 : this.myPlayerId));
         if (myPlayerObj) {
           myPlayerObj.lastActionTime = Date.now();
           myPlayerObj.consecutiveTimeouts = 0;
-          if (myPlayerObj.autoAFKTakeover) {
-            myPlayerObj.autoAFKTakeover = false;
+          // 若有任何手動出牌或觸控操作，若目前處於託管狀態，立即自動解除託管，恢復手動操作
+          if (myPlayerObj.isAITakeover) {
+            this.myTakeoverState = false;
+            this.lastTakeoverToggleTime = Date.now();
             myPlayerObj.isAITakeover = false;
+            myPlayerObj.autoAFKTakeover = false;
+
             if (this.isHost) {
+              if (this.aiTurnTimer) {
+                clearTimeout(this.aiTurnTimer);
+                this.aiTurnTimer = null;
+              }
+              if (this.inGame && this.turnIndex === 0) {
+                this.startTimerHost();
+              }
               this.broadcastState();
             } else if (this.hostConn && this.hostConn.open) {
               this.hostConn.send({
                 type: 'CLIENT_TAKEOVER_TOGGLE',
                 uid: this.myUserId,
+                playerId: this.myPlayerId,
                 isAITakeover: false
               });
             }
-            this.showToast('偵測到動作，已自動恢復手動控制', '👤');
+            this.showToast('偵測到手動操作，已自動解除電腦託管', '👤');
             this.renderAll();
           }
         }
@@ -859,40 +875,57 @@
 
       toggleManualTakeover() {
         this.lastUserActionTime = Date.now();
+        this.lastTakeoverToggleTime = Date.now();
         const myPlayerObj = this.players.find(p => p.uid === this.myUserId) || this.players[0];
         if (!myPlayerObj) return;
 
-        // 切換自己的託管狀態 (即使在他人回合點選也絕不失效)
+        // 切換託管狀態
         this.myTakeoverState = !this.myTakeoverState;
         myPlayerObj.isAITakeover = this.myTakeoverState;
         myPlayerObj.autoAFKTakeover = false;
+        myPlayerObj.consecutiveTimeouts = 0;
+        myPlayerObj.lastActionTime = Date.now();
 
         // 立即反饋按鈕外觀
         const takeoverBtn = document.getElementById('btn-toggle-takeover');
         const takeoverBtnLabel = document.getElementById('takeover-btn-label');
         if (takeoverBtn && takeoverBtnLabel) {
           if (this.myTakeoverState) {
-            takeoverBtn.className = 'px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold border border-amber-400 shadow animate-pulse flex items-center gap-0.5';
+            takeoverBtn.className = 'px-2.5 sm:px-3 py-1 sm:py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold border border-amber-400 shadow animate-pulse flex items-center gap-1 transition';
             takeoverBtnLabel.textContent = '解除託管';
           } else {
-            takeoverBtn.className = 'px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs font-semibold border border-slate-600 shadow flex items-center gap-0.5';
+            takeoverBtn.className = 'px-2.5 sm:px-3 py-1 sm:py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold border border-slate-600 shadow flex items-center gap-1 transition';
             takeoverBtnLabel.textContent = '電腦託管';
           }
         }
 
         if (this.isHost) {
-          this.broadcastState();
-          this.showToast(this.myTakeoverState ? '已開啟電腦託管（簡易難度，方便暫離）' : '已解除電腦託管，恢復手動操作', '🤖');
-          this.renderAll();
-          if (this.isMyTurn() && this.myTakeoverState) {
-            clearInterval(this.timerInterval);
-            setTimeout(() => {
-              if (this.isMyTurn() && this.myTakeoverState) {
-                this.executeAITurn(myPlayerObj);
-              }
-            }, 600);
+          if (!this.myTakeoverState) {
+            // 房主解除託管：取消任何正在排隊的 AI 代打計時器，並若輪到自己則重啟倒數計時！
+            if (this.aiTurnTimer) {
+              clearTimeout(this.aiTurnTimer);
+              this.aiTurnTimer = null;
+            }
+            if (this.isMyTurn()) {
+              this.startTimerHost();
+            }
+          } else {
+            // 房主開啟託管：若現在是自己回合，啟動 AI 代打
+            if (this.isMyTurn()) {
+              clearInterval(this.timerInterval);
+              if (this.aiTurnTimer) clearTimeout(this.aiTurnTimer);
+              this.aiTurnTimer = setTimeout(() => {
+                if (this.isMyTurn() && this.myTakeoverState) {
+                  this.executeAITurn(myPlayerObj);
+                }
+              }, 600);
+            }
           }
+          this.broadcastState();
+          this.showToast(this.myTakeoverState ? '已開啟電腦託管（簡易難度，方便暫離）' : '已解除電腦託管，恢復手動操作', this.myTakeoverState ? '🤖' : '👤');
+          this.renderAll();
         } else {
+          // 訪客端：向房主發送狀態切換
           if (this.hostConn && this.hostConn.open) {
             this.hostConn.send({
               type: 'CLIENT_TAKEOVER_TOGGLE',
@@ -901,7 +934,7 @@
               isAITakeover: this.myTakeoverState
             });
           }
-          this.showToast(this.myTakeoverState ? '已開啟電腦託管（簡易難度，方便暫離）' : '已解除電腦託管，恢復手動操作', '🤖');
+          this.showToast(this.myTakeoverState ? '已開啟電腦託管（簡易難度，方便暫離）' : '已解除電腦託管，恢復手動操作', this.myTakeoverState ? '🤖' : '👤');
           this.renderAll();
         }
       }
@@ -1401,16 +1434,33 @@
             if (player) {
               player.isAITakeover = data.isAITakeover;
               player.autoAFKTakeover = false;
+              player.consecutiveTimeouts = 0;
+              player.lastActionTime = Date.now();
+
+              if (!player.isAITakeover) {
+                // 玩家解除託管：取消任何正在排隊的 AI 代打計時器，並若輪到該玩家則重啟倒數計時！
+                if (this.aiTurnTimer) {
+                  clearTimeout(this.aiTurnTimer);
+                  this.aiTurnTimer = null;
+                }
+                if (this.inGame && this.turnIndex === player.id) {
+                  this.startTimerHost();
+                }
+              } else {
+                // 玩家開啟託管：若現在是他的回合，啟動 AI 出牌
+                if (this.inGame && this.turnIndex === player.id) {
+                  clearInterval(this.timerInterval);
+                  if (this.aiTurnTimer) clearTimeout(this.aiTurnTimer);
+                  this.aiTurnTimer = setTimeout(() => {
+                    if (this.inGame && this.turnIndex === player.id && player.isAITakeover) {
+                      this.executeAITurn(player);
+                    }
+                  }, 600);
+                }
+              }
+
               this.broadcastState();
               this.renderAll();
-              if (this.turnIndex === player.id && player.isAITakeover) {
-                clearInterval(this.timerInterval);
-                setTimeout(() => {
-                  if (this.turnIndex === player.id && player.isAITakeover) {
-                    this.executeAITurn(player);
-                  }
-                }, 600);
-              }
             }
             break;
           }
@@ -1434,6 +1484,15 @@
             this.broadcast({ type: 'REMATCH_STATUS_SYNC', rematchStatus: status });
             this.renderRematchStatusUI(status);
             this.checkAllRematchReady();
+            break;
+          }
+
+          case 'CLIENT_REMATCH_CANCEL': {
+            if (!this.isRematchPhase) return;
+            this.rematchReadyUids.delete(data.uid);
+            const status = this.getRematchStatusData();
+            this.broadcast({ type: 'REMATCH_STATUS_SYNC', rematchStatus: status });
+            this.renderRematchStatusUI(status);
             break;
           }
 
@@ -1518,6 +1577,7 @@
               myHand: p.hand,
               tableMelds: this.tableMelds,
               deckCount: this.deck.length,
+              startTurnIndex: this.startTurnIndex,
               turnIndex: this.turnIndex,
               currentSeconds: this.currentSeconds
             });
@@ -1602,12 +1662,14 @@
             this.tableMelds = data.tableMelds || [];
             this.myHand = data.myHand || [];
             this.deckCount = data.deckCount !== undefined ? data.deckCount : (this.players.length >= 5 ? 160 : 106);
+            this.startTurnIndex = data.startTurnIndex !== undefined ? data.startTurnIndex : 0;
             this.turnIndex = data.turnIndex;
             this.currentSeconds = data.currentSeconds;
             this.players = data.players;
             this.enterGameView();
             this.sortHand('number');
             this.renderAll();
+            this.startClientCountdown();
             this.showToast('對局開始！', '🎮');
             break;
 
@@ -1624,6 +1686,7 @@
             if (isCurrentlyMyTurn && hasUnfinishedTurnMoves) {
               this.currentSeconds = data.currentSeconds;
               this.players = data.players;
+              this.startClientCountdown();
               this.renderTurnInfo();
               return;
             }
@@ -1640,6 +1703,7 @@
               this.turnIndex = data.turnIndex;
               this.currentSeconds = data.currentSeconds;
               this.players = data.players;
+              this.startClientCountdown();
               this.tableMelds = data.tableMelds || [];
               this.myHand = data.myHand || [];
               if (this.handSortMode) {
@@ -1661,13 +1725,19 @@
             }
 
             this.tableMelds = data.tableMelds || [];
+            if (data.startTurnIndex !== undefined) this.startTurnIndex = data.startTurnIndex;
             this.turnIndex = data.turnIndex;
             this.currentSeconds = data.currentSeconds;
             this.players = data.players;
-            // 保持本機最新託管按鈕設定，防止他人回合中被未同步的廣播覆蓋
+            this.startClientCountdown();
+            // 保持本機最新託管按鈕設定，防止點選後短時間內被未同步的廣播覆蓋
             const mySyncP = this.players.find(p => p.uid === this.myUserId || p.id === this.myPlayerId);
-            if (mySyncP && this.myTakeoverState !== undefined) {
-              mySyncP.isAITakeover = this.myTakeoverState;
+            if (mySyncP) {
+              if (this.lastTakeoverToggleTime && (Date.now() - this.lastTakeoverToggleTime < 1500)) {
+                mySyncP.isAITakeover = this.myTakeoverState;
+              } else {
+                this.myTakeoverState = mySyncP.isAITakeover || false;
+              }
             }
 
             this.myHand = data.myHand || [];
@@ -1721,6 +1791,7 @@
             if (goModal) goModal.classList.add('hidden');
             this.inGame = true;
             this.deckCount = data.deckCount;
+            this.startTurnIndex = data.startTurnIndex !== undefined ? data.startTurnIndex : 0;
             this.turnIndex = data.turnIndex;
             this.currentSeconds = data.currentSeconds;
             this.players = data.players;
@@ -1734,6 +1805,7 @@
               tableMelds: [],
               playerBrokenIce: false
             };
+            this.startClientCountdown();
             this.showToast('房主已開啟全新回合！已為您自動發牌', '🎉');
             this.sound.myTurnChime();
             this.renderAll();
@@ -1912,7 +1984,9 @@
         this.deck = this.generateDeck();
         this.deckCount = this.deck.length;
         this.tableMelds = [];
-        this.turnIndex = 0;
+        // 全隨機指定第一位出牌的玩家 (不限於房主)
+        this.startTurnIndex = Math.floor(Math.random() * this.players.length);
+        this.turnIndex = this.startTurnIndex;
 
         for (let round = 0; round < 14; round++) {
           for (let p = 0; p < this.players.length; p++) {
@@ -1937,6 +2011,7 @@
               myHand: p.hand,
               tableMelds: this.tableMelds,
               deckCount: this.deck.length,
+              startTurnIndex: this.startTurnIndex,
               turnIndex: this.turnIndex,
               currentSeconds: this.timerSeconds
             });
@@ -2147,20 +2222,59 @@
           playerBrokenIce: curPlayer.hasBrokenIce || false
         };
 
-        // 無論是房主還是訪客，只要開啟託管或離線，均由伺服端執行簡易 AI 代打
+        // 結束回合時直接重新倒數：每位玩家(無論真人或電腦)都是固定秒數 (例如 60s)
+        this.startTimerHost();
+        this.broadcastState();
+
         if (curPlayer.isAI || curPlayer.isAITakeover || !curPlayer.isOnline) {
-          clearInterval(this.timerInterval);
-          this.broadcastState();
-          setTimeout(() => { this.executeAITurn(curPlayer); }, 800);
+          if (this.aiTurnTimer) clearTimeout(this.aiTurnTimer);
+          this.aiTurnTimer = setTimeout(() => {
+            if (this.inGame && this.players[this.turnIndex] === curPlayer && (curPlayer.isAI || curPlayer.isAITakeover || !curPlayer.isOnline)) {
+              this.executeAITurn(curPlayer);
+            }
+          }, 1200);
         } else if (curPlayer.id === 0) {
           this.sound.myTurnChime();
-          this.startTimerHost();
-        } else {
-          this.startTimerHost();
-          this.broadcastState();
         }
 
         this.renderAll();
+      }
+
+
+      renderTimerCard() {
+        const timerText = document.getElementById('timer-text');
+        const timerCard = document.getElementById('player-bar-timer-card');
+        const timerIconBox = document.getElementById('timer-icon-box');
+        if (!timerText || !timerCard || !timerIconBox) return;
+
+        const sec = (this.currentSeconds !== undefined && this.currentSeconds >= 0) ? this.currentSeconds : 0;
+        timerText.textContent = (sec > 0) ? `${sec}s` : (this.timerSeconds > 0 ? '0s' : '無限制');
+
+        if (sec <= 10 && sec > 0) {
+          timerCard.className = 'flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 rounded-xl sm:rounded-2xl border border-rose-500 bg-rose-950/80 shadow-md flex-shrink-0 transition-colors animate-pulse';
+          timerIconBox.className = 'w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-rose-900 border-2 border-rose-400 flex items-center justify-center text-sm sm:text-lg flex-shrink-0 shadow text-rose-200';
+          timerText.className = 'font-mono text-sm sm:text-lg font-black text-rose-300 leading-none';
+        } else {
+          timerCard.className = 'flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 rounded-xl sm:rounded-2xl border border-slate-700 bg-slate-800 shadow-sm flex-shrink-0 transition-colors';
+          timerIconBox.className = 'w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-900 border-2 border-amber-400 flex items-center justify-center text-sm sm:text-lg flex-shrink-0 shadow text-amber-300';
+          timerText.className = 'font-mono text-sm sm:text-lg font-black text-amber-300 leading-none';
+        }
+      }
+
+      startClientCountdown() {
+        clearInterval(this.clientTimerInterval);
+        if (!this.inGame || this.timerSeconds <= 0) return;
+        this.renderTimerCard();
+        this.clientTimerInterval = setInterval(() => {
+          if (!this.inGame) {
+            clearInterval(this.clientTimerInterval);
+            return;
+          }
+          if (this.currentSeconds > 0) {
+            this.currentSeconds--;
+            this.renderTimerCard();
+          }
+        }, 1000);
       }
 
       startTimerHost() {
@@ -2774,6 +2888,17 @@
       }
 
       executeAITurn(aiPlayer) {
+        if (!this.inGame) return;
+        const curPlayer = this.players[this.turnIndex];
+        if (!curPlayer || curPlayer !== aiPlayer) return;
+
+        // 核心安全檢查：若真人玩家已取消託管且在線上，絕不代打，立刻交還手動控制權
+        if (!aiPlayer.isAI && !aiPlayer.isAITakeover && aiPlayer.isOnline) {
+          this.broadcastState();
+          this.renderAll();
+          return;
+        }
+
         let playedAny = false;
         // 電腦託管的強度一律只有簡易 (Casual)，避免玩家靠託管取勝！
         const isCasual = (aiPlayer.isAITakeover === true) || (this.aiDifficulty === 'casual');
@@ -2845,7 +2970,11 @@
         }
 
         this.broadcastState();
-        setTimeout(() => { this.advanceTurnHost(); }, 1200);
+        setTimeout(() => {
+          if (this.inGame && this.players[this.turnIndex] === aiPlayer) {
+            this.advanceTurnHost();
+          }
+        }, 1000);
       }
 
       findHandMelds(hand) {
@@ -3001,6 +3130,7 @@
         const btnAcceptText = document.getElementById('btn-accept-rematch-text');
         if (btnAccept && btnAcceptText) {
           btnAccept.className = 'py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-1.5';
+          btnAccept.setAttribute('onclick', 'netGame.acceptRematch()');
           btnAccept.disabled = false;
           btnAcceptText.textContent = '繼續下一場';
         }
@@ -3066,6 +3196,23 @@
           }
         }
 
+        // 更新接受 / 取消按鈕狀態：已接受的玩家在其他玩家接受前可以取消接受
+        const btnAccept = document.getElementById('btn-accept-rematch');
+        const btnAcceptText = document.getElementById('btn-accept-rematch-text');
+        if (btnAccept && btnAcceptText) {
+          if (this.myRematchAccepted) {
+            btnAccept.className = 'py-2.5 px-3 bg-amber-700/80 hover:bg-amber-600 text-amber-100 font-black text-xs sm:text-sm rounded-xl border border-amber-400/80 shadow transition flex items-center justify-center gap-1.5 cursor-pointer';
+            btnAccept.setAttribute('onclick', 'netGame.cancelRematchAccept()');
+            btnAccept.disabled = false;
+            btnAcceptText.textContent = '↩️ 取消接受';
+          } else {
+            btnAccept.className = 'py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-1.5 cursor-pointer';
+            btnAccept.setAttribute('onclick', 'netGame.acceptRematch()');
+            btnAccept.disabled = false;
+            btnAcceptText.textContent = '🟢 繼續下一場';
+          }
+        }
+
         const waitText = document.getElementById('rematch-wait-text');
         if (waitText) {
           if (statusData.allReady) {
@@ -3079,14 +3226,6 @@
       acceptRematch() {
         if (this.myRematchAccepted) return;
         this.myRematchAccepted = true;
-
-        const btnAccept = document.getElementById('btn-accept-rematch');
-        const btnAcceptText = document.getElementById('btn-accept-rematch-text');
-        if (btnAccept && btnAcceptText) {
-          btnAccept.className = 'py-2.5 px-3 bg-emerald-800/60 text-emerald-200 font-bold text-xs sm:text-sm rounded-xl border border-emerald-500/40 cursor-default flex items-center justify-center gap-1.5';
-          btnAccept.disabled = true;
-          btnAcceptText.textContent = '✔️ 已準備 (等待其他玩家)';
-        }
 
         if (this.isHost) {
           this.rematchReadyUids.add(this.myUserId);
@@ -3103,6 +3242,36 @@
             });
           }
           this.showToast('已確認參加下一場！等待其他玩家確認', '👍');
+          const status = this.getRematchStatusData();
+          const target = status.players.find(p => p.uid === this.myUserId);
+          if (target) target.ready = true;
+          this.renderRematchStatusUI(status);
+        }
+      }
+
+      // 已接受的玩家在其他玩家接受前可以取消接受按鈕
+      cancelRematchAccept() {
+        if (!this.myRematchAccepted) return;
+        this.myRematchAccepted = false;
+
+        if (this.isHost) {
+          this.rematchReadyUids.delete(this.myUserId);
+          const status = this.getRematchStatusData();
+          this.broadcast({ type: 'REMATCH_STATUS_SYNC', rematchStatus: status });
+          this.renderRematchStatusUI(status);
+          this.showToast('已取消接受下一場', '↩️');
+        } else {
+          if (this.hostConn && this.hostConn.open) {
+            this.hostConn.send({
+              type: 'CLIENT_REMATCH_CANCEL',
+              uid: this.myUserId
+            });
+          }
+          this.showToast('已取消接受下一場', '↩️');
+          const status = this.getRematchStatusData();
+          const target = status.players.find(p => p.uid === this.myUserId);
+          if (target) target.ready = false;
+          this.renderRematchStatusUI(status);
         }
       }
 
@@ -3158,7 +3327,7 @@
             this.rematchTimeoutTimer = null;
           }
           this.isRematchPhase = false;
-          this.showToast('所有玩家皆已接受！開始下一回合', '🎉');
+          this.showToast('所有玩家皆已接受！即將開始下一回合', '🎉');
           setTimeout(() => {
             this.hostRematch();
           }, 600);
@@ -3171,29 +3340,44 @@
           clearInterval(this.rematchTimeoutTimer);
           this.rematchTimeoutTimer = null;
         }
+        if (this.aiTurnTimer) {
+          clearTimeout(this.aiTurnTimer);
+          this.aiTurnTimer = null;
+        }
+        clearInterval(this.timerInterval);
         this.isRematchPhase = false;
         this.rematchReadyUids.clear();
         this.myRematchAccepted = false;
+        this.myTakeoverState = false;
 
-        // 重新洗牌、重新發 14 張牌、清理桌面
-        this.initDeck();
-        this.shuffleDeck();
+        // 重新產生並洗牌 (支援 2-4 人 106 張或 5-8 人 160 張)
+        this.deck = this.generateDeck();
+        this.deckCount = this.deck.length;
         this.tableMelds = [];
         this.playedTilesThisTurn = [];
         this.selectedHandIndices.clear();
         this.selectedTableTileIds.clear();
-        this.turnIndex = 0;
+
+        // 全隨機指定第一位出牌的玩家 (不限於房主)
+        this.startTurnIndex = Math.floor(Math.random() * this.players.length);
+        this.turnIndex = this.startTurnIndex;
         this.currentSeconds = this.timerSeconds;
         this.inGame = true;
 
+        // 重新發 14 張牌給全體玩家並重置狀態
         this.players.forEach(p => {
           p.hand = [];
           p.hasBrokenIce = false;
           p.consecutiveTimeouts = 0;
+          p.isAITakeover = false;
+          p.autoAFKTakeover = false;
           for (let i = 0; i < 14; i++) {
             if (this.deck.length > 0) p.hand.push(this.deck.pop());
           }
         });
+
+        this.deckCount = this.deck.length;
+        this.myHand = this.players[0].hand;
 
         // 隱藏房主結算視窗
         const modal = document.getElementById('modal-gameover');
@@ -3209,13 +3393,16 @@
               myHand: p.hand,
               tableMelds: [],
               deckCount: this.deck.length,
+              startTurnIndex: this.startTurnIndex,
               turnIndex: this.turnIndex,
               currentSeconds: this.timerSeconds
             });
           }
         });
 
-        this.showToast('全新回合開始！已自動為全體玩家發牌', '🎉');
+        this.enterGameView();
+        this.sortHand('number');
+        this.showToast('全新回合開始！已自動發牌', '🎉');
         this.startTurnHost();
         this.renderAll();
       }
@@ -3275,24 +3462,7 @@
           document.getElementById('btn-undo').disabled = true;
         }
 
-        if (timerText) {
-          timerText.textContent = (this.currentSeconds > 0) ? `${this.currentSeconds}s` : '無限制';
-        }
-
-        // 同步更新左側倒數秒數卡片狀態 (緊張倒數變色)
-        const timerCard = document.getElementById('player-bar-timer-card');
-        const timerIconBox = document.getElementById('timer-icon-box');
-        if (timerCard && timerIconBox) {
-          if (this.currentSeconds <= 10 && this.currentSeconds > 0) {
-            timerCard.className = 'flex items-center gap-2 px-2.5 py-1 rounded-2xl border border-rose-500 bg-rose-950/80 shadow-md flex-shrink-0 transition-colors animate-pulse';
-            timerIconBox.className = 'w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-rose-900 border-2 border-rose-400 flex items-center justify-center text-base sm:text-lg flex-shrink-0 shadow text-rose-200';
-            if (timerText) timerText.className = 'font-mono text-base sm:text-lg font-black text-rose-300';
-          } else {
-            timerCard.className = 'flex items-center gap-2 px-2.5 py-1 rounded-2xl border border-slate-700 bg-slate-800 shadow-sm flex-shrink-0 transition-colors';
-            timerIconBox.className = 'w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-900 border-2 border-amber-400 flex items-center justify-center text-base sm:text-lg flex-shrink-0 shadow text-amber-300';
-            if (timerText) timerText.className = 'font-mono text-base sm:text-lg font-black text-amber-300';
-          }
-        }
+        this.renderTimerCard();
 
         // 3. 手牌數與破冰提示 (防禦性 null check 確保 100% 穩定不報錯)
         const myHand = this.getMyHand();
@@ -3320,10 +3490,10 @@
         const takeoverBtnLabel = document.getElementById('takeover-btn-label');
         if (takeoverBtn && takeoverBtnLabel) {
           if (myPlayerObj.isAITakeover) {
-            takeoverBtn.className = 'px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold border border-amber-400 shadow animate-pulse flex items-center gap-0.5';
+            takeoverBtn.className = 'px-2.5 sm:px-3 py-1 sm:py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold border border-amber-400 shadow animate-pulse flex items-center gap-1 transition';
             takeoverBtnLabel.textContent = '解除託管';
           } else {
-            takeoverBtn.className = 'px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs font-semibold border border-slate-600 shadow flex items-center gap-0.5';
+            takeoverBtn.className = 'px-2.5 sm:px-3 py-1 sm:py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold border border-slate-600 shadow flex items-center gap-1 transition';
             takeoverBtnLabel.textContent = '電腦託管';
           }
         }
@@ -3347,12 +3517,12 @@
         const sub = document.getElementById('end-turn-sub');
 
         if (this.playedTilesThisTurn.length > 0) {
-          btn.className = 'px-3.5 sm:px-6 py-1 sm:py-1.5 rounded-xl text-xs sm:text-sm font-black shadow-lg transition flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white';
+          btn.className = 'px-5 sm:px-8 py-2 sm:py-2.5 rounded-2xl text-sm sm:text-base font-black shadow-xl transition flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white ring-2 ring-emerald-400/50 hover:scale-105 active:scale-95';
           icon.textContent = '✅';
-          title.textContent = '結束回合';
+          title.textContent = '出牌結束';
           sub.textContent = `送出 ${this.playedTilesThisTurn.length} 張`;
         } else {
-          btn.className = 'px-3.5 sm:px-6 py-1 sm:py-1.5 rounded-xl text-xs sm:text-sm font-black shadow-lg transition flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white';
+          btn.className = 'px-5 sm:px-8 py-2 sm:py-2.5 rounded-2xl text-sm sm:text-base font-black shadow-xl transition flex items-center gap-2 bg-amber-600 hover:bg-amber-500 text-white ring-2 ring-amber-400/50 hover:scale-105 active:scale-95';
           icon.textContent = '📥';
           title.textContent = '結束回合';
           sub.textContent = '自動摸牌';
@@ -3361,14 +3531,23 @@
 
       renderOpponents() {
         const container = document.getElementById('opponents-container');
-        if (!container) return;
+        if (!container || !this.players || this.players.length === 0) return;
 
-        // 畫面一致化：將自己的資訊移動到最上面與其他玩家並排，自己置於首位
-        const myPlayer = this.players.find(p => p.uid === this.myUserId);
-        const otherPlayers = this.players.filter(p => p.uid !== this.myUserId);
-        const allDisplayPlayers = myPlayer ? [myPlayer, ...otherPlayers] : this.players;
+        const N = this.players.length;
+        const startIdx = (this.startTurnIndex !== undefined && this.startTurnIndex >= 0) ? this.startTurnIndex : 0;
 
-        container.innerHTML = allDisplayPlayers.map(p => {
+        // 【依出牌順序排列】：從第一順位出牌者開始，由左至右依序排列順位 1 至 N
+        const orderedPlayers = [];
+        for (let i = 0; i < N; i++) {
+          const pIndex = (startIdx + i) % N;
+          const p = this.players[pIndex];
+          if (p) {
+            orderedPlayers.push(p);
+          }
+        }
+
+        // 依照順序排列，並以出牌順序箭頭 ➜ 連接，不顯示 1.2.3.4，用看的就能直覺知道出牌順序
+        const playerCardHtmls = orderedPlayers.map((p) => {
           const isMe = (p.uid === this.myUserId);
           const isCurrentTurn = (this.turnIndex === p.id);
           
@@ -3383,12 +3562,12 @@
           const displayName = isMe ? `${p.name} (我)` : p.name;
 
           return `
-            <div class="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2.5 py-1 rounded-xl sm:rounded-2xl border transition shadow-sm ${
+            <div class="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 rounded-xl sm:rounded-2xl border transition shadow-sm ${
               isCurrentTurn 
-                ? 'bg-amber-950/90 border-amber-400 shadow-md ring-2 ring-amber-400/80 scale-[1.02]' 
+                ? 'bg-amber-950/90 border-amber-400 shadow-md ring-2 ring-amber-400/80 scale-[1.03]' 
                 : (isMe ? 'bg-slate-800/95 border-amber-500/60 ring-1 ring-amber-500/30' : 'bg-slate-800/95 border-slate-700 hover:border-slate-600')
             }">
-              <!-- 大頭貼 (手機端 32px，桌面端 40px，精緻清晰且好排列) -->
+              <!-- 大頭貼 -->
               <div class="relative flex-shrink-0 ${isMe ? 'cursor-pointer group' : ''}" ${isMe ? 'onclick="netGame.openAvatarPickerModal()" title="點選可更換大頭貼"' : ''}>
                 <img src="${av}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 ${
                   isCurrentTurn 
@@ -3404,7 +3583,7 @@
               <!-- 玩家資訊：名稱、出牌狀態、手牌張數、破冰狀態 -->
               <div class="flex flex-col text-left leading-tight">
                 <div class="flex items-center gap-1">
-                  <span class="font-bold text-[11px] sm:text-sm truncate max-w-[50px] sm:max-w-[100px] ${isMe ? 'text-amber-300' : 'text-slate-100'}">${displayName}</span>
+                  <span class="font-bold text-[11px] sm:text-sm truncate max-w-[55px] sm:max-w-[100px] ${isMe ? 'text-amber-300' : 'text-slate-100'}">${displayName}</span>
                   ${isCurrentTurn ? '<span class="text-[8px] sm:text-[9px] px-1 py-0.2 rounded bg-amber-500 text-slate-950 font-black animate-pulse whitespace-nowrap">出牌中</span>' : ''}
                 </div>
                 <div class="flex items-center gap-1 sm:gap-1.5 mt-0.5">
@@ -3420,7 +3599,10 @@
               </div>
             </div>
           `;
-        }).join('');
+        });
+
+        // 依順序串接，卡片之間加入簡潔的箭頭指示，清晰呈現出牌輪轉方向
+        container.innerHTML = playerCardHtmls.join('<span class="text-slate-500/70 text-xs sm:text-sm font-black flex-shrink-0 select-none">➜</span>');
       }
 
       renderTableMelds() {
