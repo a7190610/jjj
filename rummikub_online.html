@@ -65,12 +65,12 @@
       border-radius: 5px;
     }
 
-    /* 手機版 (Mobile) 緊湊尺寸 (確保手牌架絕不超高) */
+    /* 手機版 (Mobile) 適中清晰尺寸 (稍微調大，看得清楚更好點擊) */
     body.device-mobile .rummi-tile {
-      width: 29px;
-      height: 41px;
-      font-size: 15px;
-      border-radius: 4px;
+      width: 35px;
+      height: 50px;
+      font-size: 18px;
+      border-radius: 5px;
     }
 
     /* 選取中的牌 */
@@ -341,12 +341,11 @@
       <h1 class="font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-200 to-yellow-400 bg-clip-text text-transparent">
         拉密
       </h1>
-      <div class="flex items-center gap-1 text-[10px] sm:text-xs bg-slate-700/80 px-1.5 py-0.5 rounded border border-slate-600 text-slate-300">
-        <span>房:</span>
-        <span id="game-room-code-tag" class="font-mono font-bold text-amber-300 cursor-pointer hover:underline" onclick="netGame.copyRoomLink()" title="點擊複製邀請網址">-----</span>
-        <button onclick="netGame.copyRoomLink()" class="text-amber-400 hover:text-amber-300 ml-0.5" title="複製邀請網址">🔗</button>
+      <div class="flex items-center gap-1.5 text-[10px] sm:text-xs bg-slate-700/80 px-2 py-0.5 rounded border border-slate-600 text-slate-300">
+        <span class="text-slate-400">房號:</span>
+        <span id="game-room-code-tag" class="font-mono font-bold text-amber-300 tracking-wider">-----</span>
         <span class="text-slate-500">|</span>
-        <span>牌池:</span>
+        <span class="text-slate-400">牌池:</span>
         <span id="deck-count" class="font-bold text-amber-300">106</span>
       </div>
     </div>
@@ -365,24 +364,26 @@
     </div>
   </header>
 
-  <!-- 2. 頂部玩家資訊列與倒數計時卡片 (倒數秒數移到最左側同大小，所有玩家包含自己並排展示，畫面更一致) -->
-  <section class="flex-shrink-0 bg-slate-900/95 border-b border-slate-700/80 px-2 py-1.5 overflow-x-auto min-h-[52px] flex items-center gap-2">
-    <!-- 倒數秒數卡片：置於玩家畫面最左側，與玩家大頭貼卡片相同尺寸與造型，好瀏覽 -->
-    <div id="player-bar-timer-card" class="flex items-center gap-2 px-2.5 py-1 rounded-2xl border border-slate-700 bg-slate-800 shadow-sm flex-shrink-0 transition-colors">
-      <div id="timer-icon-box" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-900 border-2 border-amber-400 flex items-center justify-center text-base sm:text-lg flex-shrink-0 shadow text-amber-300">
+  <!-- 2. 頂部玩家資訊列與倒數計時卡片 (左側計時固定，右側玩家群組在手機上自動緊湊排列或順暢滾動，絕不擠爆畫面) -->
+  <section class="flex-shrink-0 bg-slate-900/95 border-b border-slate-700/80 px-1.5 sm:px-3 py-1 sm:py-1.5 min-h-[48px] sm:min-h-[52px] flex items-center justify-between gap-1.5 sm:gap-2">
+    <!-- 倒數秒數卡片：固定在最左側，與玩家卡片等大等高，好瀏覽 -->
+    <div id="player-bar-timer-card" class="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 rounded-xl sm:rounded-2xl border border-slate-700 bg-slate-800 shadow-sm flex-shrink-0 transition-colors">
+      <div id="timer-icon-box" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-900 border-2 border-amber-400 flex items-center justify-center text-sm sm:text-lg flex-shrink-0 shadow text-amber-300">
         ⏱️
       </div>
-      <div class="flex flex-col text-left leading-tight pr-1">
-        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">倒數</span>
-        <span id="timer-text" class="font-mono text-base sm:text-lg font-black text-amber-300">--s</span>
+      <div class="flex flex-col text-left leading-tight pr-0.5 sm:pr-1">
+        <span class="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase tracking-wider">倒數</span>
+        <span id="timer-text" class="font-mono text-sm sm:text-lg font-black text-amber-300 leading-none">--s</span>
       </div>
     </div>
 
     <!-- 垂直分隔線 -->
-    <div class="h-8 w-[1px] bg-slate-700/80 flex-shrink-0"></div>
+    <div class="h-7 sm:h-8 w-[1px] bg-slate-700/80 flex-shrink-0"></div>
 
-    <!-- 所有玩家並排清單 (包含我與所有對手，統一格式與大頭貼大小) -->
-    <div id="opponents-container" class="flex items-center gap-2 min-w-max"></div>
+    <!-- 所有玩家並排容器 (支援手機端平滑捲動，絕不溢出螢幕邊緣) -->
+    <div class="flex-1 min-w-0 overflow-x-auto no-scrollbar">
+      <div id="opponents-container" class="flex items-center gap-1.5 sm:gap-2 min-w-max py-0.5"></div>
+    </div>
   </section>
 
   <!-- 3. 【超顯眼回合指示橫幅】(專注置中提示當前回合行動) -->
@@ -471,7 +472,7 @@
       </div>
 
       <!-- 手牌架本體 (雙層自適應排列 + 觸控拖曳支援) -->
-      <div id="tile-rack-container" class="tile-rack p-1.5 sm:p-2 min-h-[52px] max-h-[105px] sm:max-h-[125px] flex items-start overflow-y-auto shadow-inner" ondragover="netGame.onDragOver(event)" ondrop="netGame.onDropToHand(event)">
+      <div id="tile-rack-container" class="tile-rack p-1.5 sm:p-2 min-h-[58px] max-h-[118px] sm:max-h-[135px] flex items-start overflow-y-auto shadow-inner" ondragover="netGame.onDragOver(event)" ondrop="netGame.onDropToHand(event)">
         <div id="player-hand" class="flex flex-wrap content-start items-center gap-1 sm:gap-1.5 w-full"></div>
       </div>
 
@@ -637,18 +638,33 @@
     </div>
   </div>
 
-  <!-- 獲勝結算彈窗 Modal -->
+  <!-- 獲勝結算彈窗 Modal (支援自動邀請全體繼續下一回合) -->
   <div id="modal-gameover" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 z-50 hidden">
-    <div class="bg-slate-800 border-2 border-amber-500 rounded-3xl max-w-md w-full p-5 shadow-2xl flex flex-col items-center gap-3 text-center">
+    <div class="bg-slate-800 border-2 border-amber-500 rounded-3xl max-w-md w-full p-4 sm:p-5 shadow-2xl flex flex-col items-center gap-3 text-center">
       <div class="text-4xl animate-bounce">🏆</div>
-      <h2 id="gameover-title" class="text-xl font-black text-amber-300">遊戲結束</h2>
+      <h2 id="gameover-title" class="text-xl font-black text-amber-300">回合結算</h2>
       <p id="gameover-desc" class="text-slate-300 text-xs">某某玩家率先出完手牌！</p>
+      
+      <!-- 得分結算清單 -->
       <div class="w-full bg-slate-900/80 rounded-xl p-2.5 border border-slate-700 text-left">
         <div id="gameover-scores" class="space-y-1 text-xs"></div>
       </div>
-      <button onclick="netGame.returnToLobby()" class="w-full py-2 bg-gradient-to-r from-emerald-600 to-teal-500 text-white font-black rounded-xl shadow-lg transition">
-        返回大廳
-      </button>
+
+      <!-- 自動邀請與下一回合操作區 -->
+      <div class="w-full flex flex-col gap-2 pt-1">
+        <div id="rematch-auto-banner" class="bg-emerald-950/80 border border-emerald-500/50 rounded-xl p-2 text-xs text-emerald-300 font-bold flex items-center justify-center gap-1.5 animate-pulse">
+          <span>🔄</span>
+          <span id="rematch-status-text">已自動邀請所有玩家，<span id="rematch-sec-left" class="font-mono text-white text-sm font-black">5</span> 秒後開始下一回合...</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button id="btn-start-next-round" onclick="netGame.triggerRematchAction()" class="py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-1">
+            <span>🔄</span> <span id="rematch-btn-label">立即開始</span>
+          </button>
+          <button onclick="netGame.returnToLobby()" class="py-2.5 px-3 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs sm:text-sm rounded-xl shadow transition border border-slate-600">
+            🚪 返回大廳
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -731,6 +747,8 @@
           localStorage.setItem('rmk_nick', this.myNickname);
         }
 
+        this.myTakeoverState = false;
+        this.rematchInterval = null;
         this.customAvatar = localStorage.getItem('rmk_custom_avatar') || null;
         this.presetAvatarNames = ['狐狸探險家', '貓咪帽少年', '星際宇航員', '科技機器人', '淘氣熊貓', '陽光獅子', '優雅王冠', '魔法巫師'];
         this.presetAvatars = [
@@ -820,33 +838,50 @@
       }
 
       toggleManualTakeover() {
-        this.recordUserAction();
+        this.lastUserActionTime = Date.now();
         const myPlayerObj = this.players.find(p => p.uid === this.myUserId) || this.players[0];
         if (!myPlayerObj) return;
 
-        myPlayerObj.isAITakeover = !myPlayerObj.isAITakeover;
+        // 切換自己的託管狀態 (即使在他人回合點選也絕不失效)
+        this.myTakeoverState = !this.myTakeoverState;
+        myPlayerObj.isAITakeover = this.myTakeoverState;
         myPlayerObj.autoAFKTakeover = false;
+
+        // 立即反饋按鈕外觀
+        const takeoverBtn = document.getElementById('btn-toggle-takeover');
+        const takeoverBtnLabel = document.getElementById('takeover-btn-label');
+        if (takeoverBtn && takeoverBtnLabel) {
+          if (this.myTakeoverState) {
+            takeoverBtn.className = 'px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold border border-amber-400 shadow animate-pulse flex items-center gap-0.5';
+            takeoverBtnLabel.textContent = '解除託管';
+          } else {
+            takeoverBtn.className = 'px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs font-semibold border border-slate-600 shadow flex items-center gap-0.5';
+            takeoverBtnLabel.textContent = '電腦託管';
+          }
+        }
 
         if (this.isHost) {
           this.broadcastState();
-          this.showToast(myPlayerObj.isAITakeover ? '已開啟電腦託管（簡易難度，方便暫離）' : '已解除電腦託管，恢復手動操作', '🤖');
+          this.showToast(this.myTakeoverState ? '已開啟電腦託管（簡易難度，方便暫離）' : '已解除電腦託管，恢復手動操作', '🤖');
           this.renderAll();
-          if (this.isMyTurn() && myPlayerObj.isAITakeover) {
+          if (this.isMyTurn() && this.myTakeoverState) {
+            clearInterval(this.timerInterval);
             setTimeout(() => {
-              if (this.isMyTurn() && myPlayerObj.isAITakeover) {
+              if (this.isMyTurn() && this.myTakeoverState) {
                 this.executeAITurn(myPlayerObj);
               }
-            }, 800);
+            }, 600);
           }
         } else {
           if (this.hostConn && this.hostConn.open) {
             this.hostConn.send({
               type: 'CLIENT_TAKEOVER_TOGGLE',
               uid: this.myUserId,
-              isAITakeover: myPlayerObj.isAITakeover
+              playerId: this.myPlayerId,
+              isAITakeover: this.myTakeoverState
             });
           }
-          this.showToast(myPlayerObj.isAITakeover ? '已開啟電腦託管（簡易難度，方便暫離）' : '已解除電腦託管，恢復手動操作', '🤖');
+          this.showToast(this.myTakeoverState ? '已開啟電腦託管（簡易難度，方便暫離）' : '已解除電腦託管，恢復手動操作', '🤖');
           this.renderAll();
         }
       }
@@ -1325,18 +1360,19 @@
           }
 
           case 'CLIENT_TAKEOVER_TOGGLE': {
-            const player = this.players.find(p => p.uid === data.uid);
+            const player = this.players.find(p => p.uid === data.uid || p.id === data.playerId);
             if (player) {
               player.isAITakeover = data.isAITakeover;
               player.autoAFKTakeover = false;
               this.broadcastState();
-              this.renderOpponents();
+              this.renderAll();
               if (this.turnIndex === player.id && player.isAITakeover) {
+                clearInterval(this.timerInterval);
                 setTimeout(() => {
                   if (this.turnIndex === player.id && player.isAITakeover) {
                     this.executeAITurn(player);
                   }
-                }, 800);
+                }, 600);
               }
             }
             break;
@@ -1567,6 +1603,11 @@
             this.turnIndex = data.turnIndex;
             this.currentSeconds = data.currentSeconds;
             this.players = data.players;
+            // 保持本機最新託管按鈕設定，防止他人回合中被未同步的廣播覆蓋
+            const mySyncP = this.players.find(p => p.uid === this.myUserId || p.id === this.myPlayerId);
+            if (mySyncP && this.myTakeoverState !== undefined) {
+              mySyncP.isAITakeover = this.myTakeoverState;
+            }
 
             this.myHand = data.myHand || [];
             if (this.handSortMode) {
@@ -1593,6 +1634,30 @@
             this.inGame = false;
             this.triggerGameOverUI(data.winnerName, data.scoresSummary);
             break;
+
+          case 'GAME_RESTART': {
+            const goModal = document.getElementById('modal-gameover');
+            if (goModal) goModal.classList.add('hidden');
+            this.inGame = true;
+            this.deckCount = data.deckCount;
+            this.turnIndex = data.turnIndex;
+            this.currentSeconds = data.currentSeconds;
+            this.players = data.players;
+            this.tableMelds = [];
+            this.myHand = data.myHand || [];
+            this.playedTilesThisTurn = [];
+            this.selectedHandIndices.clear();
+            this.selectedTableTileIds.clear();
+            this.turnSnapshot = {
+              hand: JSON.parse(JSON.stringify(this.myHand)),
+              tableMelds: [],
+              playerBrokenIce: false
+            };
+            this.showToast('房主已開啟全新回合！已為您自動發牌', '🎉');
+            this.sound.myTurnChime();
+            this.renderAll();
+            break;
+          }
         }
       }
 
@@ -2001,13 +2066,14 @@
           playerBrokenIce: curPlayer.hasBrokenIce || false
         };
 
-        if (curPlayer.id === 0) {
-          this.sound.myTurnChime();
-          this.startTimerHost();
-        } else if (curPlayer.isAI || curPlayer.isAITakeover || !curPlayer.isOnline) {
+        // 無論是房主還是訪客，只要開啟託管或離線，均由伺服端執行簡易 AI 代打
+        if (curPlayer.isAI || curPlayer.isAITakeover || !curPlayer.isOnline) {
           clearInterval(this.timerInterval);
           this.broadcastState();
-          setTimeout(() => { this.executeAITurn(curPlayer); }, 1000);
+          setTimeout(() => { this.executeAITurn(curPlayer); }, 800);
+        } else if (curPlayer.id === 0) {
+          this.sound.myTurnChime();
+          this.startTimerHost();
         } else {
           this.startTimerHost();
           this.broadcastState();
@@ -2771,12 +2837,39 @@
         });
 
         this.triggerGameOverUI(winner.name, scoresSummary);
+
+        // 房主端啟動 5 秒自動邀請全體繼續下一回合倒數
+        if (this.rematchInterval) clearInterval(this.rematchInterval);
+        let leftSec = 5;
+        const secEl = document.getElementById('rematch-sec-left');
+        if (secEl) secEl.textContent = leftSec;
+
+        this.rematchInterval = setInterval(() => {
+          leftSec--;
+          const el = document.getElementById('rematch-sec-left');
+          if (el) el.textContent = leftSec;
+          if (leftSec <= 0) {
+            clearInterval(this.rematchInterval);
+            this.rematchInterval = null;
+            this.hostRematch();
+          }
+        }, 1000);
       }
 
       triggerGameOverUI(winnerName, scoresSummary) {
         const modal = document.getElementById('modal-gameover');
-        document.getElementById('gameover-title').textContent = `${winnerName} 獲得勝利！`;
+        document.getElementById('gameover-title').textContent = `${winnerName} 獲得本回合勝利！`;
         document.getElementById('gameover-desc').textContent = `${winnerName} 率先清空所有手牌！`;
+
+        const bannerText = document.getElementById('rematch-status-text');
+        const btnLabel = document.getElementById('rematch-btn-label');
+        if (!this.isHost) {
+          if (bannerText) bannerText.innerHTML = '已自動接受下一回合邀請，等待房主開局發牌...';
+          if (btnLabel) btnLabel.textContent = '我已準備';
+        } else {
+          if (bannerText) bannerText.innerHTML = '已自動邀請所有玩家，<span id="rematch-sec-left" class="font-mono text-white text-sm font-black">5</span> 秒後開始下一回合...';
+          if (btnLabel) btnLabel.textContent = '立即開局';
+        }
 
         document.getElementById('gameover-scores').innerHTML = scoresSummary.map(item => `
           <div class="flex items-center justify-between py-1 border-b border-slate-800 last:border-0">
@@ -2790,6 +2883,74 @@
         `).join('');
 
         modal.classList.remove('hidden');
+      }
+
+
+      triggerRematchAction() {
+        if (this.rematchInterval) {
+          clearInterval(this.rematchInterval);
+          this.rematchInterval = null;
+        }
+        if (this.isHost) {
+          this.hostRematch();
+        } else {
+          if (this.hostConn && this.hostConn.open) {
+            this.hostConn.send({ type: 'REQ_REMATCH', uid: this.myUserId });
+            this.showToast('已向房主發送下一回合準備完成！', '👍');
+          }
+        }
+      }
+
+      hostRematch() {
+        if (!this.isHost) return;
+        if (this.rematchInterval) {
+          clearInterval(this.rematchInterval);
+          this.rematchInterval = null;
+        }
+
+        // 重新洗牌、重新發 14 張牌、清理桌面
+        this.initDeck();
+        this.shuffleDeck();
+        this.tableMelds = [];
+        this.playedTilesThisTurn = [];
+        this.selectedHandIndices.clear();
+        this.selectedTableTileIds.clear();
+        this.turnIndex = 0;
+        this.currentSeconds = this.timerSeconds;
+        this.inGame = true;
+
+        this.players.forEach(p => {
+          p.hand = [];
+          p.hasBrokenIce = false;
+          p.consecutiveTimeouts = 0;
+          for (let i = 0; i < 14; i++) {
+            if (this.deck.length > 0) p.hand.push(this.deck.pop());
+          }
+        });
+
+        // 隱藏房主結算視窗
+        const modal = document.getElementById('modal-gameover');
+        if (modal) modal.classList.add('hidden');
+
+        // 廣播給所有玩家開啟新回合
+        this.connections.forEach((conn, uid) => {
+          const p = this.players.find(item => item.uid === uid);
+          if (conn.open && p) {
+            conn.send({
+              type: 'GAME_RESTART',
+              players: this.sanitizePlayersForClient(),
+              myHand: p.hand,
+              tableMelds: [],
+              deckCount: this.deck.length,
+              turnIndex: this.turnIndex,
+              currentSeconds: this.timerSeconds
+            });
+          }
+        });
+
+        this.showToast('全新回合開始！已自動為全體玩家發牌', '🎉');
+        this.startTurnHost();
+        this.renderAll();
       }
 
       returnToLobby() {
@@ -2955,33 +3116,33 @@
           const displayName = isMe ? `${p.name} (我)` : p.name;
 
           return `
-            <div class="flex items-center gap-2 px-2.5 py-1 rounded-2xl border transition shadow-sm ${
+            <div class="flex items-center gap-1.5 sm:gap-2 px-1.5 sm:px-2.5 py-1 rounded-xl sm:rounded-2xl border transition shadow-sm ${
               isCurrentTurn 
                 ? 'bg-amber-950/90 border-amber-400 shadow-md ring-2 ring-amber-400/80 scale-[1.02]' 
                 : (isMe ? 'bg-slate-800/95 border-amber-500/60 ring-1 ring-amber-500/30' : 'bg-slate-800/95 border-slate-700 hover:border-slate-600')
             }">
-              <!-- 大頭貼 (與左側倒數秒數卡片同尺寸造型：w-9 h-9 sm:w-10 sm:h-10) -->
+              <!-- 大頭貼 (手機端 32px，桌面端 40px，精緻清晰且好排列) -->
               <div class="relative flex-shrink-0 ${isMe ? 'cursor-pointer group' : ''}" ${isMe ? 'onclick="netGame.openAvatarPickerModal()" title="點選可更換大頭貼"' : ''}>
-                <img src="${av}" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border-2 ${
+                <img src="${av}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover border-2 ${
                   isCurrentTurn 
                     ? 'border-amber-300 ring-2 ring-amber-400 shadow-amber-500/50' 
                     : (isMe ? 'border-amber-400' : 'border-slate-600')
                 } bg-slate-700 shadow transition ${isMe ? 'group-hover:scale-105' : ''}">
                 
-                ${isMe ? '<div class="absolute -bottom-1 -right-1 bg-amber-500 text-slate-950 rounded-full w-4 h-4 flex items-center justify-center text-[9px] font-black shadow border border-slate-900" title="更換頭貼">📷</div>' : ''}
-                ${!isMe && p.isAITakeover ? '<span class="absolute -bottom-1 -right-1 text-[9px] bg-amber-500 text-slate-950 rounded-full px-1 font-black shadow border border-slate-900">🤖</span>' : ''}
-                ${!isMe && !p.isOnline ? '<span class="absolute -bottom-1 -right-1 text-[9px] bg-rose-600 text-white rounded-full px-1 font-black shadow border border-slate-900">💤</span>' : ''}
+                ${isMe ? '<div class="absolute -bottom-1 -right-1 bg-amber-500 text-slate-950 rounded-full w-3.5 h-3.5 sm:w-4 sm:h-4 flex items-center justify-center text-[8px] sm:text-[9px] font-black shadow border border-slate-900" title="更換頭貼">📷</div>' : ''}
+                ${!isMe && p.isAITakeover ? '<span class="absolute -bottom-1 -right-1 text-[8px] sm:text-[9px] bg-amber-500 text-slate-950 rounded-full px-0.5 sm:px-1 font-black shadow border border-slate-900">🤖</span>' : ''}
+                ${!isMe && !p.isOnline ? '<span class="absolute -bottom-1 -right-1 text-[8px] sm:text-[9px] bg-rose-600 text-white rounded-full px-0.5 sm:px-1 font-black shadow border border-slate-900">💤</span>' : ''}
               </div>
 
               <!-- 玩家資訊：名稱、出牌狀態、手牌張數、破冰狀態 -->
               <div class="flex flex-col text-left leading-tight">
                 <div class="flex items-center gap-1">
-                  <span class="font-bold text-xs sm:text-sm truncate max-w-[70px] sm:max-w-[100px] ${isMe ? 'text-amber-300' : 'text-slate-100'}">${displayName}</span>
-                  ${isCurrentTurn ? '<span class="text-[9px] px-1 py-0.2 rounded bg-amber-500 text-slate-950 font-black animate-pulse whitespace-nowrap">出牌中</span>' : ''}
+                  <span class="font-bold text-[11px] sm:text-sm truncate max-w-[50px] sm:max-w-[100px] ${isMe ? 'text-amber-300' : 'text-slate-100'}">${displayName}</span>
+                  ${isCurrentTurn ? '<span class="text-[8px] sm:text-[9px] px-1 py-0.2 rounded bg-amber-500 text-slate-950 font-black animate-pulse whitespace-nowrap">出牌中</span>' : ''}
                 </div>
-                <div class="flex items-center gap-1.5 mt-0.5">
-                  <span class="font-mono text-amber-300 font-extrabold text-xs">${handCount} 張</span>
-                  <span class="text-[10px] px-1 py-0.2 rounded font-bold ${
+                <div class="flex items-center gap-1 sm:gap-1.5 mt-0.5">
+                  <span class="font-mono text-amber-300 font-extrabold text-[11px] sm:text-xs">${handCount} 張</span>
+                  <span class="text-[9px] sm:text-[10px] px-1 py-0.2 rounded font-bold ${
                     p.hasBrokenIce 
                       ? 'bg-amber-900/80 text-amber-200 border border-amber-500/40' 
                       : 'bg-cyan-950 text-cyan-300 border border-cyan-500/30'
