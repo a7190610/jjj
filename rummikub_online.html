@@ -153,21 +153,62 @@
     <div class="max-w-md w-full bg-slate-800 border border-slate-700 rounded-3xl p-5 sm:p-7 shadow-2xl flex flex-col gap-4 text-center">
       
       <div class="flex flex-col items-center gap-1.5">
-        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-300 flex items-center justify-center text-2xl sm:text-3xl shadow-lg shadow-amber-500/20">
-          🀄
+        <!-- 經典拉密象牙牌組合圖案 (藍7、黃7、紅7) -->
+        <div class="w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center drop-shadow-xl" title="拉密 Rummikub">
+          <svg viewBox="0 0 64 64" class="w-full h-full">
+            <defs>
+              <filter id="tile-shadow" x="-20%" y="-20%" width="150%" height="150%">
+                <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="#000" flood-opacity="0.35"/>
+              </filter>
+              <linearGradient id="ivory-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="#fdfbf7"/>
+                <stop offset="100%" stop-color="#ede3d1"/>
+              </linearGradient>
+            </defs>
+            <!-- 左牌：藍色 7 -->
+            <g transform="translate(6, 14) rotate(-14 11 16)" filter="url(#tile-shadow)">
+              <rect x="0" y="0" width="22" height="32" rx="3.5" fill="url(#ivory-grad)" stroke="#d5c7b2" stroke-width="0.8"/>
+              <text x="11" y="21" font-family="'Noto Sans TC', sans-serif" font-size="16" font-weight="900" fill="#1d4ed8" text-anchor="middle">7</text>
+              <circle cx="11" cy="26" r="1.5" fill="#1d4ed8"/>
+            </g>
+            <!-- 右牌：黃色 7 -->
+            <g transform="translate(36, 14) rotate(14 11 16)" filter="url(#tile-shadow)">
+              <rect x="0" y="0" width="22" height="32" rx="3.5" fill="url(#ivory-grad)" stroke="#d5c7b2" stroke-width="0.8"/>
+              <text x="11" y="21" font-family="'Noto Sans TC', sans-serif" font-size="16" font-weight="900" fill="#d97706" text-anchor="middle">7</text>
+              <circle cx="11" cy="26" r="1.5" fill="#d97706"/>
+            </g>
+            <!-- 中牌：紅色 7 -->
+            <g transform="translate(21, 9)" filter="url(#tile-shadow)">
+              <rect x="0" y="0" width="22" height="32" rx="3.5" fill="url(#ivory-grad)" stroke="#d5c7b2" stroke-width="0.8"/>
+              <text x="11" y="21" font-family="'Noto Sans TC', sans-serif" font-size="16" font-weight="900" fill="#dc2626" text-anchor="middle">7</text>
+              <circle cx="11" cy="26" r="1.5" fill="#dc2626"/>
+            </g>
+          </svg>
         </div>
-        <h1 class="text-xl sm:text-2xl font-black bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent">
+        <h1 class="text-xl sm:text-2xl font-black tracking-wide bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 bg-clip-text text-transparent">
           拉密 Rummikub
         </h1>
-        <p class="text-[11px] sm:text-xs text-slate-400">免綁帳號 · 亂碼房號連線 · 離線電腦自動託管</p>
       </div>
 
-      <div class="bg-slate-900/80 p-2.5 sm:p-3 rounded-2xl border border-slate-700/80 flex flex-col gap-1 text-left">
-        <label class="text-xs font-bold text-slate-300 flex items-center justify-between">
-          <span>👤 我的隨機名稱</span>
-          <button onclick="netGame.randomizeNickname()" class="text-amber-400 hover:text-amber-300 text-[11px]">🎲 換一個</button>
-        </label>
-        <input id="input-nickname" type="text" maxlength="10" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-white font-bold focus:outline-none focus:border-amber-500 transition" placeholder="輸入暱稱">
+      <div class="bg-slate-900/80 p-3 sm:p-3.5 rounded-2xl border border-slate-700/80 flex items-center gap-3.5 text-left">
+        <!-- 點擊大頭貼直接更換 (放大更吸睛) -->
+        <div class="relative cursor-pointer group flex-shrink-0" onclick="netGame.openAvatarPickerModal()" title="點選大頭貼即可更換或上傳照片">
+          <img id="lobby-avatar-preview" src="" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-amber-400 shadow-lg transition-transform duration-150 group-hover:scale-105 group-hover:border-amber-300 bg-slate-700">
+          <div class="absolute -bottom-1 -right-1 bg-amber-500 group-hover:bg-amber-400 text-slate-950 rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-black shadow border border-slate-900" title="點選更換">
+            📷
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-1.5 flex-grow">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-300">我的名稱</span>
+            <button onclick="netGame.randomizeNickname()" class="text-amber-400 hover:text-amber-300 text-xs font-semibold flex items-center gap-0.5">
+              <span>🎲</span> 隨機生成
+            </button>
+          </div>
+          <input id="input-nickname" type="text" maxlength="10" class="bg-slate-800 border border-slate-600 rounded-xl px-3 py-1.5 text-xs sm:text-sm text-white font-bold focus:outline-none focus:border-amber-500 transition" placeholder="輸入暱稱">
+        </div>
       </div>
 
       <div id="lobby-menu-buttons" class="grid grid-cols-2 gap-2.5">
@@ -239,28 +280,19 @@
 
       <!-- 等待大廳面板 -->
       <div id="panel-waiting-room" class="flex flex-col gap-3 text-left hidden border-t border-slate-700 pt-3">
-        <!-- 房號與雙重分享卡片 (保留複製純房號 + 新增一鍵分享/複製網址) -->
-        <div class="bg-slate-900/90 p-2.5 rounded-2xl border border-amber-500/40 flex flex-col gap-2">
-          <div class="flex items-center justify-between">
-            <div class="flex flex-col">
-              <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">房間亂碼房號</span>
-              <span id="waiting-room-code" class="text-xl font-mono font-black text-amber-300 tracking-wider">------</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-              <!-- 保留原本的複製純房號按鈕 -->
-              <button onclick="netGame.copyRoomCode()" class="px-2.5 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs rounded-xl font-bold transition flex items-center gap-1 border border-slate-600 shadow" title="複製 5 碼純房號代碼">
-                <span>📋</span> 複製房號
-              </button>
-              <!-- 新增分享房間專屬連結按鈕 (支援原生分享或一鍵複製完整網址) -->
-              <button onclick="netGame.shareRoomLink()" class="px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 text-white text-xs rounded-xl font-black transition flex items-center gap-1 shadow-lg transform hover:scale-[1.02]" title="直接分享專屬房間連結">
-                <span>🔗</span> 分享房間連結
-              </button>
-            </div>
+        <!-- 房號與一鍵複製邀請網址卡片 (去除重複，僅保留複製房號與複製邀請網址) -->
+        <div class="bg-slate-900/90 p-2.5 rounded-2xl border border-amber-500/40 flex items-center justify-between gap-2">
+          <div class="flex flex-col">
+            <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">房間亂碼房號</span>
+            <span id="waiting-room-code" class="text-xl font-mono font-black text-amber-300 tracking-wider">------</span>
           </div>
-          <!-- 專屬連結預覽與一鍵複製列 -->
-          <div class="bg-slate-800/80 px-2 py-1.5 rounded-xl border border-slate-700 text-[10px] text-slate-300 flex items-center justify-between gap-1 overflow-hidden">
-            <span class="truncate font-mono text-slate-400" id="waiting-room-url-preview">https://...</span>
-            <button onclick="netGame.copyRoomLink()" class="text-amber-400 hover:text-amber-300 font-bold whitespace-nowrap text-[10px] bg-slate-700 px-1.5 py-0.5 rounded border border-slate-600">複製網址</button>
+          <div class="flex items-center gap-1.5">
+            <button onclick="netGame.copyRoomCode()" class="px-2.5 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs rounded-xl font-bold transition flex items-center gap-1 border border-slate-600 shadow" title="複製 5 碼純房號代碼">
+              <span>📋</span> 複製房號
+            </button>
+            <button onclick="netGame.copyRoomLink()" class="px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white text-xs rounded-xl font-black transition flex items-center gap-1 shadow-lg transform hover:scale-[1.02]" title="一鍵複製完整邀請網址">
+              <span>🔗</span> 複製邀請網址
+            </button>
           </div>
         </div>
 
@@ -295,14 +327,24 @@
   <!-- 1. 頂部狀態列 (高度 34px - 40px) -->
   <header class="flex-shrink-0 bg-slate-800/95 backdrop-blur border-b border-slate-700 px-2 sm:px-4 py-1 flex items-center justify-between gap-1 shadow-md z-30 min-h-[34px] sm:min-h-[40px]">
     <div class="flex items-center gap-1.5 sm:gap-2">
-      <span class="text-base sm:text-lg">🀄</span>
+      <!-- 經典拉密雙牌圖示 (替代撲克牌) -->
+      <div class="w-6 h-6 flex items-center justify-center flex-shrink-0">
+        <svg viewBox="0 0 32 32" class="w-full h-full">
+          <rect x="2" y="6" width="13" height="19" rx="2" fill="#fff" stroke="#d5c7b2" stroke-width="0.6"/>
+          <text x="8.5" y="19" font-size="10" font-weight="900" fill="#dc2626" text-anchor="middle">7</text>
+          <circle cx="8.5" cy="22" r="0.8" fill="#dc2626"/>
+          <rect x="13" y="4" width="13" height="19" rx="2" fill="#fff" stroke="#d5c7b2" stroke-width="0.6"/>
+          <text x="19.5" y="17" font-size="10" font-weight="900" fill="#1d4ed8" text-anchor="middle">8</text>
+          <circle cx="19.5" cy="20" r="0.8" fill="#1d4ed8"/>
+        </svg>
+      </div>
       <h1 class="font-extrabold text-xs sm:text-sm bg-gradient-to-r from-amber-200 to-yellow-400 bg-clip-text text-transparent">
         拉密
       </h1>
       <div class="flex items-center gap-1 text-[10px] sm:text-xs bg-slate-700/80 px-1.5 py-0.5 rounded border border-slate-600 text-slate-300">
         <span>房:</span>
-        <span id="game-room-code-tag" class="font-mono font-bold text-amber-300 cursor-pointer hover:underline" onclick="netGame.shareRoomLink()" title="點擊分享專屬邀請連結">-----</span>
-        <button onclick="netGame.shareRoomLink()" class="text-amber-400 hover:text-amber-300 ml-0.5" title="分享房間連結">🔗</button>
+        <span id="game-room-code-tag" class="font-mono font-bold text-amber-300 cursor-pointer hover:underline" onclick="netGame.copyRoomLink()" title="點擊複製邀請網址">-----</span>
+        <button onclick="netGame.copyRoomLink()" class="text-amber-400 hover:text-amber-300 ml-0.5" title="複製邀請網址">🔗</button>
         <span class="text-slate-500">|</span>
         <span>牌池:</span>
         <span id="deck-count" class="font-bold text-amber-300">106</span>
@@ -323,20 +365,31 @@
     </div>
   </header>
 
-  <!-- 2. 對手膠囊列 (高度 28px) -->
-  <section class="flex-shrink-0 bg-slate-800/80 border-b border-slate-700/80 px-2 py-0.5 overflow-x-auto min-h-[28px] flex items-center">
-    <div id="opponents-container" class="flex items-center gap-1.5 min-w-max mx-auto"></div>
+  <!-- 2. 頂部玩家資訊列與倒數計時卡片 (倒數秒數移到最左側同大小，所有玩家包含自己並排展示，畫面更一致) -->
+  <section class="flex-shrink-0 bg-slate-900/95 border-b border-slate-700/80 px-2 py-1.5 overflow-x-auto min-h-[52px] flex items-center gap-2">
+    <!-- 倒數秒數卡片：置於玩家畫面最左側，與玩家大頭貼卡片相同尺寸與造型，好瀏覽 -->
+    <div id="player-bar-timer-card" class="flex items-center gap-2 px-2.5 py-1 rounded-2xl border border-slate-700 bg-slate-800 shadow-sm flex-shrink-0 transition-colors">
+      <div id="timer-icon-box" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-900 border-2 border-amber-400 flex items-center justify-center text-base sm:text-lg flex-shrink-0 shadow text-amber-300">
+        ⏱️
+      </div>
+      <div class="flex flex-col text-left leading-tight pr-1">
+        <span class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">倒數</span>
+        <span id="timer-text" class="font-mono text-base sm:text-lg font-black text-amber-300">--s</span>
+      </div>
+    </div>
+
+    <!-- 垂直分隔線 -->
+    <div class="h-8 w-[1px] bg-slate-700/80 flex-shrink-0"></div>
+
+    <!-- 所有玩家並排清單 (包含我與所有對手，統一格式與大頭貼大小) -->
+    <div id="opponents-container" class="flex items-center gap-2 min-w-max"></div>
   </section>
 
-  <!-- 3. 【超顯眼回合指示橫幅】(解決不知道輪到誰) -->
-  <div id="big-turn-banner" class="flex-shrink-0 px-3 py-1 flex items-center justify-between text-xs font-black shadow transition-all duration-300 min-h-[30px] bg-slate-800 text-slate-300 border-y border-slate-700/80">
+  <!-- 3. 【超顯眼回合指示橫幅】(專注置中提示當前回合行動) -->
+  <div id="big-turn-banner" class="flex-shrink-0 px-3 py-1 flex items-center justify-center text-xs sm:text-sm font-black shadow transition-all duration-300 min-h-[28px] bg-slate-800 text-slate-300 border-y border-slate-700/80">
     <div class="flex items-center gap-1.5">
       <span id="big-turn-icon" class="text-sm sm:text-base">⏳</span>
       <span id="big-turn-text" class="tracking-wide">等待遊戲開始...</span>
-    </div>
-    <div id="big-turn-timer-badge" class="font-mono text-[11px] px-2 py-0.5 rounded bg-black/40 text-amber-300 font-bold border border-slate-600/60 flex items-center gap-1">
-      <span>⏱️</span>
-      <span id="timer-text">--s</span>
     </div>
   </div>
 
@@ -398,31 +451,21 @@
   <footer class="flex-shrink-0 bg-slate-800/98 backdrop-blur border-t border-slate-700 shadow-2xl p-1.5 sm:p-2 z-30 pb-[max(12px,env(safe-area-inset-bottom))]">
     <div class="max-w-7xl mx-auto flex flex-col gap-1">
       
-      <!-- 手牌數量、破冰狀態與快速出牌按鈕 -->
+      <!-- 手牌架頂部狀態列 (個人資訊已移至最上方與大家並排，畫面更一致) -->
       <div class="flex items-center justify-between gap-1 px-1 text-xs">
-        <div class="flex items-center gap-1.5 flex-wrap">
-          <span class="font-bold text-amber-300 text-xs flex items-center gap-0.5">
-            <span>👤</span> 手牌 (<span id="player-tile-count">14</span>)
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-slate-300 text-xs flex items-center gap-1">
+            <span>我的手牌架</span>
+            <span class="text-amber-300 font-mono font-extrabold">(<span id="player-tile-count">14</span>張)</span>
           </span>
-          <span id="ice-status-badge" class="px-1.5 py-0.2 rounded-full font-bold text-[10px] bg-cyan-900/80 text-cyan-200 border border-cyan-500/40">
-            ❄️ 尚未破冰 (需>=30分)
-          </span>
-          <span id="turn-played-info" class="text-emerald-300 font-bold hidden text-[10px]">
-            已出 <span id="turn-played-count">0</span> 張 (<span id="turn-played-points">0</span>分)
+          <!-- 保留 ice-status-badge DOM 元素以防任何舊引用報錯 (隱藏狀態) -->
+          <span id="ice-status-badge" class="hidden"></span>
+          <span id="turn-played-info" class="text-emerald-300 font-bold hidden text-[11px] bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-500/40">
+            本回合已出 <span id="turn-played-count">0</span> 張 (<span id="turn-played-points">0</span>分)
           </span>
         </div>
 
-        <!-- 手牌選取時直接浮現快速打出鍵 -->
-        <div id="hand-action-bar" class="flex items-center gap-1 hidden">
-          <button onclick="netGame.playSelectedAsNewMeld()" id="btn-play-from-hand" class="px-2.5 py-0.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white rounded-lg text-xs font-black shadow flex items-center gap-1 animate-pulse">
-            <span>🚀</span> <span>打出到桌面</span>
-          </button>
-          <button onclick="netGame.clearSelection()" class="px-1.5 py-0.5 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-lg text-xs">
-            ✕
-          </button>
-        </div>
-
-        <div id="ai-takeover-warning" class="text-amber-400 font-bold hidden text-[10px] bg-amber-950 px-1 rounded animate-pulse">
+        <div id="ai-takeover-warning" class="text-amber-400 font-bold hidden text-[10px] bg-amber-950 px-1.5 py-0.5 rounded-full border border-amber-500/40 animate-pulse">
           🤖 電腦託管中
         </div>
       </div>
@@ -444,11 +487,14 @@
           <button onclick="netGame.undoTurn()" id="btn-undo" class="px-2 py-1 bg-rose-900/60 hover:bg-rose-800 text-rose-200 rounded text-xs font-semibold border border-rose-500/40 shadow" title="還原本回合">
             ↩️ 還原
           </button>
+          <button onclick="netGame.toggleManualTakeover()" id="btn-toggle-takeover" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs font-semibold border border-slate-600 shadow flex items-center gap-0.5" title="電腦託管：暫離/上洗手間時自動出牌">
+            <span>🤖</span> <span id="takeover-btn-label">電腦託管</span>
+          </button>
         </div>
 
         <div>
           <button onclick="netGame.handleUnifiedEndTurn()" id="btn-end-turn" class="px-3.5 sm:px-6 py-1 sm:py-1.5 rounded-xl text-xs sm:text-sm font-black shadow-lg transition flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white">
-            <span id="end-turn-icon">🃏</span>
+            <span id="end-turn-icon">📥</span>
             <div class="flex flex-col text-left leading-none">
               <span id="end-turn-title">結束回合</span>
               <span id="end-turn-sub" class="text-[9px] font-normal opacity-90 mt-0.5">自動摸牌</span>
@@ -511,7 +557,49 @@
     </div>
   </div>
 
-  <!-- 專屬分享房間彈窗 Modal (開啟房間後自動彈出，好友點擊直達房間) -->
+
+  <!-- 大頭貼選擇與上傳彈窗 Modal -->
+  <div id="modal-avatar-picker" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-[80] hidden">
+    <div class="bg-slate-800 border-2 border-amber-500/60 rounded-3xl max-w-sm w-full p-4 sm:p-5 shadow-2xl flex flex-col gap-3.5">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+        <h3 class="text-base font-black text-amber-400 flex items-center gap-1.5">
+          <span>🖼️</span> 大頭貼設定
+        </h3>
+        <button onclick="netGame.closeAvatarPickerModal()" class="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+      </div>
+
+      <!-- 目前使用中頭貼與上傳按鈕 -->
+      <div class="flex items-center gap-3.5 bg-slate-900/80 p-3 rounded-2xl border border-slate-700">
+        <img id="picker-current-avatar" src="" class="w-16 h-16 rounded-full object-cover border-2 border-amber-400 shadow-lg flex-shrink-0 bg-slate-700">
+        <div class="flex flex-col gap-1.5 flex-grow">
+          <span class="text-xs font-bold text-slate-200">上傳個人相片</span>
+          <p class="text-[10px] text-slate-400 leading-tight">支援手機相簿或電腦相片，將自動永久保留</p>
+          <label class="cursor-pointer inline-flex items-center justify-center gap-1 px-3 py-1.5 bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 text-white text-xs font-bold rounded-xl shadow transition">
+            <span>📁</span> 選擇照片上傳
+            <input type="file" id="avatar-file-input" accept="image/*" class="hidden" onchange="netGame.handleAvatarFileUpload(event)">
+          </label>
+        </div>
+      </div>
+
+      <!-- 大頭貼選擇清單 (自動保留上次上傳圖片 + 8款精緻向量插圖) -->
+      <div class="flex flex-col gap-1.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-300">大頭貼選擇清單：</span>
+          <span class="text-[10px] text-amber-400 font-medium">點選直接套用</span>
+        </div>
+        <div id="preset-avatars-grid" class="grid grid-cols-4 gap-2.5 p-2 bg-slate-900/60 rounded-2xl border border-slate-700/60 max-h-[190px] overflow-y-auto">
+        </div>
+      </div>
+
+      <div class="pt-1">
+        <button onclick="netGame.closeAvatarPickerModal()" class="w-full py-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white rounded-xl font-black text-xs sm:text-sm shadow">
+          確定完成
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 專屬分享房間彈窗 Modal -->
   <div id="modal-share-room" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-[75] hidden">
     <div class="bg-slate-800 border-2 border-amber-500/80 rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl flex flex-col gap-3.5 text-center">
       <div class="flex items-center justify-between border-b border-slate-700 pb-2">
@@ -530,33 +618,20 @@
       <!-- 專屬直達邀請網址框 -->
       <div class="flex flex-col gap-1 text-left">
         <label class="text-xs font-bold text-slate-300 flex items-center justify-between">
-          <span>🔗 專屬直達網址（點擊自動帶入房號）</span>
+          <span>🔗 專屬直達網址</span>
         </label>
         <div class="bg-slate-900 border border-slate-700 rounded-xl p-2.5 flex items-center justify-between gap-2">
           <input id="modal-share-url-input" type="text" readonly class="bg-transparent text-xs font-mono text-emerald-300 w-full focus:outline-none select-all" value="">
         </div>
-        <p class="text-[11px] text-slate-400 leading-tight">
-          💡 好友點開此連結，系統將<b>直接自動帶入房號並進入房間</b>，無須手動輸入！
-        </p>
       </div>
 
-      <!-- 操作按鈕：複製邀請網址、分享至 LINE / 原生分享 -->
-      <div class="grid grid-cols-2 gap-2 pt-1">
+      <!-- 操作按鈕：複製房號 (左)、複製邀請網址 (右) -->
+      <div class="grid grid-cols-2 gap-2.5 pt-1">
+        <button onclick="netGame.copyRoomCode()" class="py-2.5 px-3 bg-slate-700 hover:bg-slate-600 text-slate-100 font-extrabold rounded-xl shadow-lg transition flex items-center justify-center gap-1.5 text-xs sm:text-sm border border-slate-600">
+          <span>📋</span> 複製房號
+        </button>
         <button onclick="netGame.copyRoomLink()" class="py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white font-extrabold rounded-xl shadow-lg transition flex items-center justify-center gap-1.5 text-xs sm:text-sm">
           <span>🔗</span> 複製邀請網址
-        </button>
-        <button onclick="netGame.shareRoomNativeOrLine()" class="py-2.5 px-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 text-white font-extrabold rounded-xl shadow-lg transition flex items-center justify-center gap-1.5 text-xs sm:text-sm">
-          <span>💬</span> 分享至 LINE
-        </button>
-      </div>
-
-      <!-- 原本的複製純房號按鈕 (100% 保留) -->
-      <div class="pt-2 border-t border-slate-700/80 flex items-center justify-between gap-2">
-        <button onclick="netGame.copyRoomCode()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs rounded-xl font-bold transition flex items-center gap-1 border border-slate-600 shadow">
-          <span>📋</span> 保留原功能：僅複製純房號
-        </button>
-        <button onclick="netGame.closeShareModal()" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-xl font-bold transition">
-          我知道了
         </button>
       </div>
     </div>
@@ -649,7 +724,31 @@
         localStorage.setItem('rmk_uid', this.myUserId);
 
         const savedNick = localStorage.getItem('rmk_nick');
-        this.myNickname = savedNick || this.generateRandomNickname();
+        if (savedNick && savedNick.trim()) {
+          this.myNickname = savedNick.trim();
+        } else {
+          this.myNickname = this.generateRandomNickname();
+          localStorage.setItem('rmk_nick', this.myNickname);
+        }
+
+        this.customAvatar = localStorage.getItem('rmk_custom_avatar') || null;
+        this.presetAvatarNames = ['狐狸探險家', '貓咪帽少年', '星際宇航員', '科技機器人', '淘氣熊貓', '陽光獅子', '優雅王冠', '魔法巫師'];
+        this.presetAvatars = [
+          'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22bg-fox%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fdba74%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23ea580c%22/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2248%22%20fill%3D%22url%28%23bg-fox%29%22/%3E%3Cpolygon%20points%3D%2226%2C42%2016%2C14%2042%2C28%22%20fill%3D%22%23c2410c%22/%3E%3Cpolygon%20points%3D%2226%2C38%2020%2C20%2038%2C28%22%20fill%3D%22%23fef08a%22/%3E%3Cpolygon%20points%3D%2274%2C42%2084%2C14%2058%2C28%22%20fill%3D%22%23c2410c%22/%3E%3Cpolygon%20points%3D%2274%2C38%2080%2C20%2062%2C28%22%20fill%3D%22%23fef08a%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2258%22%20rx%3D%2234%22%20ry%3D%2228%22%20fill%3D%22%23ea580c%22/%3E%3Cpath%20d%3D%22M%2022%2C58%20Q%2050%2C78%2078%2C58%20Q%2050%2C92%2022%2C58%20Z%22%20fill%3D%22%23ffffff%22/%3E%3Cellipse%20cx%3D%2238%22%20cy%3D%2250%22%20rx%3D%224%22%20ry%3D%225.5%22%20fill%3D%22%231e293b%22/%3E%3Ccircle%20cx%3D%2239.5%22%20cy%3D%2248%22%20r%3D%221.5%22%20fill%3D%22%23ffffff%22/%3E%3Cellipse%20cx%3D%2262%22%20cy%3D%2250%22%20rx%3D%224%22%20ry%3D%225.5%22%20fill%3D%22%231e293b%22/%3E%3Ccircle%20cx%3D%2263.5%22%20cy%3D%2248%22%20r%3D%221.5%22%20fill%3D%22%23ffffff%22/%3E%3Cpolygon%20points%3D%2246%2C65%2054%2C65%2050%2C70%22%20fill%3D%22%230f172a%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2265%22%20rx%3D%224%22%20ry%3D%222%22%20fill%3D%22%230f172a%22/%3E%3Ccircle%20cx%3D%2232%22%20cy%3D%2258%22%20r%3D%223.5%22%20fill%3D%22%23fda4af%22%20opacity%3D%220.6%22/%3E%3Ccircle%20cx%3D%2268%22%20cy%3D%2258%22%20r%3D%223.5%22%20fill%3D%22%23fda4af%22%20opacity%3D%220.6%22/%3E%3C/svg%3E',
+          'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22bg-cat%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2367e8f9%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%230284c7%22/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2248%22%20fill%3D%22url%28%23bg-cat%29%22/%3E%3Cpolygon%20points%3D%2226%2C38%2020%2C16%2040%2C28%22%20fill%3D%22%230369a1%22/%3E%3Cpolygon%20points%3D%2227%2C34%2023%2C22%2036%2C30%22%20fill%3D%22%23f472b6%22/%3E%3Cpolygon%20points%3D%2274%2C38%2080%2C16%2060%2C28%22%20fill%3D%22%230369a1%22/%3E%3Cpolygon%20points%3D%2273%2C34%2077%2C22%2064%2C30%22%20fill%3D%22%23f472b6%22/%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2256%22%20r%3D%2230%22%20fill%3D%22%23fed7aa%22/%3E%3Cpath%20d%3D%22M%2022%2C46%20Q%2050%2C34%2078%2C46%20Q%2050%2C40%2022%2C46%20Z%22%20fill%3D%22%230284c7%22/%3E%3Cpath%20d%3D%22M%2030%2C46%20Q%2040%2C54%2048%2C46%20Q%2055%2C54%2068%2C46%22%20stroke%3D%22%23475569%22%20stroke-width%3D%224%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%3Cellipse%20cx%3D%2238%22%20cy%3D%2256%22%20rx%3D%224%22%20ry%3D%225%22%20fill%3D%22%230f172a%22/%3E%3Ccircle%20cx%3D%2239.5%22%20cy%3D%2254.5%22%20r%3D%221.5%22%20fill%3D%22%23ffffff%22/%3E%3Cellipse%20cx%3D%2262%22%20cy%3D%2256%22%20rx%3D%224%22%20ry%3D%225%22%20fill%3D%22%230f172a%22/%3E%3Ccircle%20cx%3D%2263.5%22%20cy%3D%2254.5%22%20r%3D%221.5%22%20fill%3D%22%23ffffff%22/%3E%3Cpath%20d%3D%22M%2044%2C66%20Q%2050%2C71%2056%2C66%22%20stroke%3D%22%230f172a%22%20stroke-width%3D%222.5%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%3Ccircle%20cx%3D%2233%22%20cy%3D%2262%22%20r%3D%223%22%20fill%3D%22%23fb7185%22%20opacity%3D%220.6%22/%3E%3Ccircle%20cx%3D%2267%22%20cy%3D%2262%22%20r%3D%223%22%20fill%3D%22%23fb7185%22%20opacity%3D%220.6%22/%3E%3C/svg%3E',
+          'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22bg-astro%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23312e81%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%230f172a%22/%3E%3C/radialGradient%3E%3ClinearGradient%20id%3D%22visor%22%20x1%3D%220%25%22%20y1%3D%220%25%22%20x2%3D%22100%25%22%20y2%3D%22100%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2338bdf8%22/%3E%3Cstop%20offset%3D%2250%25%22%20stop-color%3D%22%23818cf8%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23c084fc%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2248%22%20fill%3D%22url%28%23bg-astro%29%22/%3E%3Ccircle%20cx%3D%2225%22%20cy%3D%2222%22%20r%3D%221.2%22%20fill%3D%22%23ffffff%22/%3E%3Ccircle%20cx%3D%2278%22%20cy%3D%2226%22%20r%3D%221%22%20fill%3D%22%23ffffff%22/%3E%3Ccircle%20cx%3D%2282%22%20cy%3D%2274%22%20r%3D%221.5%22%20fill%3D%22%23ffffff%22/%3E%3Ccircle%20cx%3D%2220%22%20cy%3D%2272%22%20r%3D%221%22%20fill%3D%22%23ffffff%22/%3E%3Crect%20x%3D%2222%22%20y%3D%2224%22%20width%3D%2256%22%20height%3D%2252%22%20rx%3D%2226%22%20fill%3D%22%23f8fafc%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%222%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2234%22%20width%3D%2240%22%20height%3D%2232%22%20rx%3D%2216%22%20fill%3D%22url%28%23visor%29%22/%3E%3Cellipse%20cx%3D%2244%22%20cy%3D%2242%22%20rx%3D%227%22%20ry%3D%223%22%20fill%3D%22%23ffffff%22%20opacity%3D%220.5%22%20transform%3D%22rotate%28-20%2044%2042%29%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2244%22%20width%3D%226%22%20height%3D%2212%22%20rx%3D%223%22%20fill%3D%22%2394a3b8%22/%3E%3Crect%20x%3D%2276%22%20y%3D%2244%22%20width%3D%226%22%20height%3D%2212%22%20rx%3D%223%22%20fill%3D%22%2394a3b8%22/%3E%3Cpath%20d%3D%22M%2038%2C76%20L%2062%2C76%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22/%3E%3C/svg%3E',
+          'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22bg-bot%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23334155%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%230f172a%22/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2248%22%20fill%3D%22url%28%23bg-bot%29%22/%3E%3Crect%20x%3D%2248%22%20y%3D%2214%22%20width%3D%224%22%20height%3D%2214%22%20fill%3D%22%2394a3b8%22/%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2214%22%20r%3D%225%22%20fill%3D%22%2338bdf8%22/%3E%3Crect%20x%3D%2224%22%20y%3D%2226%22%20width%3D%2252%22%20height%3D%2246%22%20rx%3D%2212%22%20fill%3D%22%23cbd5e1%22%20stroke%3D%22%2364748b%22%20stroke-width%3D%222%22/%3E%3Crect%20x%3D%2218%22%20y%3D%2240%22%20width%3D%226%22%20height%3D%2218%22%20rx%3D%222%22%20fill%3D%22%2364748b%22/%3E%3Crect%20x%3D%2276%22%20y%3D%2240%22%20width%3D%226%22%20height%3D%2218%22%20rx%3D%222%22%20fill%3D%22%2364748b%22/%3E%3Crect%20x%3D%2230%22%20y%3D%2234%22%20width%3D%2240%22%20height%3D%2220%22%20rx%3D%226%22%20fill%3D%22%230f172a%22/%3E%3Ccircle%20cx%3D%2240%22%20cy%3D%2244%22%20r%3D%224.5%22%20fill%3D%22%2338bdf8%22/%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2244%22%20r%3D%224.5%22%20fill%3D%22%2338bdf8%22/%3E%3Crect%20x%3D%2236%22%20y%3D%2260%22%20width%3D%2228%22%20height%3D%225%22%20rx%3D%222.5%22%20fill%3D%22%23475569%22/%3E%3C/svg%3E',
+          'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22bg-panda%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%2386efac%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%2316a34a%22/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2248%22%20fill%3D%22url%28%23bg-panda%29%22/%3E%3Ccircle%20cx%3D%2228%22%20cy%3D%2228%22%20r%3D%2213%22%20fill%3D%22%231e293b%22/%3E%3Ccircle%20cx%3D%2272%22%20cy%3D%2228%22%20r%3D%2213%22%20fill%3D%22%231e293b%22/%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2256%22%20r%3D%2232%22%20fill%3D%22%23ffffff%22/%3E%3Cellipse%20cx%3D%2238%22%20cy%3D%2252%22%20rx%3D%229%22%20ry%3D%2212%22%20fill%3D%22%231e293b%22%20transform%3D%22rotate%28-20%2038%2052%29%22/%3E%20%3Ccircle%20cx%3D%2239%22%20cy%3D%2250%22%20r%3D%223%22%20fill%3D%22%23ffffff%22/%3E%3Cellipse%20cx%3D%2262%22%20cy%3D%2252%22%20rx%3D%229%22%20ry%3D%2212%22%20fill%3D%22%231e293b%22%20transform%3D%22rotate%2820%2062%2052%29%22/%3E%3Ccircle%20cx%3D%2261%22%20cy%3D%2250%22%20r%3D%223%22%20fill%3D%22%23ffffff%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2264%22%20rx%3D%224%22%20ry%3D%222.5%22%20fill%3D%22%231e293b%22/%3E%3Cpath%20d%3D%22M%2046%2C69%20Q%2050%2C73%2054%2C69%22%20stroke%3D%22%231e293b%22%20stroke-width%3D%222%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%3C/svg%3E',
+          'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22bg-lion%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fef08a%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23ca8a04%22/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2248%22%20fill%3D%22url%28%23bg-lion%29%22/%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2252%22%20r%3D%2235%22%20fill%3D%22%23b45309%22/%3E%3Ccircle%20cx%3D%2228%22%20cy%3D%2228%22%20r%3D%229%22%20fill%3D%22%23f59e0b%22/%3E%3Ccircle%20cx%3D%2228%22%20cy%3D%2228%22%20r%3D%225%22%20fill%3D%22%23fef3c7%22/%3E%3Ccircle%20cx%3D%2272%22%20cy%3D%2228%22%20r%3D%229%22%20fill%3D%22%23f59e0b%22/%3E%3Ccircle%20cx%3D%2272%22%20cy%3D%2228%22%20r%3D%225%22%20fill%3D%22%23fef3c7%22/%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2254%22%20r%3D%2226%22%20fill%3D%22%23fbbf24%22/%3E%3Ccircle%20cx%3D%2241%22%20cy%3D%2248%22%20r%3D%223.5%22%20fill%3D%22%231e293b%22/%3E%3Ccircle%20cx%3D%2242%22%20cy%3D%2246.5%22%20r%3D%221%22%20fill%3D%22%23ffffff%22/%3E%3Ccircle%20cx%3D%2259%22%20cy%3D%2248%22%20r%3D%223.5%22%20fill%3D%22%231e293b%22/%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2246.5%22%20r%3D%221%22%20fill%3D%22%23ffffff%22/%3E%3Cellipse%20cx%3D%2250%22%20cy%3D%2262%22%20rx%3D%2210%22%20ry%3D%227%22%20fill%3D%22%23fef3c7%22/%3E%3Cpolygon%20points%3D%2246%2C58%2054%2C58%2050%2C62%22%20fill%3D%22%2378350f%22/%3E%3Cpath%20d%3D%22M%2046%2C65%20Q%2050%2C68%2054%2C65%22%20stroke%3D%22%2378350f%22%20stroke-width%3D%221.8%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%3C/svg%3E',
+          'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22bg-crown%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23f472b6%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23db2777%22/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2248%22%20fill%3D%22url%28%23bg-crown%29%22/%3E%3Cpolygon%20points%3D%2230%2C34%2038%2C20%2050%2C30%2062%2C20%2070%2C34%22%20fill%3D%22%23fbbf24%22%20stroke%3D%22%23f59e0b%22%20stroke-width%3D%222%22/%3E%3Ccircle%20cx%3D%2238%22%20cy%3D%2218%22%20r%3D%223%22%20fill%3D%22%23ef4444%22/%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2228%22%20r%3D%223%22%20fill%3D%22%233b82f6%22/%3E%3Ccircle%20cx%3D%2262%22%20cy%3D%2218%22%20r%3D%223%22%20fill%3D%22%23ef4444%22/%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2258%22%20r%3D%2228%22%20fill%3D%22%23fed7aa%22/%3E%3Cpath%20d%3D%22M%2028%2C48%20Q%2050%2C36%2072%2C48%20Q%2050%2C44%2028%2C48%20Z%22%20fill%3D%22%2392400e%22/%3E%3Cpath%20d%3D%22M%2036%2C54%20Q%2042%2C50%2044%2C56%22%20stroke%3D%22%231e293b%22%20stroke-width%3D%222.5%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%3Cpath%20d%3D%22M%2056%2C56%20Q%2058%2C50%2064%2C54%22%20stroke%3D%22%231e293b%22%20stroke-width%3D%222.5%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%3Cpath%20d%3D%22M%2044%2C68%20Q%2050%2C74%2056%2C68%22%20stroke%3D%22%23be185d%22%20stroke-width%3D%222.5%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%3Ccircle%20cx%3D%2234%22%20cy%3D%2264%22%20r%3D%223.5%22%20fill%3D%22%23f43f5e%22%20opacity%3D%220.6%22/%3E%3Ccircle%20cx%3D%2266%22%20cy%3D%2264%22%20r%3D%223.5%22%20fill%3D%22%23f43f5e%22%20opacity%3D%220.6%22/%3E%3C/svg%3E',
+          'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cdefs%3E%3CradialGradient%20id%3D%22bg-wiz%22%20cx%3D%2250%25%22%20cy%3D%2250%25%22%20r%3D%2250%25%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23a855f7%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23581c87%22/%3E%3C/radialGradient%3E%3C/defs%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%2248%22%20fill%3D%22url%28%23bg-wiz%29%22/%3E%3Cpolygon%20points%3D%2250%2C10%2024%2C42%2076%2C42%22%20fill%3D%22%233b0764%22/%3E%3Cpath%20d%3D%22M%2016%2C42%20Q%2050%2C36%2084%2C42%20Q%2050%2C46%2016%2C42%20Z%22%20fill%3D%22%234c1d95%22/%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2226%22%20r%3D%223%22%20fill%3D%22%23facc15%22/%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2256%22%20r%3D%2224%22%20fill%3D%22%23fed7aa%22/%3E%3Ccircle%20cx%3D%2241%22%20cy%3D%2254%22%20r%3D%223%22%20fill%3D%22%231e293b%22/%3E%3Ccircle%20cx%3D%2242%22%20cy%3D%2253%22%20r%3D%221%22%20fill%3D%22%23ffffff%22/%3E%3Ccircle%20cx%3D%2259%22%20cy%3D%2254%22%20r%3D%223%22%20fill%3D%22%231e293b%22/%3E%3Ccircle%20cx%3D%2260%22%20cy%3D%2253%22%20r%3D%221%22%20fill%3D%22%23ffffff%22/%3E%3Cpath%20d%3D%22M%2034%2C60%20Q%2050%2C90%2066%2C60%20Q%2050%2C68%2034%2C60%20Z%22%20fill%3D%22%23e2e8f0%22/%3E%3Cpath%20d%3D%22M%2040%2C64%20Q%2050%2C68%2060%2C64%22%20stroke%3D%22%23cbd5e1%22%20stroke-width%3D%222.5%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%3C/svg%3E'
+        ];
+        const savedAvatar = localStorage.getItem('rmk_avatar');
+        if (savedAvatar && !savedAvatar.startsWith('data:image/svg') && !this.customAvatar) {
+          this.customAvatar = savedAvatar;
+          localStorage.setItem('rmk_custom_avatar', savedAvatar);
+        }
+        this.myAvatar = savedAvatar || this.presetAvatars[0];
 
         this.isHost = false;
         this.roomCode = '';
@@ -675,10 +774,12 @@
         this.myHand = [];
 
         this.selectedHandIndices = new Set();
+        this.selectedTableTileIds = new Set();
         this.selectedTableTile = null;
         this.playedTilesThisTurn = [];
         this.turnSnapshot = { hand: [], tableMelds: [], playerBrokenIce: false };
 
+        this.lastUserActionTime = Date.now();
         this.heartbeatTimer = null;
         this.touchDragState = null;
       }
@@ -694,17 +795,81 @@
         }
       }
 
+      recordUserAction() {
+        this.lastUserActionTime = Date.now();
+        const myPlayerObj = this.players.find(p => p.uid === this.myUserId);
+        if (myPlayerObj) {
+          myPlayerObj.lastActionTime = Date.now();
+          myPlayerObj.consecutiveTimeouts = 0;
+          if (myPlayerObj.autoAFKTakeover) {
+            myPlayerObj.autoAFKTakeover = false;
+            myPlayerObj.isAITakeover = false;
+            if (this.isHost) {
+              this.broadcastState();
+            } else if (this.hostConn && this.hostConn.open) {
+              this.hostConn.send({
+                type: 'CLIENT_TAKEOVER_TOGGLE',
+                uid: this.myUserId,
+                isAITakeover: false
+              });
+            }
+            this.showToast('偵測到動作，已自動恢復手動控制', '👤');
+            this.renderAll();
+          }
+        }
+      }
+
+      toggleManualTakeover() {
+        this.recordUserAction();
+        const myPlayerObj = this.players.find(p => p.uid === this.myUserId) || this.players[0];
+        if (!myPlayerObj) return;
+
+        myPlayerObj.isAITakeover = !myPlayerObj.isAITakeover;
+        myPlayerObj.autoAFKTakeover = false;
+
+        if (this.isHost) {
+          this.broadcastState();
+          this.showToast(myPlayerObj.isAITakeover ? '已開啟電腦託管（簡易難度，方便暫離）' : '已解除電腦託管，恢復手動操作', '🤖');
+          this.renderAll();
+          if (this.isMyTurn() && myPlayerObj.isAITakeover) {
+            setTimeout(() => {
+              if (this.isMyTurn() && myPlayerObj.isAITakeover) {
+                this.executeAITurn(myPlayerObj);
+              }
+            }, 800);
+          }
+        } else {
+          if (this.hostConn && this.hostConn.open) {
+            this.hostConn.send({
+              type: 'CLIENT_TAKEOVER_TOGGLE',
+              uid: this.myUserId,
+              isAITakeover: myPlayerObj.isAITakeover
+            });
+          }
+          this.showToast(myPlayerObj.isAITakeover ? '已開啟電腦託管（簡易難度，方便暫離）' : '已解除電腦託管，恢復手動操作', '🤖');
+          this.renderAll();
+        }
+      }
+
       init() {
         this.detectAndApplyDevice();
         window.addEventListener('resize', () => this.detectAndApplyDevice());
         
+        const lobbyAvatar = document.getElementById('lobby-avatar-preview');
+        if (lobbyAvatar) lobbyAvatar.src = this.myAvatar;
+
         const nickInput = document.getElementById('input-nickname');
         if (nickInput) {
           nickInput.value = this.myNickname;
-          nickInput.addEventListener('change', (e) => {
-            this.myNickname = e.target.value.trim() || this.generateRandomNickname();
-            localStorage.setItem('rmk_nick', this.myNickname);
-          });
+          const saveNickname = (e) => {
+            const val = e.target.value.trim();
+            if (val) {
+              this.myNickname = val;
+              localStorage.setItem('rmk_nick', val);
+            }
+          };
+          nickInput.addEventListener('input', saveNickname);
+          nickInput.addEventListener('change', saveNickname);
         }
 
         document.addEventListener('visibilitychange', () => {
@@ -761,10 +926,137 @@
         return name;
       }
 
+
+      openAvatarPickerModal() {
+        const modal = document.getElementById('modal-avatar-picker');
+        if (!modal) return;
+        modal.classList.remove('hidden');
+
+        const currImg = document.getElementById('picker-current-avatar');
+        if (currImg) currImg.src = this.myAvatar;
+
+        this.renderAvatarPickerList();
+      }
+
+      closeAvatarPickerModal() {
+        const modal = document.getElementById('modal-avatar-picker');
+        if (modal) modal.classList.add('hidden');
+      }
+
+      renderAvatarPickerList() {
+        const grid = document.getElementById('preset-avatars-grid');
+        if (!grid) return;
+
+        let itemsHtml = '';
+
+        // 1. 保留上一次上傳的圖片：若曾上傳過，固定展示於選擇清單首位，並標註「我的上傳」
+        if (this.customAvatar) {
+          const isCustomSelected = (this.myAvatar === this.customAvatar);
+          itemsHtml += `
+            <div class="flex flex-col items-center">
+              <button type="button" onclick="netGame.setMyAvatar(netGame.customAvatar)" class="relative p-1 rounded-2xl transition border-2 flex items-center justify-center ${isCustomSelected ? 'border-amber-400 bg-amber-400/20 shadow-md ring-2 ring-amber-400/50' : 'border-slate-600 hover:border-slate-400 bg-slate-800'}" title="上次上傳的相片">
+                <img src="${this.customAvatar}" class="w-12 h-12 rounded-full object-cover">
+                <span class="absolute -top-1.5 -right-1.5 bg-amber-500 text-slate-950 font-black text-[9px] px-1 py-0.2 rounded-full shadow">上傳</span>
+              </button>
+              <span class="text-[10px] text-amber-300 font-bold mt-0.5 truncate max-w-[65px]">我的相片</span>
+            </div>
+          `;
+        }
+
+        // 2. 8 款精緻預設向量插圖
+        this.presetAvatars.forEach((uri, idx) => {
+          const isSelected = (this.myAvatar === uri);
+          const name = (this.presetAvatarNames && this.presetAvatarNames[idx]) ? this.presetAvatarNames[idx] : `圖案 ${idx + 1}`;
+          itemsHtml += `
+            <div class="flex flex-col items-center">
+              <button type="button" onclick="netGame.setMyAvatar(netGame.presetAvatars[${idx}])" class="p-1 rounded-2xl transition border-2 flex items-center justify-center ${isSelected ? 'border-amber-400 bg-amber-400/20 shadow-md ring-2 ring-amber-400/50' : 'border-transparent hover:border-slate-500 bg-slate-800'}" title="${name}">
+                <img src="${uri}" class="w-12 h-12 rounded-full object-cover">
+              </button>
+              <span class="text-[10px] text-slate-400 mt-0.5 truncate max-w-[65px]">${name}</span>
+            </div>
+          `;
+        });
+
+        grid.innerHTML = itemsHtml;
+      }
+
+      setMyAvatar(avatarData) {
+        if (!avatarData) return;
+        this.myAvatar = avatarData;
+        localStorage.setItem('rmk_avatar', avatarData);
+
+        const lobbyAv = document.getElementById('lobby-avatar-preview');
+        if (lobbyAv) lobbyAv.src = avatarData;
+
+        const pickerAv = document.getElementById('picker-current-avatar');
+        if (pickerAv) pickerAv.src = avatarData;
+
+        const rackAv = document.getElementById('my-rack-avatar');
+        if (rackAv) rackAv.src = avatarData;
+
+        const myPlayerObj = this.players.find(p => p.uid === this.myUserId);
+        if (myPlayerObj) {
+          myPlayerObj.avatar = avatarData;
+        }
+
+        if (this.isHost) {
+          this.broadcastLobbyUpdate();
+          this.broadcastState();
+          this.updateWaitingRoomUI();
+          this.renderAll();
+        } else if (this.hostConn && this.hostConn.open) {
+          this.hostConn.send({
+            type: 'CLIENT_AVATAR_UPDATE',
+            uid: this.myUserId,
+            avatar: avatarData
+          });
+          this.updateWaitingRoomUI();
+          this.renderAll();
+        }
+
+        this.renderAvatarPickerList();
+      }
+
+      handleAvatarFileUpload(event) {
+        const file = event.target.files && event.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+          this.showToast('請選取圖片檔案 (JPG, PNG, WebP)', '⚠️');
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 96;
+            canvas.height = 96;
+            const ctx = canvas.getContext('2d');
+            const minDim = Math.min(img.width, img.height);
+            const sx = (img.width - minDim) / 2;
+            const sy = (img.height - minDim) / 2;
+            ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, 96, 96);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+            // 永久保留至自訂相片儲存區，隨時可在清單中切換
+            this.customAvatar = dataUrl;
+            localStorage.setItem('rmk_custom_avatar', dataUrl);
+
+            this.setMyAvatar(dataUrl);
+            this.showToast('大頭貼已上傳並保留於選擇清單！', '📷');
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
       randomizeNickname() {
         this.myNickname = this.generateRandomNickname();
-        document.getElementById('input-nickname').value = this.myNickname;
-        this.showToast(`暱稱換為：${this.myNickname}`, '🎲');
+        localStorage.setItem('rmk_nick', this.myNickname);
+        const nickInput = document.getElementById('input-nickname');
+        if (nickInput) nickInput.value = this.myNickname;
+        this.showToast(`已隨機生成名稱：${this.myNickname}`, '🎲');
       }
 
       detectAndApplyDevice() {
@@ -831,8 +1123,6 @@
           this.enterWaitingRoom();
           sessionStorage.setItem('rmk_current_room', this.roomCode);
           this.showToast(`房間已建立！房號：${this.roomCode}`, '🎉');
-          // 開啟房間後直接自動彈出專屬直達網址分享視窗！
-          setTimeout(() => { this.openShareModal(); }, 250);
         });
 
         this.peer.on('error', (err) => {
@@ -871,7 +1161,8 @@
             this.hostConn.send({
               type: 'REQ_JOIN',
               uid: this.myUserId,
-              name: this.myNickname
+              name: this.myNickname,
+              avatar: this.myAvatar
             });
             sessionStorage.setItem('rmk_current_room', this.roomCode);
           });
@@ -898,6 +1189,7 @@
           id: 0,
           uid: this.myUserId,
           name: `${this.myNickname} (房主)`,
+          avatar: this.myAvatar,
           isHost: true,
           isAI: false,
           isAITakeover: false,
@@ -970,6 +1262,7 @@
               id: this.players.length,
               uid: uid,
               name: name,
+              avatar: data.avatar || this.presetAvatars[(this.players.length) % this.presetAvatars.length],
               isHost: false,
               isAI: false,
               isAITakeover: false,
@@ -1027,6 +1320,36 @@
             const player = this.players.find(p => p.uid === data.uid);
             if (player && Array.isArray(data.hand)) {
               player.hand = data.hand;
+            }
+            break;
+          }
+
+          case 'CLIENT_TAKEOVER_TOGGLE': {
+            const player = this.players.find(p => p.uid === data.uid);
+            if (player) {
+              player.isAITakeover = data.isAITakeover;
+              player.autoAFKTakeover = false;
+              this.broadcastState();
+              this.renderOpponents();
+              if (this.turnIndex === player.id && player.isAITakeover) {
+                setTimeout(() => {
+                  if (this.turnIndex === player.id && player.isAITakeover) {
+                    this.executeAITurn(player);
+                  }
+                }, 800);
+              }
+            }
+            break;
+          }
+
+          case 'CLIENT_AVATAR_UPDATE': {
+            const player = this.players.find(p => p.uid === data.uid);
+            if (player && data.avatar) {
+              player.avatar = data.avatar;
+              this.broadcastLobbyUpdate();
+              this.broadcastState();
+              this.updateWaitingRoomUI();
+              this.renderAll();
             }
             break;
           }
@@ -1111,6 +1434,7 @@
           id: p.id,
           uid: p.uid,
           name: p.name,
+          avatar: p.avatar || this.presetAvatars[0],
           isHost: p.isHost,
           isAI: p.isAI,
           isAITakeover: p.isAITakeover,
@@ -1307,8 +1631,7 @@
         document.getElementById('game-room-code-tag').textContent = this.roomCode;
 
         const shareUrl = this.getRoomShareUrl();
-        const previewEl = document.getElementById('waiting-room-url-preview');
-        if (previewEl) previewEl.textContent = shareUrl;
+
 
         if (this.isHost) {
           document.getElementById('btn-host-start').classList.remove('hidden');
@@ -1324,16 +1647,20 @@
         document.getElementById('waiting-max-count').textContent = this.targetPlayerCount;
 
         const listEl = document.getElementById('waiting-players-list');
-        listEl.innerHTML = this.players.map(p => `
+        listEl.innerHTML = this.players.map(p => {
+          const av = p.avatar || this.presetAvatars[0];
+          return `
           <div class="flex items-center justify-between p-1.5 rounded-xl bg-slate-800/90 border border-slate-700">
-            <span class="flex items-center gap-1.5 text-xs font-bold ${p.uid === this.myUserId ? 'text-amber-300' : 'text-slate-200'}">
-              <span>${p.isHost ? '👑' : '👤'}</span> ${p.name}
+            <span class="flex items-center gap-2 text-xs font-bold ${p.uid === this.myUserId ? 'text-amber-300' : 'text-slate-200'}">
+              <img src="${av}" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-amber-400/80 bg-slate-700 shadow flex-shrink-0">
+              <span>${p.isHost ? '👑 ' : ''}${p.name}</span>
             </span>
-            <span class="text-[10px] px-1.5 py-0.2 rounded-full ${p.isOnline ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-500/40' : 'bg-slate-700 text-slate-400'}">
-              ${p.isOnline ? '已就緒' : '離線中'}
+            <span class="text-[10px] px-1.5 py-0.2 rounded-full ${p.isOnline ? 'bg-emerald-900/60 text-emerald-300 border border-emerald-500/30' : 'bg-rose-900/60 text-rose-300 border border-rose-500/30'}">
+              ${p.isOnline ? '已就緒' : '離線'}
             </span>
           </div>
-        `).join('');
+          `;
+        }).join('');
       }
 
       getRoomShareUrl() {
@@ -1425,6 +1752,7 @@
             id: this.players.length,
             uid: `ai_${i + 1}`,
             name: `電腦 ${aiNames[i] || (i + 1)}`,
+            avatar: this.presetAvatars[(i + 3) % this.presetAvatars.length],
             isHost: false,
             isAI: true,
             isAITakeover: false,
@@ -1663,6 +1991,7 @@
         const curPlayer = this.players[this.turnIndex];
         this.playedTilesThisTurn = [];
         this.selectedHandIndices.clear();
+        this.selectedTableTileIds.clear();
         this.selectedTableTile = null;
 
         // 無論是房主還是訪客，都在房主端妥善保留本回合開始前的桌面與手牌快照！
@@ -1696,6 +2025,27 @@
         this.currentSeconds = this.timerSeconds;
         this.timerInterval = setInterval(() => {
           this.currentSeconds--;
+
+          // 偵測是否超過 91 秒無動作 (識別玩家離線或暫離)
+          const curPlayer = this.players[this.turnIndex];
+          if (curPlayer && !curPlayer.isAI && !curPlayer.isAITakeover) {
+            const idleSec = (Date.now() - (curPlayer.lastActionTime || this.lastUserActionTime || Date.now())) / 1000;
+            if (idleSec >= 91) {
+              curPlayer.isAITakeover = true;
+              curPlayer.autoAFKTakeover = true;
+              this.showToast(`${curPlayer.name} 超過 91 秒未操作，系統直接啟動電腦託管`, '🤖');
+              this.sound.error();
+              this.broadcastState();
+              this.renderAll();
+              setTimeout(() => {
+                if (this.turnIndex === curPlayer.id && curPlayer.isAITakeover) {
+                  this.executeAITurn(curPlayer);
+                }
+              }, 600);
+              return;
+            }
+          }
+
           if (this.currentSeconds <= 0) {
             clearInterval(this.timerInterval);
             this.handleTimeoutHost();
@@ -1708,6 +2058,14 @@
         const curPlayer = this.players[this.turnIndex];
         this.showToast(`${curPlayer.name} 回合超時，自動還原牌面並摸牌`, '⏰');
         this.sound.error();
+
+        // 超過一回合無動作，直接切換為電腦託管
+        curPlayer.consecutiveTimeouts = (curPlayer.consecutiveTimeouts || 0) + 1;
+        if (curPlayer.consecutiveTimeouts >= 1 && !curPlayer.isAI) {
+          curPlayer.isAITakeover = true;
+          curPlayer.autoAFKTakeover = true;
+          this.showToast(`${curPlayer.name} 超過一回合未出牌，已切換為電腦託管`, '🤖');
+        }
 
         if (this.turnIndex === 0) {
           // 房主自己回合超時：還原手牌與桌面牌組至本回合快照
@@ -1742,8 +2100,8 @@
 
       onHandTileClick(tileIndex) {
         if (!this.isMyTurn()) return;
+        this.recordUserAction();
         this.sound.tileClick();
-        this.selectedTableTile = null;
 
         if (this.selectedHandIndices.has(tileIndex)) {
           this.selectedHandIndices.delete(tileIndex);
@@ -1754,126 +2112,152 @@
       }
 
       clearSelection() {
+        this.recordUserAction();
         this.selectedHandIndices.clear();
-        this.selectedTableTile = null;
+        this.selectedTableTileIds.clear();
         this.renderAll();
       }
 
       onTableBackgroundClick(event) {
         if (!this.isMyTurn()) return;
         if (event.target.id === 'table-melds' || event.target.classList.contains('new-meld-zone')) {
-          if (this.selectedHandIndices.size > 0) {
+          if (this.selectedHandIndices.size > 0 || this.selectedTableTileIds.size > 0) {
             this.playSelectedAsNewMeld();
-          } else if (this.selectedTableTile) {
-            this.extractSelectedTableTileToNewMeld();
           }
         }
       }
 
       playSelectedAsNewMeld() {
         if (!this.isMyTurn()) return;
-        if (this.selectedHandIndices.size === 0) return;
+        this.recordUserAction();
+        const handCount = this.selectedHandIndices.size;
+        const tableCount = this.selectedTableTileIds.size;
+        if (handCount === 0 && tableCount === 0) return;
 
         const hand = this.getMyHand();
         const tilesToPlay = [];
-        const tileIds = new Set();
+        const handTileIds = new Set();
 
+        // 1. 收集並扣除手牌
         this.selectedHandIndices.forEach(idx => {
           if (hand[idx]) {
             tilesToPlay.push(hand[idx]);
-            tileIds.add(hand[idx].id);
+            handTileIds.add(hand[idx].id);
           }
         });
 
+        if (handTileIds.size > 0) {
+          const newHand = hand.filter(t => !handTileIds.has(t.id));
+          if (this.isHost) this.players[0].hand = newHand;
+          else this.myHand = newHand;
+          this.playedTilesThisTurn.push(...tilesToPlay);
+        }
+
+        // 2. 收集並移出選取的桌面牌
+        if (this.selectedTableTileIds.size > 0) {
+          for (let m = 0; m < this.tableMelds.length; m++) {
+            const remaining = [];
+            for (let t of this.tableMelds[m]) {
+              if (this.selectedTableTileIds.has(t.id)) {
+                tilesToPlay.push(t);
+              } else {
+                remaining.push(t);
+              }
+            }
+            this.tableMelds[m] = remaining;
+          }
+          this.cleanEmptyMelds();
+        }
+
         if (tilesToPlay.length === 0) return;
 
-        // 嚴格 ID 集合過濾扣減手牌
-        const newHand = hand.filter(t => !tileIds.has(t.id));
-        if (this.isHost) this.players[0].hand = newHand;
-        else this.myHand = newHand;
-
-        this.playedTilesThisTurn.push(...tilesToPlay);
-
+        // 3. 自動排序並建立為全新牌組
         const sortedMeld = this.sortMeldTiles(tilesToPlay);
         this.tableMelds.push(sortedMeld);
 
         this.selectedHandIndices.clear();
+        this.selectedTableTileIds.clear();
         this.sound.tilePlace();
-        this.showToast(`已打出新牌組 (自動排序)`, '🚀');
+
+        let msg = '已打出成新組 (自動排序)';
+        if (handCount > 0 && tableCount > 0) {
+          msg = `已打出成新組 (手牌 ${handCount} 張 + 桌面 ${tableCount} 張)`;
+        } else if (tableCount > 0) {
+          msg = `已將桌面 ${tableCount} 張牌重組為新牌組`;
+        }
+        this.showToast(msg, '🚀');
         this.renderAll();
       }
 
       onMeldGroupClick(targetMeldIdx, event) {
         if (!this.isMyTurn()) return;
         if (event) event.stopPropagation();
+        this.recordUserAction();
 
-        if (this.selectedHandIndices.size > 0) {
-          const hand = this.getMyHand();
-          const tilesToAdd = [];
-          const tileIds = new Set();
+        const handCount = this.selectedHandIndices.size;
+        const tableCount = this.selectedTableTileIds.size;
+        if (handCount === 0 && tableCount === 0) return;
 
-          this.selectedHandIndices.forEach(idx => {
-            if (hand[idx]) {
-              tilesToAdd.push(hand[idx]);
-              tileIds.add(hand[idx].id);
-            }
-          });
+        // 1. 移入手牌
+        const hand = this.getMyHand();
+        const handTilesToAdd = [];
+        const handTileIds = new Set();
 
-          if (tilesToAdd.length === 0) return;
+        this.selectedHandIndices.forEach(idx => {
+          if (hand[idx]) {
+            handTilesToAdd.push(hand[idx]);
+            handTileIds.add(hand[idx].id);
+          }
+        });
 
-          const newHand = hand.filter(t => !tileIds.has(t.id));
+        if (handTilesToAdd.length > 0) {
+          const newHand = hand.filter(t => !handTileIds.has(t.id));
           if (this.isHost) this.players[0].hand = newHand;
           else this.myHand = newHand;
-
-          this.playedTilesThisTurn.push(...tilesToAdd);
-
-          this.tableMelds[targetMeldIdx].push(...tilesToAdd);
-          this.tableMelds[targetMeldIdx] = this.sortMeldTiles(this.tableMelds[targetMeldIdx]);
-
-          this.selectedHandIndices.clear();
-          this.sound.tilePlace();
-          this.showToast(`已加入牌組 (自動排序)`, '✨');
-          this.renderAll();
-          return;
+          this.playedTilesThisTurn.push(...handTilesToAdd);
         }
 
-        if (this.selectedTableTile) {
-          const tileId = this.selectedTableTile.id;
-          this.moveTableTileById(tileId, targetMeldIdx);
-          this.selectedTableTile = null;
-          this.sound.tilePlace();
-          this.renderAll();
+        // 2. 移入桌面選取的牌
+        const tableTilesToAdd = [];
+        if (this.selectedTableTileIds.size > 0) {
+          for (let m = 0; m < this.tableMelds.length; m++) {
+            const remaining = [];
+            for (let t of this.tableMelds[m]) {
+              if (this.selectedTableTileIds.has(t.id)) {
+                tableTilesToAdd.push(t);
+              } else {
+                remaining.push(t);
+              }
+            }
+            this.tableMelds[m] = remaining;
+          }
         }
+
+        this.tableMelds[targetMeldIdx].push(...handTilesToAdd, ...tableTilesToAdd);
+        this.tableMelds[targetMeldIdx] = this.sortMeldTiles(this.tableMelds[targetMeldIdx]);
+
+        this.cleanEmptyMelds();
+        this.selectedHandIndices.clear();
+        this.selectedTableTileIds.clear();
+        this.sound.tilePlace();
+        this.showToast('已加入牌組 (自動排序)', '✨');
+        this.renderAll();
       }
 
       onTableTileClick(meldIndex, tileIndex, event) {
         if (!this.isMyTurn()) return;
         event.stopPropagation();
+        this.recordUserAction();
         this.sound.tileClick();
 
-        if (this.selectedHandIndices.size > 0) {
-          this.onMeldGroupClick(meldIndex, event);
-          return;
-        }
-
         const clickedTile = this.tableMelds[meldIndex][tileIndex];
+        if (!clickedTile) return;
 
-        if (this.selectedTableTile) {
-          if (this.selectedTableTile.id === clickedTile.id) {
-            this.selectedTableTile = null;
-          } else {
-            const tileId = this.selectedTableTile.id;
-            this.moveTableTileById(tileId, meldIndex, tileIndex);
-            this.selectedTableTile = null;
-            this.sound.tilePlace();
-          }
+        // 複選或取消複選桌面牌
+        if (this.selectedTableTileIds.has(clickedTile.id)) {
+          this.selectedTableTileIds.delete(clickedTile.id);
         } else {
-          this.selectedTableTile = {
-            id: clickedTile.id,
-            tile: clickedTile,
-            meldIndex: meldIndex,
-            tileIndex: tileIndex
-          };
+          this.selectedTableTileIds.add(clickedTile.id);
         }
         this.renderAll();
       }
@@ -2003,6 +2387,7 @@
         }
         this.playedTilesThisTurn = [];
         this.selectedHandIndices.clear();
+        this.selectedTableTileIds.clear();
         this.selectedTableTile = null;
         if (notify) this.showToast('已還原回本回合初始狀態', '↩️');
         this.renderAll();
@@ -2059,18 +2444,15 @@
               const drawn = this.deck.pop();
               player.hand.push(drawn);
               this.sound.drawTile();
-              this.showToast(`您摸了一張牌`, '🃏');
+              this.showToast(`您摸了一張牌`, '📥');
             }
             this.advanceTurnHost();
             return;
           }
 
           if (!player.hasBrokenIce) {
-            if (this.turnSnapshot.tableMelds.length > 0 && JSON.stringify(this.turnSnapshot.tableMelds) !== JSON.stringify(this.tableMelds.slice(0, this.turnSnapshot.tableMelds.length))) {
-              this.showToast('尚未破冰前，不可改動桌面既有牌組！', '❌');
-              this.sound.error();
-              return;
-            }
+            const modifiedExisting = (this.turnSnapshot.tableMelds.length > 0 && 
+              JSON.stringify(this.turnSnapshot.tableMelds) !== JSON.stringify(this.tableMelds.slice(0, this.turnSnapshot.tableMelds.length)));
 
             let meldPoints = 0;
             let allNewMeldsValid = true;
@@ -2081,9 +2463,17 @@
               meldPoints += (check.value || 0);
             }
 
-            if (!allNewMeldsValid || meldPoints < 30) {
-              this.showToast(`破冰需達 30 分且符合合法牌型 (目前：${meldPoints} 分)`, '❌');
+            // 若不符破冰規則：自動還原牌面並摸 1 張罰牌 (視為調整時間不足放棄)
+            if (modifiedExisting || !allNewMeldsValid || meldPoints < 30) {
+              const reason = modifiedExisting ? '尚未破冰不可更動桌面' : (meldPoints < 30 ? `點數不足30分` : '牌型不合法');
+              this.showToast(`牌面不合破冰規則(${reason})，視為放棄：已自動還原並摸牌`, '⚠️');
               this.sound.error();
+              this.undoTurn(false);
+              if (this.deck.length > 0) {
+                player.hand.push(this.deck.pop());
+                this.sound.drawTile();
+              }
+              this.advanceTurnHost();
               return;
             }
 
@@ -2092,9 +2482,16 @@
             this.showToast(`🎉 破冰成功！出牌達 ${meldPoints} 點！`, '☀️');
           } else {
             const wholeCheck = this.validateWholeTable();
+            // 若桌面存在不合法牌組：自動還原牌面並摸 1 張罰牌
             if (!wholeCheck.valid) {
-              this.showToast(`桌面存在不合法牌組！(${wholeCheck.reason})`, '❌');
+              this.showToast(`桌面存在不合法牌組(${wholeCheck.reason})，視為放棄：已自動還原並摸牌`, '⚠️');
               this.sound.error();
+              this.undoTurn(false);
+              if (this.deck.length > 0) {
+                player.hand.push(this.deck.pop());
+                this.sound.drawTile();
+              }
+              this.advanceTurnHost();
               return;
             }
           }
@@ -2111,6 +2508,52 @@
           this.showToast('出牌成功！回合結束', '✅');
           this.advanceTurnHost();
         } else {
+          // 訪客端先行驗證牌型，若不合法則自動還原並摸牌
+          const myPlayerObj = this.players.find(p => p.id === this.myPlayerId) || {};
+          let isValid = true;
+          let failReason = '';
+
+          if (this.playedTilesThisTurn.length > 0) {
+            if (!myPlayerObj.hasBrokenIce) {
+              const modifiedExisting = (this.turnSnapshot.tableMelds.length > 0 && 
+                JSON.stringify(this.turnSnapshot.tableMelds) !== JSON.stringify(this.tableMelds.slice(0, this.turnSnapshot.tableMelds.length)));
+              let meldPoints = 0;
+              let allNewValid = true;
+              for (let i = this.turnSnapshot.tableMelds.length; i < this.tableMelds.length; i++) {
+                const check = this.validateMeld(this.tableMelds[i]);
+                if (!check.valid) { allNewValid = false; break; }
+                meldPoints += (check.value || 0);
+              }
+              if (modifiedExisting || !allNewValid || meldPoints < 30) {
+                isValid = false;
+                failReason = modifiedExisting ? '尚未破冰不可更動桌面' : (meldPoints < 30 ? '點數不足30分' : '牌型不合法');
+              }
+            } else {
+              const wholeCheck = this.validateWholeTable();
+              if (!wholeCheck.valid) {
+                isValid = false;
+                failReason = wholeCheck.reason;
+              }
+            }
+          }
+
+          if (!isValid) {
+            this.showToast(`牌面不合規則(${failReason})，視為放棄：已自動還原並摸牌`, '⚠️');
+            this.sound.error();
+            this.undoTurn(false);
+            if (this.hostConn && this.hostConn.open) {
+              this.hostConn.send({
+                type: 'ACTION_END_TURN',
+                playerId: this.myPlayerId,
+                uid: this.myUserId,
+                playedTilesCount: 0,
+                tableMelds: this.tableMelds,
+                remainingHand: this.myHand
+              });
+            }
+            return;
+          }
+
           if (this.hostConn && this.hostConn.open) {
             this.hostConn.send({
               type: 'ACTION_END_TURN',
@@ -2133,7 +2576,7 @@
           if (this.deck.length > 0) {
             client.hand.push(this.deck.pop());
           }
-          this.showToast(`${client.name} 選擇摸牌`, '🃏');
+          this.showToast(`${client.name} 選擇摸牌`, '📥');
           this.advanceTurnHost();
           return;
         }
@@ -2143,8 +2586,24 @@
 
         const wholeCheck = this.validateWholeTable();
         if (!wholeCheck.valid) {
+          // 訪客送出的牌型不合法：自動還原為本回合快照並摸 1 張牌
+          this.tableMelds = JSON.parse(JSON.stringify(this.turnSnapshot.tableMelds));
+          client.hand = JSON.parse(JSON.stringify(this.turnSnapshot.hand));
+          if (this.deck.length > 0) {
+            client.hand.push(this.deck.pop());
+          }
           const conn = this.connections.get(client.uid);
-          if (conn) conn.send({ type: 'ACTION_REJECTED', reason: wholeCheck.reason });
+          if (conn) {
+            conn.send({
+              type: 'FORCE_TIMEOUT_UNDO',
+              playerId: client.id,
+              tableMelds: this.tableMelds,
+              hand: client.hand,
+              reason: '牌面不符合規定，視為放棄：已自動還原並摸牌'
+            });
+          }
+          this.showToast(`${client.name} 牌型不合規，視為放棄並抽牌`, '⚠️');
+          this.advanceTurnHost();
           return;
         }
 
@@ -2169,6 +2628,8 @@
 
       executeAITurn(aiPlayer) {
         let playedAny = false;
+        // 電腦託管的強度一律只有簡易 (Casual)，避免玩家靠託管取勝！
+        const isCasual = (aiPlayer.isAITakeover === true) || (this.aiDifficulty === 'casual');
 
         if (!aiPlayer.hasBrokenIce) {
           const possibleMelds = this.findHandMelds(aiPlayer.hand);
@@ -2190,6 +2651,7 @@
             this.showToast(`${aiPlayer.name} 破冰打出 ${totalVal} 分！`, '☀️');
           }
         } else {
+          // 簡易模式 / 託管模式：僅打出手牌中的純基本合法牌型 (最多 1 組)，絕不拆動桌面牌，避免靠託管取勝
           const handMelds = this.findHandMelds(aiPlayer.hand);
           if (handMelds.length > 0) {
             const meldObj = handMelds[0];
@@ -2203,16 +2665,19 @@
             this.sound.tilePlace();
           }
 
-          for (let h = aiPlayer.hand.length - 1; h >= 0; h--) {
-            const card = aiPlayer.hand[h];
-            for (let m = 0; m < this.tableMelds.length; m++) {
-              const candidate = this.sortMeldTiles([...this.tableMelds[m], card]);
-              if (this.validateMeld(candidate).valid) {
-                this.tableMelds[m] = candidate;
-                aiPlayer.hand.splice(h, 1);
-                playedAny = true;
-                this.sound.tilePlace();
-                break;
+          // 只有正常 AI Bot 且非託管時，才執行桌面牌追加組合
+          if (!isCasual) {
+            for (let h = aiPlayer.hand.length - 1; h >= 0; h--) {
+              const card = aiPlayer.hand[h];
+              for (let m = 0; m < this.tableMelds.length; m++) {
+                const candidate = this.sortMeldTiles([...this.tableMelds[m], card]);
+                if (this.validateMeld(candidate).valid) {
+                  this.tableMelds[m] = candidate;
+                  aiPlayer.hand.splice(h, 1);
+                  playedAny = true;
+                  this.sound.tilePlace();
+                  break;
+                }
               }
             }
           }
@@ -2228,7 +2693,7 @@
         if (!playedAny) {
           if (this.deck.length > 0) {
             aiPlayer.hand.push(this.deck.pop());
-            this.showToast(`${aiPlayer.name} 摸了一張牌`, '🃏');
+            this.showToast(`${aiPlayer.name} 摸了一張牌`, '📥');
           }
         }
 
@@ -2349,6 +2814,10 @@
         const curPlayer = this.players[this.turnIndex] || { name: '等待中' };
         const isMine = this.isMyTurn();
 
+        // 更新牌架上的自己大頭貼
+        const rackAv = document.getElementById('my-rack-avatar');
+        if (rackAv) rackAv.src = this.myAvatar;
+
         // 1. 【核心修復：精確同步牌池數量】
         const displayDeck = this.isHost ? this.deck.length : (this.deckCount !== undefined ? this.deckCount : 0);
         document.getElementById('deck-count').textContent = displayDeck;
@@ -2378,25 +2847,58 @@
           document.getElementById('btn-undo').disabled = true;
         }
 
-        timerText.textContent = (this.currentSeconds > 0) ? `${this.currentSeconds}s` : '無限制';
+        if (timerText) {
+          timerText.textContent = (this.currentSeconds > 0) ? `${this.currentSeconds}s` : '無限制';
+        }
 
-        // 3. 手牌數與破冰提示
+        // 同步更新左側倒數秒數卡片狀態 (緊張倒數變色)
+        const timerCard = document.getElementById('player-bar-timer-card');
+        const timerIconBox = document.getElementById('timer-icon-box');
+        if (timerCard && timerIconBox) {
+          if (this.currentSeconds <= 10 && this.currentSeconds > 0) {
+            timerCard.className = 'flex items-center gap-2 px-2.5 py-1 rounded-2xl border border-rose-500 bg-rose-950/80 shadow-md flex-shrink-0 transition-colors animate-pulse';
+            timerIconBox.className = 'w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-rose-900 border-2 border-rose-400 flex items-center justify-center text-base sm:text-lg flex-shrink-0 shadow text-rose-200';
+            if (timerText) timerText.className = 'font-mono text-base sm:text-lg font-black text-rose-300';
+          } else {
+            timerCard.className = 'flex items-center gap-2 px-2.5 py-1 rounded-2xl border border-slate-700 bg-slate-800 shadow-sm flex-shrink-0 transition-colors';
+            timerIconBox.className = 'w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-900 border-2 border-amber-400 flex items-center justify-center text-base sm:text-lg flex-shrink-0 shadow text-amber-300';
+            if (timerText) timerText.className = 'font-mono text-base sm:text-lg font-black text-amber-300';
+          }
+        }
+
+        // 3. 手牌數與破冰提示 (防禦性 null check 確保 100% 穩定不報錯)
         const myHand = this.getMyHand();
-        document.getElementById('player-tile-count').textContent = myHand.length;
+        const tileCountEl = document.getElementById('player-tile-count');
+        if (tileCountEl) tileCountEl.textContent = myHand.length;
 
         const myPlayerObj = this.players.find(p => p.uid === this.myUserId) || this.players[0] || {};
         const iceBadge = document.getElementById('ice-status-badge');
-        if (myPlayerObj.hasBrokenIce) {
-          iceBadge.className = 'px-1.5 py-0.2 rounded-full font-bold text-[10px] bg-amber-900/80 text-amber-200 border border-amber-500/40';
-          iceBadge.textContent = '☀️ 已破冰';
-        } else {
-          iceBadge.className = 'px-1.5 py-0.2 rounded-full font-bold text-[10px] bg-cyan-900/80 text-cyan-200 border border-cyan-500/40';
-          iceBadge.textContent = '❄️ 尚未破冰 (需>=30分)';
+        if (iceBadge) {
+          if (myPlayerObj.hasBrokenIce) {
+            iceBadge.className = 'px-1.5 py-0.2 rounded-full font-bold text-[10px] bg-amber-900/80 text-amber-200 border border-amber-500/40 hidden';
+            iceBadge.textContent = '☀️ 已破冰';
+          } else {
+            iceBadge.className = 'px-1.5 py-0.2 rounded-full font-bold text-[10px] bg-cyan-900/80 text-cyan-200 border border-cyan-500/40 hidden';
+            iceBadge.textContent = '❄️ 尚未破冰 (需>=30分)';
+          }
         }
 
         const takeoverWarn = document.getElementById('ai-takeover-warning');
         if (myPlayerObj.isAITakeover) takeoverWarn.classList.remove('hidden');
         else takeoverWarn.classList.add('hidden');
+
+        // 更新手動「電腦託管」按鈕狀態
+        const takeoverBtn = document.getElementById('btn-toggle-takeover');
+        const takeoverBtnLabel = document.getElementById('takeover-btn-label');
+        if (takeoverBtn && takeoverBtnLabel) {
+          if (myPlayerObj.isAITakeover) {
+            takeoverBtn.className = 'px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded text-xs font-bold border border-amber-400 shadow animate-pulse flex items-center gap-0.5';
+            takeoverBtnLabel.textContent = '解除託管';
+          } else {
+            takeoverBtn.className = 'px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs font-semibold border border-slate-600 shadow flex items-center gap-0.5';
+            takeoverBtnLabel.textContent = '電腦託管';
+          }
+        }
 
         const playedInfoEl = document.getElementById('turn-played-info');
         if (this.playedTilesThisTurn.length > 0) {
@@ -2423,7 +2925,7 @@
           sub.textContent = `送出 ${this.playedTilesThisTurn.length} 張`;
         } else {
           btn.className = 'px-3.5 sm:px-6 py-1 sm:py-1.5 rounded-xl text-xs sm:text-sm font-black shadow-lg transition flex items-center gap-1.5 bg-amber-600 hover:bg-amber-500 text-white';
-          icon.textContent = '🃏';
+          icon.textContent = '📥';
           title.textContent = '結束回合';
           sub.textContent = '自動摸牌';
         }
@@ -2431,24 +2933,63 @@
 
       renderOpponents() {
         const container = document.getElementById('opponents-container');
-        const otherPlayers = this.players.filter(p => p.uid !== this.myUserId);
+        if (!container) return;
 
-        container.innerHTML = otherPlayers.map(p => {
+        // 畫面一致化：將自己的資訊移動到最上面與其他玩家並排，自己置於首位
+        const myPlayer = this.players.find(p => p.uid === this.myUserId);
+        const otherPlayers = this.players.filter(p => p.uid !== this.myUserId);
+        const allDisplayPlayers = myPlayer ? [myPlayer, ...otherPlayers] : this.players;
+
+        container.innerHTML = allDisplayPlayers.map(p => {
+          const isMe = (p.uid === this.myUserId);
           const isCurrentTurn = (this.turnIndex === p.id);
-          const handCount = (p.handCount !== undefined) ? p.handCount : (p.hand ? p.hand.length : 0);
+          
+          let handCount = 0;
+          if (isMe) {
+            handCount = this.getMyHand().length;
+          } else {
+            handCount = (p.handCount !== undefined) ? p.handCount : (p.hand ? p.hand.length : 0);
+          }
+          
+          const av = p.avatar || this.presetAvatars[0];
+          const displayName = isMe ? `${p.name} (我)` : p.name;
+
           return `
-            <div class="flex items-center gap-1 px-2 py-0.5 rounded-full border transition text-[11px] ${
+            <div class="flex items-center gap-2 px-2.5 py-1 rounded-2xl border transition shadow-sm ${
               isCurrentTurn 
-                ? 'bg-amber-950/90 border-amber-400 shadow-md ring-1 ring-amber-400' 
-                : 'bg-slate-800 border-slate-700'
+                ? 'bg-amber-950/90 border-amber-400 shadow-md ring-2 ring-amber-400/80 scale-[1.02]' 
+                : (isMe ? 'bg-slate-800/95 border-amber-500/60 ring-1 ring-amber-500/30' : 'bg-slate-800/95 border-slate-700 hover:border-slate-600')
             }">
-              <span class="text-xs">${p.isAITakeover ? '🤖' : (p.isOnline ? '👤' : '💤')}</span>
-              <span class="font-bold text-slate-200 truncate max-w-[65px] sm:max-w-[100px]">${p.name}</span>
-              ${isCurrentTurn ? '<span class="text-[9px] px-1 rounded bg-amber-500 text-slate-900 font-black animate-pulse">出牌中</span>' : ''}
-              <span class="font-mono text-amber-300 font-extrabold">${handCount}張</span>
-              <span class="text-[9px] px-1 rounded ${p.hasBrokenIce ? 'bg-amber-900/60 text-amber-300' : 'bg-cyan-950 text-cyan-400'}">
-                ${p.hasBrokenIce ? '☀️' : '❄️'}
-              </span>
+              <!-- 大頭貼 (與左側倒數秒數卡片同尺寸造型：w-9 h-9 sm:w-10 sm:h-10) -->
+              <div class="relative flex-shrink-0 ${isMe ? 'cursor-pointer group' : ''}" ${isMe ? 'onclick="netGame.openAvatarPickerModal()" title="點選可更換大頭貼"' : ''}>
+                <img src="${av}" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border-2 ${
+                  isCurrentTurn 
+                    ? 'border-amber-300 ring-2 ring-amber-400 shadow-amber-500/50' 
+                    : (isMe ? 'border-amber-400' : 'border-slate-600')
+                } bg-slate-700 shadow transition ${isMe ? 'group-hover:scale-105' : ''}">
+                
+                ${isMe ? '<div class="absolute -bottom-1 -right-1 bg-amber-500 text-slate-950 rounded-full w-4 h-4 flex items-center justify-center text-[9px] font-black shadow border border-slate-900" title="更換頭貼">📷</div>' : ''}
+                ${!isMe && p.isAITakeover ? '<span class="absolute -bottom-1 -right-1 text-[9px] bg-amber-500 text-slate-950 rounded-full px-1 font-black shadow border border-slate-900">🤖</span>' : ''}
+                ${!isMe && !p.isOnline ? '<span class="absolute -bottom-1 -right-1 text-[9px] bg-rose-600 text-white rounded-full px-1 font-black shadow border border-slate-900">💤</span>' : ''}
+              </div>
+
+              <!-- 玩家資訊：名稱、出牌狀態、手牌張數、破冰狀態 -->
+              <div class="flex flex-col text-left leading-tight">
+                <div class="flex items-center gap-1">
+                  <span class="font-bold text-xs sm:text-sm truncate max-w-[70px] sm:max-w-[100px] ${isMe ? 'text-amber-300' : 'text-slate-100'}">${displayName}</span>
+                  ${isCurrentTurn ? '<span class="text-[9px] px-1 py-0.2 rounded bg-amber-500 text-slate-950 font-black animate-pulse whitespace-nowrap">出牌中</span>' : ''}
+                </div>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span class="font-mono text-amber-300 font-extrabold text-xs">${handCount} 張</span>
+                  <span class="text-[10px] px-1 py-0.2 rounded font-bold ${
+                    p.hasBrokenIce 
+                      ? 'bg-amber-900/80 text-amber-200 border border-amber-500/40' 
+                      : 'bg-cyan-950 text-cyan-300 border border-cyan-500/30'
+                  }">
+                    ${p.hasBrokenIce ? '☀️破冰' : '❄️未破'}
+                  </span>
+                </div>
+              </div>
             </div>
           `;
         }).join('');
@@ -2472,7 +3013,7 @@
               </span>
 
               ${meld.map((tile, tileIdx) => {
-                const isSelected = (this.selectedTableTile && this.selectedTableTile.id === tile.id);
+                const isSelected = this.selectedTableTileIds.has(tile.id);
                 const wasPlayedThisTurn = this.playedTilesThisTurn.some(t => t.id === tile.id);
                 return `
                   <div class="relative group/tile">
@@ -2498,7 +3039,7 @@
           `;
         });
 
-        const hasSelection = (this.selectedHandIndices.size > 0 || this.selectedTableTile !== null);
+        const hasSelection = (this.selectedHandIndices.size > 0 || this.selectedTableTileIds.size > 0);
         html += `
           <div class="new-meld-zone flex items-center justify-center p-1.5 min-h-[46px] sm:min-h-[58px] min-w-[80px] cursor-pointer ${hasSelection ? 'highlight animate-pulse' : ''}"
                onclick="netGame.onTableBackgroundClick(event)"
@@ -2533,53 +3074,52 @@
       }
 
       renderQuickBars() {
-        const tableBar = document.getElementById('table-tile-actions-bar');
-        if (this.selectedTableTile && this.isMyTurn()) {
-          tableBar.classList.remove('hidden');
-          const t = this.selectedTableTile.tile;
-          document.getElementById('selected-table-tile-desc').textContent = t.isJoker ? '百搭牌' : `${t.num} (${t.color})`;
-          
-          const wasPlayedThisTurn = this.playedTilesThisTurn.some(item => item.id === t.id);
-          const btnTakeBack = document.getElementById('btn-take-back-tile');
-          if (wasPlayedThisTurn) btnTakeBack.classList.remove('hidden');
-          else btnTakeBack.classList.add('hidden');
-        } else {
-          tableBar.classList.add('hidden');
-        }
-
         const quickBar = document.getElementById('quick-play-bar');
-        const handActionBar = document.getElementById('hand-action-bar');
-        const count = this.selectedHandIndices.size;
+        const handCount = this.selectedHandIndices.size;
+        const tableCount = this.selectedTableTileIds.size;
+        const totalCount = handCount + tableCount;
 
-        if (handActionBar) {
-          if (count > 0 && this.isMyTurn()) handActionBar.classList.remove('hidden');
-          else handActionBar.classList.add('hidden');
-        }
-
-        if (count === 0 || !this.isMyTurn()) {
-          quickBar.classList.add('hidden');
+        if (totalCount === 0 || !this.isMyTurn()) {
+          if (quickBar) quickBar.classList.add('hidden');
           return;
         }
 
-        quickBar.classList.remove('hidden');
-        const hand = this.getMyHand();
-        const selectedTiles = Array.from(this.selectedHandIndices).map(i => hand[i]);
+        if (quickBar) {
+          quickBar.classList.remove('hidden');
+          const hand = this.getMyHand();
+          const selectedHandTiles = Array.from(this.selectedHandIndices).map(i => hand[i]).filter(Boolean);
+          
+          const selectedTableTiles = [];
+          for (let m of this.tableMelds) {
+            for (let t of m) {
+              if (this.selectedTableTileIds.has(t.id)) selectedTableTiles.push(t);
+            }
+          }
 
-        const names = selectedTiles.map(t => t.isJoker ? '百搭' : `${t.num}`).join(', ');
-        document.getElementById('quick-selected-names').textContent = `${count} 張 (${names})`;
+          const combinedTiles = [...selectedHandTiles, ...selectedTableTiles];
+          let desc = '';
+          if (handCount > 0 && tableCount > 0) {
+            desc = `手牌 ${handCount} + 桌面 ${tableCount} 張`;
+          } else if (tableCount > 0) {
+            desc = `桌面 ${tableCount} 張`;
+          } else {
+            desc = `手牌 ${handCount} 張`;
+          }
+          document.getElementById('quick-selected-names').textContent = desc;
 
-        const validationEl = document.getElementById('quick-meld-validation');
-        const btnPlay = document.getElementById('btn-quick-play');
+          const validationEl = document.getElementById('quick-meld-validation');
+          const btnPlay = document.getElementById('btn-quick-play');
 
-        const check = this.validateMeld(selectedTiles);
-        if (check.valid) {
-          validationEl.className = 'ml-1 px-1.5 py-0.2 rounded-full font-bold bg-emerald-900 text-emerald-200 border border-emerald-500/40 text-[10px]';
-          validationEl.textContent = `✅ 合法${check.type === 'run' ? '順組' : '群組'} (${check.value || 0}分)`;
-          btnPlay.className = 'px-2.5 py-0.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white rounded text-xs font-black shadow';
-        } else {
-          validationEl.className = 'ml-1 px-1.5 py-0.2 rounded-full font-medium bg-slate-700 text-amber-300 border border-slate-600 text-[10px]';
-          validationEl.textContent = `⚠️ 可直接打出或接牌`;
-          btnPlay.className = 'px-2 py-0.5 bg-slate-700 text-slate-200 rounded text-xs font-semibold';
+          const check = this.validateMeld(combinedTiles);
+          if (check.valid) {
+            validationEl.className = 'ml-1 px-1.5 py-0.2 rounded-full font-bold bg-emerald-900 text-emerald-200 border border-emerald-500/40 text-[10px]';
+            validationEl.textContent = `✅ 合法${check.type === 'run' ? '順組' : '群組'} (${check.value || 0}分)`;
+            btnPlay.className = 'px-2.5 py-0.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white rounded text-xs font-black shadow';
+          } else {
+            validationEl.className = 'ml-1 px-1.5 py-0.2 rounded-full font-medium bg-slate-700 text-amber-300 border border-slate-600 text-[10px]';
+            validationEl.textContent = `⚠️ 可打出成新組或點擊牌組加入`;
+            btnPlay.className = 'px-2 py-0.5 bg-slate-700 text-slate-200 rounded text-xs font-semibold';
+          }
         }
       }
 
