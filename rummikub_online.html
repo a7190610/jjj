@@ -351,8 +351,12 @@
     </div>
 
     <!-- 右側功能鍵 -->
-    <div class="flex items-center gap-1">
-      <button id="btn-sound" onclick="netGame.toggleSound()" class="p-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-200 text-xs" title="音效">
+    <div class="flex items-center gap-1 sm:gap-1.5">
+      <!-- 電腦託管按鈕 (已移至音量開關左邊) -->
+      <button onclick="netGame.toggleManualTakeover()" id="btn-toggle-takeover" class="px-2 py-0.5 sm:py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs font-semibold border border-slate-600 shadow flex items-center gap-0.5" title="電腦託管：暫離/上洗手間時自動出牌">
+        <span>🤖</span> <span id="takeover-btn-label">電腦託管</span>
+      </button>
+      <button id="btn-sound" onclick="netGame.toggleSound()" class="px-1.5 py-0.5 sm:py-1 bg-slate-700 hover:bg-slate-600 rounded text-slate-200 text-xs font-medium" title="音效">
         <span id="sound-icon">🔊</span>
       </button>
       <button onclick="netGame.openRulesModal()" class="px-1.5 py-0.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs font-medium" title="規則">
@@ -487,9 +491,6 @@
           </button>
           <button onclick="netGame.undoTurn()" id="btn-undo" class="px-2 py-1 bg-rose-900/60 hover:bg-rose-800 text-rose-200 rounded text-xs font-semibold border border-rose-500/40 shadow" title="還原本回合">
             ↩️ 還原
-          </button>
-          <button onclick="netGame.toggleManualTakeover()" id="btn-toggle-takeover" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs font-semibold border border-slate-600 shadow flex items-center gap-0.5" title="電腦託管：暫離/上洗手間時自動出牌">
-            <span>🤖</span> <span id="takeover-btn-label">電腦託管</span>
           </button>
         </div>
 
@@ -638,11 +639,11 @@
     </div>
   </div>
 
-  <!-- 獲勝結算彈窗 Modal (支援自動邀請全體繼續下一回合) -->
+  <!-- 獲勝結算彈窗 Modal (全體玩家意願顯示、必須所有真人玩家接受才可開局、任一玩家未選或離開則回主畫面) -->
   <div id="modal-gameover" class="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 z-50 hidden">
-    <div class="bg-slate-800 border-2 border-amber-500 rounded-3xl max-w-md w-full p-4 sm:p-5 shadow-2xl flex flex-col items-center gap-3 text-center">
+    <div class="bg-slate-800 border-2 border-amber-500 rounded-3xl max-w-md w-full p-4 sm:p-5 shadow-2xl flex flex-col items-center gap-2.5 text-center max-h-[92vh] overflow-y-auto">
       <div class="text-4xl animate-bounce">🏆</div>
-      <h2 id="gameover-title" class="text-xl font-black text-amber-300">回合結算</h2>
+      <h2 id="gameover-title" class="text-xl font-black text-amber-300">本局結算</h2>
       <p id="gameover-desc" class="text-slate-300 text-xs">某某玩家率先出完手牌！</p>
       
       <!-- 得分結算清單 -->
@@ -650,20 +651,35 @@
         <div id="gameover-scores" class="space-y-1 text-xs"></div>
       </div>
 
-      <!-- 自動邀請與下一回合操作區 -->
-      <div class="w-full flex flex-col gap-2 pt-1">
-        <div id="rematch-auto-banner" class="bg-emerald-950/80 border border-emerald-500/50 rounded-xl p-2 text-xs text-emerald-300 font-bold flex items-center justify-center gap-1.5 animate-pulse">
-          <span>🔄</span>
-          <span id="rematch-status-text">已自動邀請所有玩家，<span id="rematch-sec-left" class="font-mono text-white text-sm font-black">5</span> 秒後開始下一回合...</span>
+      <!-- 下一回合意願與玩家就緒狀態顯示區 (需全體非電腦玩家接受方可開局) -->
+      <div class="w-full bg-slate-900/90 rounded-2xl p-3 border border-slate-700/80 text-left flex flex-col gap-2">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+          <div class="flex items-center gap-1.5">
+            <span class="text-sm">👥</span>
+            <span class="text-xs font-bold text-slate-200">下一回合參加確認</span>
+            <span class="text-[10px] text-amber-400 bg-amber-950/80 px-1.5 py-0.2 rounded border border-amber-500/30">全體接受方可開局</span>
+          </div>
+          <span id="rematch-ready-summary" class="font-mono text-xs font-black text-amber-300">0 / 0 已接受</span>
         </div>
-        <div class="grid grid-cols-2 gap-2">
-          <button id="btn-start-next-round" onclick="netGame.triggerRematchAction()" class="py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-1">
-            <span>🔄</span> <span id="rematch-btn-label">立即開始</span>
-          </button>
-          <button onclick="netGame.returnToLobby()" class="py-2.5 px-3 bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs sm:text-sm rounded-xl shadow transition border border-slate-600">
-            🚪 返回大廳
-          </button>
+
+        <!-- 誰要繼續下一場的玩家清單 -->
+        <div id="rematch-players-list" class="space-y-1.5 max-h-36 overflow-y-auto pr-0.5"></div>
+
+        <!-- 倒數與提示 -->
+        <div id="rematch-wait-hint" class="text-[11px] text-slate-400 text-center py-0.5 font-medium flex items-center justify-center gap-1">
+          <span>⏳</span>
+          <span id="rematch-wait-text">等待所有玩家確認參加... (<span id="rematch-countdown-num" class="text-amber-400 font-bold font-mono">30</span>s)</span>
         </div>
+      </div>
+
+      <!-- 操作按鈕區 -->
+      <div class="w-full grid grid-cols-2 gap-2 pt-1">
+        <button id="btn-accept-rematch" onclick="netGame.acceptRematch()" class="py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-1.5">
+          <span>🟢</span> <span id="btn-accept-rematch-text">繼續下一場</span>
+        </button>
+        <button id="btn-decline-rematch" onclick="netGame.declineRematch()" class="py-2.5 px-3 bg-slate-700 hover:bg-rose-900/80 hover:border-rose-600 hover:text-rose-200 text-slate-200 font-bold text-xs sm:text-sm rounded-xl shadow transition border border-slate-600 flex items-center justify-center gap-1.5">
+          <span>🚪</span> <span>不參加 (回主畫面)</span>
+        </button>
       </div>
     </div>
   </div>
@@ -748,7 +764,11 @@
         }
 
         this.myTakeoverState = false;
-        this.rematchInterval = null;
+        this.isRematchPhase = false;
+        this.rematchReadyUids = new Set();
+        this.rematchSecondsLeft = 30;
+        this.rematchTimeoutTimer = null;
+        this.myRematchAccepted = false;
         this.customAvatar = localStorage.getItem('rmk_custom_avatar') || null;
         this.presetAvatarNames = ['狐狸探險家', '貓咪帽少年', '星際宇航員', '科技機器人', '淘氣熊貓', '陽光獅子', '優雅王冠', '魔法巫師'];
         this.presetAvatars = [
@@ -912,7 +932,19 @@
         });
 
         window.addEventListener('beforeunload', () => {
-          this.handlePlayerVisibility(false);
+          if (this.isRematchPhase) {
+            if (this.isHost) {
+              this.cancelRematchAndReturn('房主已離開畫面，牌局結束，返回主畫面');
+            } else if (this.hostConn && this.hostConn.open) {
+              this.hostConn.send({
+                type: 'CLIENT_REMATCH_DECLINE',
+                uid: this.myUserId,
+                name: this.myNickname
+              });
+            }
+          } else {
+            this.handlePlayerVisibility(false);
+          }
         });
 
         const lastRoom = sessionStorage.getItem('rmk_current_room');
@@ -1205,7 +1237,12 @@
           this.hostConn.on('data', (data) => this.handleGuestReceiveData(data));
           
           this.hostConn.on('close', () => {
-            this.showToast('與房主的連線已中斷', '⚠️');
+            if (this.isRematchPhase) {
+              this.showToast('房主已離開畫面，牌局結束，返回主畫面', '🚪');
+              setTimeout(() => this.returnToLobby(), 1200);
+            } else {
+              this.showToast('與房主的連線已中斷', '⚠️');
+            }
           });
 
           this.hostConn.on('error', () => {
@@ -1390,6 +1427,22 @@
             break;
           }
 
+          case 'CLIENT_REMATCH_ACCEPT': {
+            if (!this.isRematchPhase) return;
+            this.rematchReadyUids.add(data.uid);
+            const status = this.getRematchStatusData();
+            this.broadcast({ type: 'REMATCH_STATUS_SYNC', rematchStatus: status });
+            this.renderRematchStatusUI(status);
+            this.checkAllRematchReady();
+            break;
+          }
+
+          case 'CLIENT_REMATCH_DECLINE': {
+            if (!this.isRematchPhase) return;
+            this.cancelRematchAndReturn(`玩家【${data.name || '訪客'}】選擇不參加，牌局結束，返回主畫面`);
+            break;
+          }
+
           case 'ACTION_END_TURN': {
             if (this.inGame && this.turnIndex === data.playerId) {
               this.handleClientTurnAction(data);
@@ -1412,6 +1465,14 @@
             if (player) {
               player.isOnline = false;
               player.isAITakeover = true;
+
+              // 若在下一回合確認階段有玩家離線或斷開連線，直接結束對局跳回主畫面
+              if (this.isRematchPhase) {
+                this.cancelRematchAndReturn(`玩家【${player.name}】已離開畫面，牌局結束，返回主畫面`);
+                this.connections.delete(uid);
+                return;
+              }
+
               this.showToast(`${player.name} 離線，已由電腦託管`, '🤖');
               this.broadcastState();
               if (this.inGame && this.turnIndex === player.id) {
@@ -1632,8 +1693,28 @@
 
           case 'GAME_OVER':
             this.inGame = false;
-            this.triggerGameOverUI(data.winnerName, data.scoresSummary);
+            this.isRematchPhase = true;
+            this.myRematchAccepted = false;
+            this.triggerGameOverUI(data.winnerName, data.scoresSummary, data.rematchStatus);
             break;
+
+          case 'REMATCH_STATUS_SYNC':
+            this.renderRematchStatusUI(data.rematchStatus);
+            break;
+
+          case 'REMATCH_CANCELLED': {
+            if (this.rematchTimeoutTimer) clearInterval(this.rematchTimeoutTimer);
+            this.isRematchPhase = false;
+            this.showToast(data.reason || '有玩家未選擇參加或已離開畫面，返回主畫面', '🚪');
+            const waitHint = document.getElementById('rematch-wait-hint');
+            if (waitHint) {
+              waitHint.innerHTML = `<span class="text-rose-400 font-black">❌ ${data.reason || '牌局已結束，即將返回主畫面...'}</span>`;
+            }
+            setTimeout(() => {
+              this.returnToLobby();
+            }, 1500);
+            break;
+          }
 
           case 'GAME_RESTART': {
             const goModal = document.getElementById('modal-gameover');
@@ -2830,46 +2911,79 @@
 
         scoresSummary.unshift({ name: winner.name, score: totalMinusPoints, isWinner: true });
 
+        // 啟動下一回合全體參加確認階段
+        this.inGame = false;
+        this.isRematchPhase = true;
+        this.rematchReadyUids = new Set();
+        this.myRematchAccepted = false;
+        this.rematchSecondsLeft = 30;
+
+        const rematchStatus = this.getRematchStatusData();
+
         this.broadcast({
           type: 'GAME_OVER',
           winnerName: winner.name,
-          scoresSummary: scoresSummary
+          scoresSummary: scoresSummary,
+          rematchStatus: rematchStatus
         });
 
-        this.triggerGameOverUI(winner.name, scoresSummary);
+        this.triggerGameOverUI(winner.name, scoresSummary, rematchStatus);
 
-        // 房主端啟動 5 秒自動邀請全體繼續下一回合倒數
-        if (this.rematchInterval) clearInterval(this.rematchInterval);
-        let leftSec = 5;
-        const secEl = document.getElementById('rematch-sec-left');
-        if (secEl) secEl.textContent = leftSec;
+        // 房主端啟動 30 秒確認倒數計時，若有玩家逾時未確認則自動結束返回主畫面
+        if (this.rematchTimeoutTimer) clearInterval(this.rematchTimeoutTimer);
+        this.rematchTimeoutTimer = setInterval(() => {
+          if (!this.isRematchPhase) {
+            clearInterval(this.rematchTimeoutTimer);
+            return;
+          }
+          this.rematchSecondsLeft--;
+          const secEl = document.getElementById('rematch-countdown-num');
+          if (secEl) secEl.textContent = this.rematchSecondsLeft;
 
-        this.rematchInterval = setInterval(() => {
-          leftSec--;
-          const el = document.getElementById('rematch-sec-left');
-          if (el) el.textContent = leftSec;
-          if (leftSec <= 0) {
-            clearInterval(this.rematchInterval);
-            this.rematchInterval = null;
-            this.hostRematch();
+          const updatedStatus = this.getRematchStatusData();
+          this.broadcast({
+            type: 'REMATCH_STATUS_SYNC',
+            rematchStatus: updatedStatus
+          });
+
+          // 若逾時仍有真人玩家未選擇參加，則自動結束對局返回主畫面
+          if (this.rematchSecondsLeft <= 0) {
+            clearInterval(this.rematchTimeoutTimer);
+            this.rematchTimeoutTimer = null;
+            const humanPlayers = this.players.filter(p => !p.isAI);
+            const unaccepted = humanPlayers.filter(p => !this.rematchReadyUids.has(p.uid));
+            if (unaccepted.length > 0) {
+              const names = unaccepted.map(p => p.name).join('、');
+              this.cancelRematchAndReturn(`玩家【${names}】未在時限內確認參加，牌局結束，返回主畫面`);
+            }
           }
         }, 1000);
       }
 
-      triggerGameOverUI(winnerName, scoresSummary) {
-        const modal = document.getElementById('modal-gameover');
-        document.getElementById('gameover-title').textContent = `${winnerName} 獲得本回合勝利！`;
-        document.getElementById('gameover-desc').textContent = `${winnerName} 率先清空所有手牌！`;
+      getRematchStatusData() {
+        const humanPlayers = this.players.filter(p => !p.isAI);
+        const readyCount = humanPlayers.filter(p => this.rematchReadyUids.has(p.uid)).length;
+        return {
+          humanTotal: humanPlayers.length,
+          readyCount: readyCount,
+          allReady: humanPlayers.length > 0 && readyCount === humanPlayers.length,
+          secondsLeft: this.rematchSecondsLeft,
+          players: this.players.map(p => ({
+            uid: p.uid,
+            id: p.id,
+            name: p.name,
+            avatar: p.avatar,
+            isAI: p.isAI,
+            isOnline: p.isOnline,
+            ready: p.isAI ? true : this.rematchReadyUids.has(p.uid)
+          }))
+        };
+      }
 
-        const bannerText = document.getElementById('rematch-status-text');
-        const btnLabel = document.getElementById('rematch-btn-label');
-        if (!this.isHost) {
-          if (bannerText) bannerText.innerHTML = '已自動接受下一回合邀請，等待房主開局發牌...';
-          if (btnLabel) btnLabel.textContent = '我已準備';
-        } else {
-          if (bannerText) bannerText.innerHTML = '已自動邀請所有玩家，<span id="rematch-sec-left" class="font-mono text-white text-sm font-black">5</span> 秒後開始下一回合...';
-          if (btnLabel) btnLabel.textContent = '立即開局';
-        }
+      triggerGameOverUI(winnerName, scoresSummary, rematchStatus) {
+        const modal = document.getElementById('modal-gameover');
+        document.getElementById('gameover-title').textContent = `${winnerName} 獲得本局勝利！`;
+        document.getElementById('gameover-desc').textContent = `${winnerName} 率先清空所有手牌！`;
 
         document.getElementById('gameover-scores').innerHTML = scoresSummary.map(item => `
           <div class="flex items-center justify-between py-1 border-b border-slate-800 last:border-0">
@@ -2882,31 +2996,184 @@
           </div>
         `).join('');
 
+        this.myRematchAccepted = false;
+        const btnAccept = document.getElementById('btn-accept-rematch');
+        const btnAcceptText = document.getElementById('btn-accept-rematch-text');
+        if (btnAccept && btnAcceptText) {
+          btnAccept.className = 'py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg transition flex items-center justify-center gap-1.5';
+          btnAccept.disabled = false;
+          btnAcceptText.textContent = '繼續下一場';
+        }
+
+        if (rematchStatus) {
+          this.renderRematchStatusUI(rematchStatus);
+        }
+
         modal.classList.remove('hidden');
       }
 
-
-      triggerRematchAction() {
-        if (this.rematchInterval) {
-          clearInterval(this.rematchInterval);
-          this.rematchInterval = null;
+      renderRematchStatusUI(statusData) {
+        if (!statusData) return;
+        const summaryEl = document.getElementById('rematch-ready-summary');
+        if (summaryEl) {
+          summaryEl.textContent = `${statusData.readyCount} / ${statusData.humanTotal} 已接受`;
         }
+
+        const secEl = document.getElementById('rematch-countdown-num');
+        if (secEl && statusData.secondsLeft !== undefined) {
+          secEl.textContent = statusData.secondsLeft;
+        }
+
+        const listEl = document.getElementById('rematch-players-list');
+        if (listEl && Array.isArray(statusData.players)) {
+          const humanPlayers = statusData.players.filter(p => !p.isAI);
+          listEl.innerHTML = humanPlayers.map(p => {
+            const isMe = (p.uid === this.myUserId);
+            const av = p.avatar || this.presetAvatars[0];
+            if (p.ready) {
+              return `
+                <div class="flex items-center justify-between bg-emerald-950/60 border border-emerald-500/50 px-2.5 py-1.5 rounded-xl transition">
+                  <div class="flex items-center gap-2">
+                    <img src="${av}" class="w-7 h-7 rounded-full object-cover border border-emerald-400 bg-slate-700 shadow">
+                    <span class="font-bold text-xs text-slate-100">${p.name} ${isMe ? '<span class="text-amber-300 font-extrabold">(我)</span>' : ''}</span>
+                  </div>
+                  <span class="text-[11px] font-black text-emerald-400 flex items-center gap-1 bg-emerald-900/60 px-2 py-0.5 rounded-full border border-emerald-500/50">
+                    <span>✅</span> 已接受
+                  </span>
+                </div>
+              `;
+            } else {
+              return `
+                <div class="flex items-center justify-between bg-slate-800/80 border border-slate-700 px-2.5 py-1.5 rounded-xl transition">
+                  <div class="flex items-center gap-2">
+                    <img src="${av}" class="w-7 h-7 rounded-full object-cover border border-slate-600 bg-slate-700">
+                    <span class="font-bold text-xs text-slate-300">${p.name} ${isMe ? '<span class="text-amber-300 font-extrabold">(我)</span>' : ''}</span>
+                  </div>
+                  <span class="text-[11px] font-bold text-amber-300 flex items-center gap-1 bg-amber-950/80 px-2 py-0.5 rounded-full border border-amber-500/30 animate-pulse">
+                    <span>⏳</span> 等待確認
+                  </span>
+                </div>
+              `;
+            }
+          }).join('');
+
+          if (statusData.players.some(p => p.isAI)) {
+            listEl.innerHTML += `
+              <div class="text-[10px] text-slate-400 text-center py-0.5 flex items-center justify-center gap-1">
+                <span>🤖</span> <span>電腦玩家將自動就緒加入</span>
+              </div>
+            `;
+          }
+        }
+
+        const waitText = document.getElementById('rematch-wait-text');
+        if (waitText) {
+          if (statusData.allReady) {
+            waitText.innerHTML = '<span class="text-emerald-400 font-black animate-pulse">🎉 全體玩家已全數接受！即將開局...</span>';
+          } else {
+            waitText.innerHTML = `等待所有玩家確認參加... (<span id="rematch-countdown-num" class="text-amber-400 font-bold font-mono">${statusData.secondsLeft !== undefined ? statusData.secondsLeft : 30}</span>s)`;
+          }
+        }
+      }
+
+      acceptRematch() {
+        if (this.myRematchAccepted) return;
+        this.myRematchAccepted = true;
+
+        const btnAccept = document.getElementById('btn-accept-rematch');
+        const btnAcceptText = document.getElementById('btn-accept-rematch-text');
+        if (btnAccept && btnAcceptText) {
+          btnAccept.className = 'py-2.5 px-3 bg-emerald-800/60 text-emerald-200 font-bold text-xs sm:text-sm rounded-xl border border-emerald-500/40 cursor-default flex items-center justify-center gap-1.5';
+          btnAccept.disabled = true;
+          btnAcceptText.textContent = '✔️ 已準備 (等待其他玩家)';
+        }
+
         if (this.isHost) {
-          this.hostRematch();
+          this.rematchReadyUids.add(this.myUserId);
+          const status = this.getRematchStatusData();
+          this.broadcast({ type: 'REMATCH_STATUS_SYNC', rematchStatus: status });
+          this.renderRematchStatusUI(status);
+          this.checkAllRematchReady();
         } else {
           if (this.hostConn && this.hostConn.open) {
-            this.hostConn.send({ type: 'REQ_REMATCH', uid: this.myUserId });
-            this.showToast('已向房主發送下一回合準備完成！', '👍');
+            this.hostConn.send({
+              type: 'CLIENT_REMATCH_ACCEPT',
+              uid: this.myUserId,
+              name: this.myNickname
+            });
           }
+          this.showToast('已確認參加下一場！等待其他玩家確認', '👍');
+        }
+      }
+
+      declineRematch() {
+        if (this.isHost) {
+          this.cancelRematchAndReturn('房主選擇不參加，牌局結束，返回主畫面');
+        } else {
+          if (this.hostConn && this.hostConn.open) {
+            this.hostConn.send({
+              type: 'CLIENT_REMATCH_DECLINE',
+              uid: this.myUserId,
+              name: this.myNickname
+            });
+          }
+          this.returnToLobby();
+        }
+      }
+
+      cancelRematchAndReturn(reason) {
+        if (!this.isRematchPhase) {
+          this.returnToLobby();
+          return;
+        }
+        this.isRematchPhase = false;
+        if (this.rematchTimeoutTimer) {
+          clearInterval(this.rematchTimeoutTimer);
+          this.rematchTimeoutTimer = null;
+        }
+
+        this.broadcast({
+          type: 'REMATCH_CANCELLED',
+          reason: reason
+        });
+
+        this.showToast(reason, '🚪');
+        const waitHint = document.getElementById('rematch-wait-hint');
+        if (waitHint) {
+          waitHint.innerHTML = `<span class="text-rose-400 font-black">❌ ${reason}，即將返回主畫面...</span>`;
+        }
+
+        setTimeout(() => {
+          this.returnToLobby();
+        }, 1500);
+      }
+
+      checkAllRematchReady() {
+        if (!this.isHost || !this.isRematchPhase) return;
+        const humanPlayers = this.players.filter(p => !p.isAI);
+        const allReady = humanPlayers.length > 0 && humanPlayers.every(p => this.rematchReadyUids.has(p.uid));
+        if (allReady) {
+          if (this.rematchTimeoutTimer) {
+            clearInterval(this.rematchTimeoutTimer);
+            this.rematchTimeoutTimer = null;
+          }
+          this.isRematchPhase = false;
+          this.showToast('所有玩家皆已接受！開始下一回合', '🎉');
+          setTimeout(() => {
+            this.hostRematch();
+          }, 600);
         }
       }
 
       hostRematch() {
         if (!this.isHost) return;
-        if (this.rematchInterval) {
-          clearInterval(this.rematchInterval);
-          this.rematchInterval = null;
+        if (this.rematchTimeoutTimer) {
+          clearInterval(this.rematchTimeoutTimer);
+          this.rematchTimeoutTimer = null;
         }
+        this.isRematchPhase = false;
+        this.rematchReadyUids.clear();
+        this.myRematchAccepted = false;
 
         // 重新洗牌、重新發 14 張牌、清理桌面
         this.initDeck();
