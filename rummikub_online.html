@@ -323,7 +323,7 @@
     <!-- 首頁右下角版本時間戳記 -->
     <div class="fixed bottom-2 right-2 text-[10px] sm:text-xs font-mono font-bold text-slate-400 bg-slate-900/85 px-2.5 py-1 rounded-xl border border-slate-700/80 shadow-lg pointer-events-none select-none z-50 flex items-center gap-1.5 backdrop-blur-sm">
       <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-      <span id="app-version-tag">版本: 2026-10-01 23:56</span>
+      <span id="app-version-tag">版本: 2026-10-02 00:30</span>
     </div>
   </div>
 
@@ -1210,16 +1210,42 @@
         return code;
       }
 
-            getPeerConfig() {
+      getPeerConfig() {
         return {
           debug: 1,
+          pingInterval: 5000,
           config: {
             iceServers: [
               { urls: 'stun:stun.l.google.com:19302' },
               { urls: 'stun:stun1.l.google.com:19302' },
               { urls: 'stun:stun2.l.google.com:19302' },
-              { urls: 'stun:stun.cloudflare.com:3478' }
-            ]
+              { urls: 'stun:stun3.l.google.com:19302' },
+              { urls: 'stun:stun4.l.google.com:19302' },
+              { urls: 'stun:stun.cloudflare.com:3478' },
+              { urls: 'stun:openrelay.metered.ca:80' },
+              {
+                urls: 'turn:openrelay.metered.ca:80',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+              },
+              {
+                urls: 'turn:openrelay.metered.ca:443',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+              },
+              {
+                urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+              },
+              {
+                urls: 'turns:openrelay.metered.ca:443?transport=tcp',
+                username: 'openrelayproject',
+                credential: 'openrelayproject'
+              }
+            ],
+            iceCandidatePoolSize: 10,
+            sdpSemantics: 'unified-plan'
           }
         };
       }
@@ -1234,7 +1260,7 @@
         this.timerSeconds = parseInt(document.getElementById('create-timer-sec').value, 10);
         this.aiDifficulty = document.getElementById('create-ai-diff').value;
 
-        this.showToast('正在開設房間...', '⏳');
+        this.showToast(`正在向伺服器登記房間【${this.roomCode}】...`, '⏳');
 
         if (this.peer && !this.peer.destroyed) {
           try { this.peer.destroy(); } catch(e) {}
@@ -1242,7 +1268,7 @@
         const hostPeerId = this.getPeerIdForRoom(this.roomCode);
         this.peer = new Peer(hostPeerId, this.getPeerConfig());
 
-        // 建立 Peer 物件後立即註冊房主監聽器
+        // 立即註冊房主監聽器
         this.setupHostListeners();
 
         this.peer.on('open', (id) => {
@@ -1251,6 +1277,13 @@
           this.updateWaitingRoomUI();
           sessionStorage.setItem('rmk_current_room', this.roomCode);
           this.showToast(`房間已建立！房號：${this.roomCode}`, '🎉');
+        });
+
+        this.peer.on('disconnected', () => {
+          console.warn('[Host Peer] 伺服器信令連線暫時中斷，正在自動重連...');
+          if (this.peer && !this.peer.destroyed) {
+            try { this.peer.reconnect(); } catch(e) {}
+          }
         });
 
         this.peer.on('error', (err) => {
@@ -1270,7 +1303,7 @@
           codeInput = inputEl ? inputEl.value.trim().toUpperCase() : '';
         }
         if (codeInput.length < 4) {
-          this.showToast('請輸入有效房號！', '⚠️');
+          this.showToast('請輸入有效 5 碼房號！', '⚠️');
           return;
         }
 
@@ -1283,24 +1316,54 @@
         }
         this.peer = new Peer(null, this.getPeerConfig());
 
-        let connectTimeout = setTimeout(() => {
-          if (!this.hostConn || !this.hostConn.open) {
-            this.showToast('連線逾時，請確認房主是否已開設房間並於大廳等待！', '⚠️');
-          }
-        }, 15000);
+        let connectionAttempts = 0;
+        let connectTimeout = null;
 
-        this.peer.on('open', (guestId) => {
-          console.log('[Guest] Peer 註冊成功，ID:', guestId);
+        const attemptConnectToHost = () => {
+          connectionAttempts++;
           const hostPeerId = this.getPeerIdForRoom(this.roomCode);
-          this.hostConn = this.peer.connect(hostPeerId, { reliable: true });
+          console.log(`[Guest] 正在連線房主 (第 ${connectionAttempts} 次):`, hostPeerId);
+
+          if (connectionAttempts === 1) {
+            this.showToast(`已找到房間【${this.roomCode}】，正在建立 P2P 穿透通道...`, '⏳');
+          } else {
+            this.showToast(`正在重試建立 P2P 穿透通道 (${connectionAttempts}/3)...`, '🔄');
+          }
+
+          if (this.hostConn) {
+            try { this.hostConn.close(); } catch(e) {}
+          }
+
+          this.hostConn = this.peer.connect(hostPeerId, {
+            reliable: true,
+            serialization: 'json'
+          });
+
+          if (connectTimeout) clearTimeout(connectTimeout);
+          connectTimeout = setTimeout(() => {
+            if (!this.hostConn || !this.hostConn.open) {
+              if (connectionAttempts < 3 && !this.inGame) {
+                console.warn('[Guest] P2P 握手未及時回應，自動進行重試...');
+                attemptConnectToHost();
+              } else if (!this.inGame) {
+                this.showToast('連線逾時！已嘗試 STUN 與 TURN 穿透，請確認房號是否正確並停留在大廳。', '⚠️');
+              }
+            }
+          }, 8000);
 
           this.hostConn.on('open', () => {
             clearTimeout(connectTimeout);
+            console.log('[Guest] 與房主 P2P 頻道已開啟！發送 REQ_JOIN');
+            this.showToast('P2P 通道建立成功！正在同步房間資料...', '✨');
+
+            // 確保頭貼不會過大導致 WebRTC DataChannel 溢出
+            const safeAvatar = (this.myAvatar && this.myAvatar.length < 8000) ? this.myAvatar : this.presetAvatars[0];
+
             this.hostConn.send({
               type: 'REQ_JOIN',
               uid: this.myUserId,
               name: this.myNickname,
-              avatar: this.myAvatar
+              avatar: safeAvatar
             });
             sessionStorage.setItem('rmk_current_room', this.roomCode);
           });
@@ -1311,25 +1374,41 @@
             if (this.isRematchPhase) {
               this.showToast('房主已離開畫面，牌局結束，返回主畫面', '🚪');
               setTimeout(() => this.returnToLobby(), 1200);
-            } else {
+            } else if (this.inGame) {
               this.showToast('與房主的連線已中斷', '⚠️');
             }
           });
 
           this.hostConn.on('error', (err) => {
-            clearTimeout(connectTimeout);
             console.error('[Guest Conn Error]', err);
-            this.showToast('連線房主發生錯誤', '❌');
+            if (connectionAttempts < 3 && !this.inGame) {
+              setTimeout(attemptConnectToHost, 1000);
+            } else {
+              clearTimeout(connectTimeout);
+              this.showToast('連線房主失敗，請檢查網路連線', '❌');
+            }
           });
+        };
+
+        this.peer.on('open', (guestId) => {
+          console.log('[Guest] Peer 註冊成功，本地 ID:', guestId);
+          attemptConnectToHost();
+        });
+
+        this.peer.on('disconnected', () => {
+          console.warn('[Guest Peer] 伺服器信令連線暫時中斷，正在自動重連...');
+          if (this.peer && !this.peer.destroyed) {
+            try { this.peer.reconnect(); } catch(e) {}
+          }
         });
 
         this.peer.on('error', (err) => {
-          clearTimeout(connectTimeout);
+          if (connectTimeout) clearTimeout(connectTimeout);
           console.error('[Guest Peer Error]', err);
           if (err.type === 'peer-unavailable') {
-            this.showToast(`查無此房間代碼【${this.roomCode}】，請確認房號是否正確！`, '❌');
+            this.showToast(`查無此房間代碼【${this.roomCode}】，請確認房主是否已開設房間！`, '❌');
           } else {
-            this.showToast(`連線失敗：${err.type || '網路異常'}`, '❌');
+            this.showToast(`連線伺服器異常：${err.type || '網路中斷'}`, '❌');
           }
         });
       }
@@ -1350,8 +1429,22 @@
         }];
 
         this.peer.on('connection', (conn) => {
+          console.log('[Host] 收到訪客 Peer 連線請求:', conn.peer);
+          
+          const handleConnected = () => {
+            conn.on('data', (data) => this.handleHostReceiveData(conn, data));
+            conn.on('close', () => this.handleClientDisconnect(conn));
+          };
+
+          if (conn.open) {
+            handleConnected();
+          } else {
+            conn.on('open', handleConnected);
+          }
+          // 雙重保險掛載
           conn.on('data', (data) => this.handleHostReceiveData(conn, data));
           conn.on('close', () => this.handleClientDisconnect(conn));
+          conn.on('error', (err) => console.error('[Host DataConn Error]', err));
         });
 
         clearInterval(this.heartbeatTimer);
@@ -1366,8 +1459,13 @@
 
         switch (data.type) {
           case 'REQ_JOIN': {
-            const uid = data.uid;
+            let uid = data.uid;
             const name = data.name;
+
+            // 若為同機雙開或 ID 衝突，指派新 UID 確保不會與房主互斥
+            if (uid === this.myUserId) {
+              uid = uid + '_' + Math.random().toString(36).substring(2, 6);
+            }
 
             const existingPlayer = this.players.find(p => p.uid === uid);
             if (existingPlayer) {
@@ -1375,24 +1473,33 @@
               existingPlayer.isAITakeover = false;
               this.connections.set(uid, conn);
 
-              conn.send({
-                type: 'JOIN_SUCCESS',
-                isReconnect: true,
-                inGame: this.inGame,
-                roomSettings: {
-                  roomCode: this.roomCode,
-                  targetPlayerCount: this.targetPlayerCount,
-                  timerSeconds: this.timerSeconds,
-                  aiDifficulty: this.aiDifficulty
-                },
-                players: this.sanitizePlayersForClient(),
-                myId: existingPlayer.id,
-                myHand: existingPlayer.hand,
-                tableMelds: this.tableMelds,
-                deckCount: this.deck.length,
-                turnIndex: this.turnIndex,
-                currentSeconds: this.currentSeconds
-              });
+              const sendReconnectMsg = () => {
+                try {
+                  conn.send({
+                    type: 'JOIN_SUCCESS',
+                    isReconnect: true,
+                    inGame: this.inGame,
+                    roomSettings: {
+                      roomCode: this.roomCode,
+                      targetPlayerCount: this.targetPlayerCount,
+                      timerSeconds: this.timerSeconds,
+                      aiDifficulty: this.aiDifficulty
+                    },
+                    players: this.sanitizePlayersForClient(),
+                    myId: existingPlayer.id,
+                    myHand: existingPlayer.hand,
+                    tableMelds: this.tableMelds,
+                    deckCount: this.deck.length,
+                    turnIndex: this.turnIndex,
+                    currentSeconds: this.currentSeconds
+                  });
+                } catch(e) {
+                  console.error('[Host send reconnect JOIN_SUCCESS Error]', e);
+                }
+              };
+
+              if (conn.open) sendReconnectMsg();
+              else conn.on('open', sendReconnectMsg);
 
               this.broadcastState();
               this.showToast(`${existingPlayer.name} 已恢復連線！`, '🟢');
@@ -1400,11 +1507,11 @@
             }
 
             if (this.inGame) {
-              conn.send({ type: 'JOIN_FAIL', reason: '遊戲已開始，無法新加入' });
+              if (conn.open) conn.send({ type: 'JOIN_FAIL', reason: '遊戲已開始，無法新加入' });
               return;
             }
             if (this.players.length >= this.targetPlayerCount) {
-              conn.send({ type: 'JOIN_FAIL', reason: '房間已滿' });
+              if (conn.open) conn.send({ type: 'JOIN_FAIL', reason: '房間已滿' });
               return;
             }
 
@@ -1425,20 +1532,33 @@
             this.players.push(newPlayer);
             this.connections.set(uid, conn);
 
-            conn.send({
-              type: 'JOIN_SUCCESS',
-              isReconnect: false,
-              inGame: false,
-              roomSettings: {
-                roomCode: this.roomCode,
-                targetPlayerCount: this.targetPlayerCount,
-                timerSeconds: this.timerSeconds,
-                aiDifficulty: this.aiDifficulty
-              },
-              players: this.sanitizePlayersForClient(),
-              myId: newPlayer.id,
-              deckCount: this.targetPlayerCount >= 5 ? 160 : 106
-            });
+            const sendJoinSuccessMsg = () => {
+              try {
+                conn.send({
+                  type: 'JOIN_SUCCESS',
+                  isReconnect: false,
+                  inGame: false,
+                  roomSettings: {
+                    roomCode: this.roomCode,
+                    targetPlayerCount: this.targetPlayerCount,
+                    timerSeconds: this.timerSeconds,
+                    aiDifficulty: this.aiDifficulty
+                  },
+                  players: this.sanitizePlayersForClient(),
+                  myId: newPlayer.id,
+                  deckCount: this.targetPlayerCount >= 5 ? 160 : 106
+                });
+              } catch(e) {
+                console.error('[Host send JOIN_SUCCESS Error]', e);
+              }
+            };
+
+            if (conn.open) {
+              sendJoinSuccessMsg();
+            } else {
+              conn.on('open', sendJoinSuccessMsg);
+              setTimeout(sendJoinSuccessMsg, 400);
+            }
 
             this.broadcastLobbyUpdate();
             this.showToast(`玩家【${name}】加入了房間`, '👋');
@@ -1621,7 +1741,7 @@
           id: p.id,
           uid: p.uid,
           name: p.name,
-          avatar: p.avatar || this.presetAvatars[0],
+          avatar: (p.avatar && p.avatar.length < 8000) ? p.avatar : this.presetAvatars[0],
           isHost: p.isHost,
           isAI: p.isAI,
           isAITakeover: p.isAITakeover,
