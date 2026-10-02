@@ -351,7 +351,7 @@
     <!-- 首頁右下角版本時間戳記 -->
     <div class="fixed bottom-2 right-2 text-[10px] sm:text-xs font-mono font-bold text-slate-400 bg-slate-900/85 px-2.5 py-1 rounded-xl border border-slate-700/80 shadow-lg pointer-events-none select-none z-50 flex items-center gap-1.5 backdrop-blur-sm">
       <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-      <span id="app-version-tag">版本: 2026-10-02 11:10</span>
+      <span id="app-version-tag">版本: 2026-10-02 12:00</span>
     </div>
   </div>
 
@@ -2502,110 +2502,127 @@
       sortMeldTiles(tiles) {
         if (!tiles || tiles.length <= 1) return tiles;
         const jokers = tiles.filter(t => t.isJoker);
-        const regulars = tiles.filter(t => !t.isJoker);
-        if (regulars.length === 0) return tiles;
+        const regs = tiles.filter(t => !t.isJoker);
+        if (regs.length === 0) return tiles;
 
         const colorOrder = { 'red': 1, 'blue': 2, 'yellow': 3, 'black': 4 };
 
-        // 1. 鏡像百搭：置中對稱排序
+        // 1. 鏡像百搭置中對稱排序
         const mirrorJoker = jokers.find(t => t.jokerType === 'mirror');
         if (mirrorJoker && tiles.length % 2 === 1) {
           const others = tiles.filter(t => t.id !== mirrorJoker.id);
-          const pairs = [];
-          const used = new Set();
-          for (let i = 0; i < others.length; i++) {
-            if (used.has(i)) continue;
-            const t1 = others[i];
-            let matchIdx = -1;
-            for (let j = i + 1; j < others.length; j++) {
-              if (!used.has(j)) {
-                const t2 = others[j];
-                if ((t1.isJoker && t2.isJoker) || (t1.num === t2.num && t1.color === t2.color)) {
-                  matchIdx = j;
-                  break;
-                }
-              }
-            }
-            if (matchIdx !== -1) {
-              used.add(i);
-              used.add(matchIdx);
-              pairs.push([t1, others[matchIdx]]);
-            }
+          const groups = {};
+          for (const t of others) {
+            const k = t.isJoker ? `j_${t.id}` : `${t.color}_${t.num}`;
+            if (!groups[k]) groups[k] = [];
+            groups[k].push(t);
           }
-          if (pairs.length * 2 === others.length) {
-            pairs.sort((a, b) => (a[0].num || 0) - (b[0].num || 0));
+          if (Object.values(groups).every(v => v.length === 2)) {
+            const sortedKeys = Object.keys(groups).sort((a,b) => (groups[a][0].num || 0) - (groups[b][0].num || 0));
             const leftHalf = [];
             const rightHalf = [];
-            for (const p of pairs) {
-              leftHalf.push(p[0]);
-              rightHalf.unshift(p[1]);
+            for (const k of sortedKeys) {
+              leftHalf.push(groups[k][0]);
+              rightHalf.unshift(groups[k][1]);
             }
             return [...leftHalf, mirrorJoker, ...rightHalf];
           }
         }
 
-        // 2. 變色百搭順組：依數字連續排序，變色百搭置於顏色過渡處
+        // 2. 順組精準依數值槽位排序 (包含變色百搭、雙百搭、一般百搭)
         const colorJoker = jokers.find(t => t.jokerType === 'color');
-        if (colorJoker && regulars.length > 0) {
-          const sortedRegs = regulars.slice().sort((a, b) => a.num - b.num);
-          const firstColor = sortedRegs[0].color;
-          const before = [];
-          const after = [];
-          let transition = false;
-          for (const t of sortedRegs) {
-            if (!transition) {
-              if (t.color === firstColor) before.push(t);
-              else {
-                transition = true;
-                after.push(t);
+        const doubleJokers = jokers.filter(t => t.jokerType === 'double');
+        const regJokers = jokers.filter(t => !t.jokerType || t.jokerType === 'regular');
+
+        if (jokers.length === 0 || colorJoker || doubleJokers.length > 0 || regJokers.length > 0) {
+          const totalSlots = regs.length + regJokers.length + (colorJoker ? 1 : 0) + (doubleJokers.length * 2);
+          if (totalSlots >= 3 && totalSlots <= 13) {
+            const regNums = regs.map(t => t.num);
+            if (new Set(regNums).size === regNums.length) {
+              const regMap = {};
+              for (const t of regs) regMap[t.num] = t;
+
+              for (let S = 1; S <= 14 - totalSlots; S++) {
+                const E = S + totalSlots - 1;
+                if (regNums.every(n => n >= S && n <= E)) {
+                  const missing = [];
+                  for (let n = S; n <= E; n++) {
+                    if (!regMap[n]) missing.push(n);
+                  }
+
+                  function solveAssignment(rem, dList, sList, dAss) {
+                    if (dList.length === 0) {
+                      if (rem.length === sList.length) {
+                        const sAss = {};
+                        for (let i = 0; i < rem.length; i++) sAss[rem[i]] = sList[i];
+                        return { dAss, sAss };
+                      }
+                      return null;
+                    }
+                    for (let i = 0; i < rem.length - 1; i++) {
+                      if (rem[i+1] === rem[i] + 1) {
+                        const nextRem = rem.slice(0, i).concat(rem.slice(i+2));
+                        const nextDAss = Object.assign({}, dAss);
+                        nextDAss[rem[i]] = dList[0];
+                        const res = solveAssignment(nextRem, dList.slice(1), sList, nextDAss);
+                        if (res) return res;
+                      }
+                    }
+                    return null;
+                  }
+
+                  if (colorJoker) {
+                    for (const K of missing) {
+                      const leftColors = new Set(regs.filter(t => t.num < K).map(t => t.color));
+                      const rightColors = new Set(regs.filter(t => t.num > K).map(t => t.color));
+                      if (leftColors.size <= 1 && rightColors.size <= 1) {
+                        const c1 = leftColors.size === 1 ? [...leftColors][0] : null;
+                        const c2 = rightColors.size === 1 ? [...rightColors][0] : null;
+                        if ((c1 && c2 && c1 !== c2) || (!c1 && c2) || (c1 && !c2)) {
+                          const remMiss = missing.filter(n => n !== K);
+                          const res = solveAssignment(remMiss, doubleJokers, regJokers, {});
+                          if (res) {
+                            const layout = [];
+                            let skip = false;
+                            for (let n = S; n <= E; n++) {
+                              if (skip) { skip = false; continue; }
+                              if (regMap[n]) layout.push(regMap[n]);
+                              else if (n === K) layout.push(colorJoker);
+                              else if (res.dAss[n]) { layout.push(res.dAss[n]); skip = true; }
+                              else if (res.sAss[n]) layout.push(res.sAss[n]);
+                            }
+                            return layout;
+                          }
+                        }
+                      }
+                    }
+                  } else {
+                    const colors = new Set(regs.map(t => t.color));
+                    if (colors.size <= 1) {
+                      const res = solveAssignment(missing, doubleJokers, regJokers, {});
+                      if (res) {
+                        const layout = [];
+                        let skip = false;
+                        for (let n = S; n <= E; n++) {
+                          if (skip) { skip = false; continue; }
+                          if (regMap[n]) layout.push(regMap[n]);
+                          else if (res.dAss[n]) { layout.push(res.dAss[n]); skip = true; }
+                          else if (res.sAss[n]) layout.push(res.sAss[n]);
+                        }
+                        return layout;
+                      }
+                    }
+                  }
+                }
               }
-            } else {
-              after.push(t);
             }
           }
-          const otherJokers = jokers.filter(t => t.id !== colorJoker.id);
-          return [...before, colorJoker, ...after, ...otherJokers];
         }
 
-        // 3. 雙百搭或一般順組 (同顏色)
-        const targetColor = regulars[0].color;
-        const allSameColor = regulars.every(t => t.color === targetColor);
-        if (allSameColor) {
-          const sortedRegs = regulars.slice().sort((a, b) => a.num - b.num);
-          const result = [];
-          const availDoubles = jokers.filter(t => t.jokerType === 'double');
-          const availSingles = jokers.filter(t => t.jokerType !== 'double');
-
-          for (let i = 0; i < sortedRegs.length; i++) {
-            if (i > 0) {
-              let gap = sortedRegs[i].num - sortedRegs[i - 1].num - 1;
-              while (gap >= 2 && availDoubles.length > 0) {
-                result.push(availDoubles.pop());
-                gap -= 2;
-              }
-              while (gap >= 1 && availSingles.length > 0) {
-                result.push(availSingles.pop());
-                gap -= 1;
-              }
-            }
-            result.push(sortedRegs[i]);
-          }
-          while (availDoubles.length > 0) result.push(availDoubles.pop());
-          while (availSingles.length > 0) {
-            const j = availSingles.pop();
-            const last = result[result.length - 1];
-            const lastNum = (last && !last.isJoker) ? last.num : 13;
-            if (lastNum < 13) result.push(j);
-            else result.unshift(j);
-          }
-          return result;
-        }
-
-        // 4. 群組 (同數字不同顏色)
-        const targetNum = regulars[0].num;
-        const allSameNum = regulars.every(t => t.num === targetNum);
-        if (allSameNum) {
-          const sortedRegs = regulars.slice().sort((a, b) => colorOrder[a.color] - colorOrder[b.color]);
+        // 3. 群組 (同數字不同顏色)
+        const targetNum = regs[0].num;
+        if (regs.every(t => t.num === targetNum)) {
+          const sortedRegs = regs.slice().sort((a, b) => colorOrder[a.color] - colorOrder[b.color]);
           return [...sortedRegs, ...jokers];
         }
 
@@ -2627,7 +2644,7 @@
         if (!tiles || tiles.length < 3) return { valid: false, reason: '牌數少於 3 張' };
 
         const jokers = tiles.filter(t => t.isJoker);
-        const regulars = tiles.filter(t => !t.isJoker);
+        const regs = tiles.filter(t => !t.isJoker);
 
         const mirrorJokers = jokers.filter(t => t.jokerType === 'mirror');
         const colorJokers = jokers.filter(t => t.jokerType === 'color');
@@ -2636,82 +2653,64 @@
 
         // ================= 1. 鏡像組 (Mirror Meld) =================
         if (mirrorJokers.length === 1 && tiles.length % 2 === 1) {
-          const mid = Math.floor(tiles.length / 2);
+          const mj = mirrorJokers[0];
+          const others = tiles.filter(t => t.id !== mj.id);
 
-          // 1.1 鏡像群組 (Mirror Group)
-          if (regulars.length > 0 && regulars.every(t => t.num === regulars[0].num)) {
-            const targetNum = regulars[0].num;
-            let sym = true;
-            if (tiles[mid].jokerType === 'mirror') {
-              for (let i = 0; i < mid; i++) {
-                const l = tiles[i];
-                const r = tiles[tiles.length - 1 - i];
-                if (l.isJoker || r.isJoker) continue;
-                if (l.color !== r.color || l.num !== r.num) { sym = false; break; }
-              }
-            } else {
-              const colorCounts = {};
-              for (const t of regulars) {
-                colorCounts[t.color] = (colorCounts[t.color] || 0) + 1;
-              }
-              let oddColors = 0;
-              for (const c in colorCounts) {
-                if (colorCounts[c] % 2 !== 0) oddColors++;
-              }
-              if (oddColors > regularJokers.length) sym = false;
+          // 1.1 鏡像群組
+          if (regs.length > 0 && regs.every(t => t.num === regs[0].num)) {
+            const targetNum = regs[0].num;
+            const colorCounts = {};
+            for (const t of others) {
+              const c = t.isJoker ? 'joker' : t.color;
+              colorCounts[c] = (colorCounts[c] || 0) + 1;
             }
-            if (sym) {
-              // 鏡像百搭價值為 0，其餘牌依面額計分
-              const val = targetNum * (tiles.length - 1);
-              return { valid: true, type: 'group', value: val, isMirror: true };
+            let canPair = true;
+            for (const c in colorCounts) {
+              if (c !== 'joker' && colorCounts[c] % 2 !== 0) {
+                canPair = false; break;
+              }
+            }
+            if (canPair) {
+              return { valid: true, type: 'group', value: targetNum * others.length, isMirror: true };
             }
           }
 
-          // 1.2 鏡像順組 (Mirror Run)
-          if (tiles[mid].jokerType === 'mirror') {
-            let isMirrorRun = true;
-            for (let i = 0; i < mid; i++) {
-              const l = tiles[i];
-              const r = tiles[tiles.length - 1 - i];
-              if (l.isJoker || r.isJoker) continue;
-              if (l.color !== r.color || l.num !== r.num) { isMirrorRun = false; break; }
-            }
-            if (isMirrorRun) {
-              const leftRegs = tiles.slice(0, mid).filter(t => !t.isJoker);
-              if (leftRegs.length > 0) {
-                const firstColor = leftRegs[0].color;
-                const sameColor = leftRegs.every(t => t.color === firstColor);
-                if (sameColor) {
-                  const nums = leftRegs.map(t => t.num);
-                  const isInc = nums.every((n, i) => i === 0 || n > nums[i - 1]);
-                  const isDec = nums.every((n, i) => i === 0 || n < nums[i - 1]);
-                  if (isInc || isDec || nums.length <= 1) {
-                    let val = 0;
-                    for (const t of tiles) {
-                      if (!t.isJoker) val += t.num;
-                    }
-                    return { valid: true, type: 'run', value: val, isMirror: true };
-                  }
-                }
+          // 1.2 鏡像順組
+          const pairMap = {};
+          for (const t of others) {
+            const k = t.isJoker ? `j_${t.id}` : `${t.color}_${t.num}`;
+            pairMap[k] = (pairMap[k] || 0) + 1;
+          }
+          let allPairs = true;
+          for (const k in pairMap) {
+            if (pairMap[k] !== 2) { allPairs = false; break; }
+          }
+          if (allPairs && regs.length > 0) {
+            const firstColor = regs[0].color;
+            if (regs.every(t => t.color === firstColor)) {
+              const uniqueNums = Array.from(new Set(regs.map(t => t.num))).sort((a,b)=>a-b);
+              let consecutive = true;
+              for (let i = 0; i < uniqueNums.length - 1; i++) {
+                if (uniqueNums[i+1] !== uniqueNums[i] + 1) { consecutive = false; break; }
+              }
+              if (consecutive) {
+                let sumNums = 0;
+                for (const n of uniqueNums) sumNums += n * 2;
+                return { valid: true, type: 'run', value: sumNums, isMirror: true };
               }
             }
           }
         }
 
-        if (mirrorJokers.length > 0) {
-          return { valid: false, reason: '鏡像百搭必須置於對稱牌組中心' };
-        }
+        if (mirrorJokers.length > 0) return { valid: false, reason: '鏡像百搭必須成對對稱' };
 
         // ================= 2. 群組 (Group: 同數字、不同顏色) =================
-        if (colorJokers.length === 0 && regulars.length > 0) {
-          const targetNum = regulars[0].num;
-          const allSameNum = regulars.every(t => t.num === targetNum);
-          if (allSameNum) {
-            const regColors = new Set(regulars.map(t => t.color));
-            if (regColors.size === regulars.length) {
-              const doubleCount = doubleJokers.length;
-              const regJokerCount = regularJokers.length;
-              const effectiveCount = regulars.length + regJokerCount + (doubleCount * 2);
+        if (colorJokers.length === 0 && regs.length > 0) {
+          const targetNum = regs[0].num;
+          if (regs.every(t => t.num === targetNum)) {
+            const regColors = new Set(regs.map(t => t.color));
+            if (regColors.size === regs.length) {
+              const effectiveCount = regs.length + regularJokers.length + (doubleJokers.length * 2);
               if (effectiveCount >= 3 && effectiveCount <= 4 && tiles.length >= 3) {
                 return { valid: true, type: 'group', value: targetNum * effectiveCount };
               }
@@ -2721,82 +2720,72 @@
 
         // ================= 3. 順組 (Run: 連續數字) =================
         if (colorJokers.length <= 1) {
-          const effectiveLen = regulars.length + regularJokers.length + colorJokers.length + (doubleJokers.length * 2);
-          if (effectiveLen >= 3 && effectiveLen <= 13) {
-            const regNums = regulars.map(t => t.num);
-            const hasDupNums = (new Set(regNums).size !== regNums.length);
+          const totalSlots = regs.length + regularJokers.length + colorJokers.length + (doubleJokers.length * 2);
+          if (totalSlots >= 3 && totalSlots <= 13) {
+            const regNums = regs.map(t => t.num);
+            if (new Set(regNums).size === regNums.length) {
+              const regMap = {};
+              for (const t of regs) regMap[t.num] = t.color;
 
-            if (!hasDupNums) {
-              let colorValid = false;
-              if (colorJokers.length === 0) {
-                if (regulars.length === 0 || regulars.every(t => t.color === regulars[0].color)) {
-                  colorValid = true;
-                }
-              } else {
-                const colors = new Set(regulars.map(t => t.color));
-                if (colors.size <= 2) {
-                  colorValid = true;
-                }
-              }
+              let bestVal = 0;
+              let foundRun = false;
 
-              if (colorValid) {
-                let bestVal = 0;
-                let canFit = false;
+              for (let S = 1; S <= 14 - totalSlots; S++) {
+                const E = S + totalSlots - 1;
+                if (regNums.every(n => n >= S && n <= E)) {
+                  const missing = [];
+                  for (let n = S; n <= E; n++) {
+                    if (regMap[n] === undefined) missing.push(n);
+                  }
 
-                for (let S = 1; S <= 14 - effectiveLen; S++) {
-                  const E = S + effectiveLen - 1;
-                  if (regNums.every(n => n >= S && n <= E)) {
-                    const occupied = new Set(regNums);
-                    const missing = [];
-                    for (let n = S; n <= E; n++) {
-                      if (!occupied.has(n)) missing.push(n);
-                    }
-
-                    function canCover(miss, dLeft, sLeft) {
-                      if (dLeft === 0) return miss.length === sLeft;
-                      for (let i = 0; i < miss.length - 1; i++) {
-                        if (miss[i + 1] === miss[i] + 1) {
-                          const rem = miss.slice(0, i).concat(miss.slice(i + 2));
-                          if (canCover(rem, dLeft - 1, sLeft)) return true;
-                        }
+                  function canAssign(rem, dLeft, sLeft) {
+                    if (dLeft === 0) return rem.length === sLeft;
+                    for (let i = 0; i < rem.length - 1; i++) {
+                      if (rem[i+1] === rem[i] + 1) {
+                        const nextRem = rem.slice(0, i).concat(rem.slice(i+2));
+                        if (canAssign(nextRem, dLeft - 1, sLeft)) return true;
                       }
-                      return false;
                     }
+                    return false;
+                  }
 
-                    const numDoubles = doubleJokers.length;
-                    const numSingles = regularJokers.length + colorJokers.length;
-
-                    if (canCover(missing, numDoubles, numSingles)) {
-                      if (colorJokers.length === 1 && regulars.length > 0) {
-                        let transitionOk = false;
-                        for (let K = S; K <= E; K++) {
-                          const leftRegs = regulars.filter(t => t.num < K);
-                          const rightRegs = regulars.filter(t => t.num > K);
-                          const lColors = new Set(leftRegs.map(t => t.color));
-                          const rColors = new Set(rightRegs.map(t => t.color));
-                          if (lColors.size <= 1 && rColors.size <= 1) {
-                            const lc = lColors.size === 1 ? [...lColors][0] : null;
-                            const rc = rColors.size === 1 ? [...rColors][0] : null;
-                            if ((lc && rc && lc !== rc) || (!lc || !rc)) {
-                              transitionOk = true;
-                              break;
-                            }
+                  if (colorJokers.length === 1) {
+                    // 變色百搭必須對應 missing 中的某個空位 K
+                    for (const K of missing) {
+                      const leftColors = new Set(regs.filter(t => t.num < K).map(t => t.color));
+                      const rightColors = new Set(regs.filter(t => t.num > K).map(t => t.color));
+                      if (leftColors.size <= 1 && rightColors.size <= 1) {
+                        const c1 = leftColors.size === 1 ? [...leftColors][0] : null;
+                        const c2 = rightColors.size === 1 ? [...rightColors][0] : null;
+                        if ((c1 && c2 && c1 !== c2) || (!c1 && c2) || (c1 && !c2)) {
+                          const remMiss = missing.filter(n => n !== K);
+                          if (canAssign(remMiss, doubleJokers.length, regularJokers.length)) {
+                            foundRun = true;
+                            let curVal = 0;
+                            for (let n = S; n <= E; n++) curVal += n;
+                            if (curVal > bestVal) bestVal = curVal;
+                            break;
                           }
                         }
-                        if (!transitionOk) continue;
                       }
-
-                      canFit = true;
-                      let curVal = 0;
-                      for (let n = S; n <= E; n++) curVal += n;
-                      if (curVal > bestVal) bestVal = curVal;
+                    }
+                  } else {
+                    // 無變色百搭：全部實體牌必須同一顏色
+                    const colors = new Set(regs.map(t => t.color));
+                    if (colors.size <= 1) {
+                      if (canAssign(missing, doubleJokers.length, regularJokers.length)) {
+                        foundRun = true;
+                        let curVal = 0;
+                        for (let n = S; n <= E; n++) curVal += n;
+                        if (curVal > bestVal) bestVal = curVal;
+                      }
                     }
                   }
                 }
+              }
 
-                if (canFit) {
-                  return { valid: true, type: 'run', value: bestVal };
-                }
+              if (foundRun) {
+                return { valid: true, type: 'run', value: bestVal };
               }
             }
           }
