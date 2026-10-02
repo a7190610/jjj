@@ -96,8 +96,13 @@
       transition: box-shadow 0.25s, border-color 0.25s;
     }
     .tile-rack.my-turn-active {
-      border-color: #10b981;
-      box-shadow: inset 0 2px 5px rgba(0,0,0,0.4), 0 0 16px rgba(16, 185, 129, 0.45);
+      border-color: #34d399;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.4), 0 0 22px rgba(52, 211, 153, 0.65);
+      animation: rack-pulse 2s infinite ease-in-out;
+    }
+    @keyframes rack-pulse {
+      0%, 100% { box-shadow: inset 0 2px 5px rgba(0,0,0,0.4), 0 0 14px rgba(52, 211, 153, 0.45); }
+      50% { box-shadow: inset 0 2px 5px rgba(0,0,0,0.4), 0 0 26px rgba(52, 211, 153, 0.85); }
     }
 
     /* 桌面綠呢絨質感 */
@@ -261,6 +266,22 @@
           </div>
         </div>
 
+        <!-- 變臉版擴充選項 -->
+        <div class="bg-slate-900/70 p-2.5 rounded-xl border border-purple-500/40 shadow-inner">
+          <label class="flex items-start gap-2.5 cursor-pointer">
+            <input type="checkbox" id="create-is-twist" class="mt-0.5 w-4 h-4 rounded text-purple-600 focus:ring-purple-500 bg-slate-700 border-slate-600 cursor-pointer">
+            <div class="flex-1 text-xs">
+              <div class="font-extrabold text-amber-300 flex items-center gap-1.5">
+                <span>🎭 啟用「變臉版 (Twist)」玩法</span>
+                <span class="px-1.5 py-0.2 bg-purple-900/90 text-purple-200 border border-purple-500/60 rounded text-[10px] font-black">擴充規則</span>
+              </div>
+              <div class="text-[11px] text-slate-300 mt-0.5 leading-snug">
+                加入變色百搭、鏡像百搭、雙百搭等 8 張特殊百搭牌 (牌庫擴充為 112 張)
+              </div>
+            </div>
+          </label>
+        </div>
+
         <div class="flex items-center gap-2 pt-1">
           <button onclick="netGame.hideSubPanels()" class="flex-1 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-bold rounded-xl transition">返回</button>
           <button onclick="netGame.createRoom()" class="flex-2 py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold rounded-xl shadow transition">產生房號並開房</button>
@@ -298,9 +319,15 @@
         </div>
 
         <div>
+          <div class="flex items-center justify-between text-xs text-slate-300 mb-1.5 font-bold">
+            <span class="flex items-center gap-1 text-slate-400">
+              <span>玩法:</span>
+              <span id="waiting-game-mode" class="px-2 py-0.5 rounded-md text-[11px] font-extrabold bg-slate-700 text-slate-200 border border-slate-600">經典標準版 (106張)</span>
+            </span>
+            <span id="waiting-room-status" class="text-emerald-400">連線就緒</span>
+          </div>
           <div class="flex items-center justify-between text-xs text-slate-300 mb-1 font-bold">
             <span>玩家清單 (<span id="waiting-current-count">1</span>/<span id="waiting-max-count">4</span>)</span>
-            <span id="waiting-room-status" class="text-emerald-400">連線就緒</span>
           </div>
           <div id="waiting-players-list" class="space-y-1"></div>
         </div>
@@ -324,7 +351,7 @@
     <!-- 首頁右下角版本時間戳記 -->
     <div class="fixed bottom-2 right-2 text-[10px] sm:text-xs font-mono font-bold text-slate-400 bg-slate-900/85 px-2.5 py-1 rounded-xl border border-slate-700/80 shadow-lg pointer-events-none select-none z-50 flex items-center gap-1.5 backdrop-blur-sm">
       <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-      <span id="app-version-tag">版本: 2026-10-02 01:45</span>
+      <span id="app-version-tag">版本: 2026-10-02 11:10</span>
     </div>
   </div>
 
@@ -353,6 +380,8 @@
         <span class="text-slate-500">|</span>
         <span class="text-slate-400">牌池:</span>
         <span id="deck-count" class="font-extrabold text-amber-300">106</span>
+        <span class="text-slate-500">|</span>
+        <span id="game-mode-tag" class="px-1.5 py-0.2 rounded text-[10px] font-black bg-slate-700 text-slate-300 border border-slate-600">經典版</span>
       </div>
     </div>
 
@@ -432,18 +461,18 @@
         </div>
       </div>
 
-      <!-- 手牌多選時的「快速打出列」 -->
-      <div id="quick-play-bar" class="w-full bg-slate-900/95 border border-amber-400/80 rounded-xl px-2 py-1 shadow-2xl flex flex-wrap items-center justify-between gap-1 transition-all duration-150 hidden">
-        <div class="flex items-center gap-1 text-xs">
+      <!-- 手牌多選時的「快速打出列」 (高度加倍、清晰大方好點選) -->
+      <div id="quick-play-bar" class="w-full bg-slate-900/95 border-2 border-amber-400/90 rounded-2xl p-2 sm:p-2.5 shadow-2xl flex flex-wrap items-center justify-between gap-2 transition-all duration-150 hidden">
+        <div class="flex items-center gap-1.5 text-xs sm:text-sm">
           <span>✨ 已選:</span>
           <span id="quick-selected-names" class="font-black text-amber-300">0 張</span>
-          <span id="quick-meld-validation" class="ml-1 px-1.5 py-0.2 rounded-full font-bold bg-slate-700 text-slate-300 text-[10px]">檢驗中</span>
+          <span id="quick-meld-validation" class="ml-1 px-2 py-0.5 rounded-full font-bold bg-slate-700 text-slate-300 text-[11px]">檢驗中</span>
         </div>
-        <div class="flex items-center gap-1">
-          <button onclick="netGame.playSelectedAsNewMeld()" id="btn-quick-play" class="px-2.5 py-0.5 bg-gradient-to-r from-emerald-600 to-teal-500 text-white rounded text-xs font-black shadow">
-            🚀 打出成新組
+        <div class="flex items-center gap-1.5">
+          <button onclick="netGame.playSelectedAsNewMeld()" id="btn-quick-play" class="px-5 sm:px-7 py-2.5 sm:py-3 min-h-[46px] sm:min-h-[50px] bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-sm sm:text-base font-black shadow-lg transform hover:scale-[1.03] active:scale-95 transition flex items-center justify-center gap-1.5 ring-2 ring-emerald-400/40">
+            <span class="text-base sm:text-lg">🚀</span> <span>打出成新組</span>
           </button>
-          <button onclick="netGame.clearSelection()" class="px-2 py-0.5 bg-slate-700 text-slate-300 rounded text-xs">
+          <button onclick="netGame.clearSelection()" class="px-3 sm:px-4 py-2.5 sm:py-3 min-h-[46px] sm:min-h-[50px] bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-xl text-sm font-bold shadow transition flex items-center justify-center" title="取消選取">
             ✕
           </button>
         </div>
@@ -451,6 +480,9 @@
 
     </div>
   </main>
+
+  <!-- 輪到我時的全螢幕流光邊框提示 -->
+  <div id="my-turn-flash-overlay" class="fixed inset-0 pointer-events-none z-40 transition-opacity duration-700 opacity-0 border-4 sm:border-8 border-emerald-400 shadow-[inset_0_0_35px_rgba(52,211,153,0.55)]"></div>
 
   <!-- 浮動提示 Toast -->
   <div id="toast" class="fixed top-12 left-1/2 -translate-x-1/2 bg-slate-900/95 text-white border border-amber-500/60 px-3 py-1 rounded-xl shadow-2xl text-xs font-semibold pointer-events-none transition-all duration-200 opacity-0 transform -translate-y-2 z-50 flex items-center gap-1">
@@ -486,17 +518,22 @@
         <div id="player-hand" class="flex flex-wrap content-start items-center gap-1 sm:gap-1.5 w-full"></div>
       </div>
 
-      <!-- 控制按鈕列 -->
-      <div class="flex items-center justify-between gap-1 pt-0.5">
-        <div class="flex items-center gap-1">
-          <button onclick="netGame.sortHand('number')" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs font-semibold border border-slate-600 shadow">
-            🔢 數字
+      <!-- 控制按鈕列 (正方形按鈕，還原右移一個按鈕間距防誤觸) -->
+      <div class="flex items-center justify-between gap-1 pt-1">
+        <div class="flex items-center gap-1.5">
+          <button onclick="netGame.sortHand('number')" class="w-11 h-11 sm:w-12 sm:h-12 bg-slate-700/90 hover:bg-slate-600 text-slate-200 rounded-xl border border-slate-600 shadow flex flex-col items-center justify-center leading-none gap-0.5 transition active:scale-95 flex-shrink-0" title="手牌依數字大小排序">
+            <span class="text-sm sm:text-base">🔢</span>
+            <span class="text-[9px] sm:text-[10px] font-bold">數字</span>
           </button>
-          <button onclick="netGame.sortHand('color')" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-xs font-semibold border border-slate-600 shadow">
-            🎨 顏色
+          <button onclick="netGame.sortHand('color')" class="w-11 h-11 sm:w-12 sm:h-12 bg-slate-700/90 hover:bg-slate-600 text-slate-200 rounded-xl border border-slate-600 shadow flex flex-col items-center justify-center leading-none gap-0.5 transition active:scale-95 flex-shrink-0" title="手牌依顏色分類排列">
+            <span class="text-sm sm:text-base">🎨</span>
+            <span class="text-[9px] sm:text-[10px] font-bold">顏色</span>
           </button>
-          <button onclick="netGame.undoTurn()" id="btn-undo" class="px-2 py-1 bg-rose-900/60 hover:bg-rose-800 text-rose-200 rounded text-xs font-semibold border border-rose-500/40 shadow" title="還原本回合">
-            ↩️ 還原
+          
+          <!-- 【防誤觸間隔】：往右空出一個按鈕的距離，徹底杜絕誤點還原 -->
+          <button onclick="netGame.undoTurn()" id="btn-undo" class="ml-6 sm:ml-8 w-11 h-11 sm:w-12 sm:h-12 bg-rose-950/70 hover:bg-rose-900 text-rose-200 rounded-xl border border-rose-600/50 shadow flex flex-col items-center justify-center leading-none gap-0.5 transition active:scale-95 flex-shrink-0" title="還原本回合至最初狀態 (防誤觸已獨立區隔)">
+            <span class="text-sm sm:text-base">↩️</span>
+            <span class="text-[9px] sm:text-[10px] font-bold text-rose-300">還原</span>
           </button>
         </div>
 
@@ -556,6 +593,105 @@
         <div>
           <h3 class="font-bold text-amber-200 mb-0.5">6. 線上對戰與手動掛機</h3>
           <p>支援 2~6 人線上連線對戰，未滿人數自動由電腦 AI 補齊。玩家可隨時手動點擊上方「掛機」按鈕由電腦代打出牌，再次點擊即可無縫接回手動操作！</p>
+        </div>
+
+        <!-- 變臉版專屬規則與百搭圖鑑 -->
+        <div class="mt-4 pt-3 border-t border-slate-700">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="px-2 py-0.5 rounded-full text-xs font-black bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow">擴充</span>
+            <h3 class="font-extrabold text-amber-300 text-sm sm:text-base">🎭 拉密變臉版 (Rummikub Twist) 特殊百搭規則</h3>
+          </div>
+          <p class="text-xs text-slate-300 mb-2 leading-relaxed">
+            若開房時勾選「啟用變臉版」，牌庫將擴充為 112 張（包含 4 種各 2 張、共 8 張特殊百搭牌）。特殊百搭功能與出牌規範如下：
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <!-- 1. 經典百搭 -->
+            <div class="bg-slate-900/80 p-2.5 rounded-xl border border-purple-500/30 flex gap-2.5 items-start">
+              <div class="rummi-tile border-purple-400/80 flex-shrink-0 w-10 h-14">
+                <svg class="w-6 h-6 text-purple-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-3.5-9c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm7 0c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+                </svg>
+                <span class="text-[8px] uppercase tracking-tighter text-purple-600 font-black">百搭</span>
+              </div>
+              <div class="flex-1">
+                <div class="font-bold text-purple-300">1. 經典百搭 (Regular Joker)</div>
+                <div class="text-[11px] text-slate-300 mt-0.5 leading-normal">
+                  可代替任意顏色與數字，可用於順組或群組。破冰時計為所代替數字的點數。
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. 變色百搭 -->
+            <div class="bg-slate-900/80 p-2.5 rounded-xl border border-rose-500/30 flex gap-2.5 items-start">
+              <div class="rummi-tile border-rose-400/80 flex-shrink-0 w-10 h-14">
+                <svg class="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10V2z" fill="#dc2626"/>
+                  <path d="M12 2v20c5.52 0 10-4.48 10-10S17.52 2 12 2z" fill="#2563eb"/>
+                  <circle cx="7.5" cy="9.5" r="1.3" fill="#ffffff"/>
+                  <circle cx="16.5" cy="9.5" r="1.3" fill="#ffffff"/>
+                  <path d="M7 14.5c1.2 2 3.2 2.8 5 2.8s3.8-0.8 5-2.8" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                  <path d="M9 4.5l3-2.5 3 2.5" stroke="#fef08a" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+                <span class="text-[8px] uppercase tracking-tighter text-rose-600 font-black">變色</span>
+              </div>
+              <div class="flex-1">
+                <div class="font-bold text-rose-300">2. 變色百搭 (Color Change Joker)</div>
+                <div class="text-[11px] text-slate-300 mt-0.5 leading-normal">
+                  <b>僅限順組使用</b>！代表 1 個數字，其左側為顏色 A，右側轉變為顏色 B（例如：藍3-藍4-[變色百搭]-紅6-紅7）。
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. 鏡像百搭 -->
+            <div class="bg-slate-900/80 p-2.5 rounded-xl border border-sky-500/30 flex gap-2.5 items-start">
+              <div class="rummi-tile border-sky-400/80 flex-shrink-0 w-10 h-14">
+                <svg class="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" fill="#0284c7"/>
+                  <line x1="12" y1="2" x2="12" y2="22" stroke="#bae6fd" stroke-width="1.5" stroke-dasharray="2 1"/>
+                  <circle cx="7.5" cy="9.5" r="1.3" fill="#ffffff"/>
+                  <circle cx="16.5" cy="9.5" r="1.3" fill="#ffffff"/>
+                  <path d="M6 14.5c1.5 1.5 3.5 1.5 4.5 0" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+                  <path d="M13.5 14.5c1 1.5 3 1.5 4.5 0" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+                  <circle cx="12" cy="4" r="1.2" fill="#fef08a"/>
+                  <circle cx="12" cy="20" r="1.2" fill="#fef08a"/>
+                </svg>
+                <span class="text-[8px] uppercase tracking-tighter text-sky-600 font-black">鏡像</span>
+              </div>
+              <div class="flex-1">
+                <div class="font-bold text-sky-300">3. 鏡像百搭 (Mirror Joker)</div>
+                <div class="text-[11px] text-slate-300 mt-0.5 leading-normal">
+                  順組與群組皆可用。居於正中間，兩側牌必須形成完全對稱鏡像（例如：藍3-藍4-[鏡像]-藍4-藍3，或藍8-[鏡像]-藍8）。<b>破冰價值為 0 分</b>。
+                </div>
+              </div>
+            </div>
+
+            <!-- 4. 雙百搭 -->
+            <div class="bg-slate-900/80 p-2.5 rounded-xl border border-emerald-500/30 flex gap-2.5 items-start">
+              <div class="rummi-tile border-emerald-400/80 flex-shrink-0 w-10 h-14">
+                <svg class="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24">
+                  <circle cx="15" cy="9.5" r="6.5" fill="#f59e0b" stroke="#ffffff" stroke-width="1"/>
+                  <circle cx="13.5" cy="8" r="0.9" fill="#78350f"/>
+                  <circle cx="17.5" cy="8" r="0.9" fill="#78350f"/>
+                  <path d="M13.8 11.2c.6.8 1.8.8 2.4 0" stroke="#78350f" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+                  <circle cx="9" cy="14.5" r="7" fill="#10b981" stroke="#ffffff" stroke-width="1.2"/>
+                  <circle cx="7" cy="13" r="1" fill="#064e3b"/>
+                  <circle cx="11" cy="13" r="1" fill="#064e3b"/>
+                  <path d="M7 16.5c1 1.1 3 1.1 4 0" stroke="#064e3b" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+                </svg>
+                <span class="text-[8px] uppercase tracking-tighter text-emerald-600 font-black">雙百搭</span>
+              </div>
+              <div class="flex-1">
+                <div class="font-bold text-emerald-300">4. 雙百搭 (Double Joker)</div>
+                <div class="text-[11px] text-slate-300 mt-0.5 leading-normal">
+                  單張牌代表<b>連續 2 張牌</b>（如藍2-[雙百搭]-藍5代表3與4；或群組中代表2種缺失顏色）。<b>注意：桌面每組仍必須至少有 3 張實體牌</b>！破冰計為兩張牌點數之和。
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-2 p-2 bg-slate-900/60 rounded-xl border border-slate-700/60 text-[11px] text-slate-400">
+            ⚠️ <b>懲罰計分規範</b>：遊戲結束時，未出完留在手牌架上的任何百搭牌（含鏡像百搭），每張一律以 <b>30 分</b> 作為扣分懲罰。
+          </div>
         </div>
       </div>
 
@@ -740,9 +876,15 @@
         this.playTone(783, 'sine', 0.2, 0.2);
       }
       myTurnChime() {
-        this.playTone(440, 'sine', 0.12, 0);
-        this.playTone(554.37, 'sine', 0.12, 0.1);
-        this.playTone(659.25, 'sine', 0.22, 0.2);
+        if (!this.enabled) return;
+        this.unlock();
+        if (!this.ctx) return;
+        // 燦爛清脆的四重登音提醒 (C5 -> E5 -> G5 -> C6 + 餘韻和弦，音量加倍立體)
+        this.playTone(523.25, 'triangle', 0.14, 0);
+        this.playTone(659.25, 'triangle', 0.14, 0.08);
+        this.playTone(783.99, 'triangle', 0.16, 0.16);
+        this.playTone(1046.50, 'sine', 0.35, 0.24);
+        this.playTone(1318.51, 'sine', 0.25, 0.32);
       }
       win() {
         [523, 659, 783, 1046].forEach((f, i) => {
@@ -808,6 +950,7 @@
         this.targetPlayerCount = 4;
         this.timerSeconds = 0;
         this.aiDifficulty = 'expert';
+        this.isTwist = false;
 
         this.inGame = false;
         this.players = [];
@@ -1211,6 +1354,26 @@
         return code;
       }
 
+            triggerMyTurnNotification() {
+        this.sound.myTurnChime();
+        if (navigator.vibrate) {
+          try { navigator.vibrate([180, 80, 220, 80, 260]); } catch(e) {}
+        }
+        document.title = '🔔【輪到您出牌！】拉密 Rummikub';
+        const flash = document.getElementById('my-turn-flash-overlay');
+        if (flash) {
+          flash.classList.remove('opacity-0');
+          flash.classList.add('opacity-100');
+          setTimeout(() => {
+            if (flash) {
+              flash.classList.remove('opacity-100');
+              flash.classList.add('opacity-0');
+            }
+          }, 1400);
+        }
+        this.showToast('🎯 輪到您的回合！請點選手牌出牌', '🔔');
+      }
+
       getPlayerAvatar(p) {
         if (!p) return this.presetAvatars[0];
         if (p.avatarIndex !== undefined && p.avatarIndex >= 0 && this.presetAvatars[p.avatarIndex]) {
@@ -1272,6 +1435,8 @@
         this.roomCode = this.generateRoomCode();
         this.timerSeconds = parseInt(document.getElementById('create-timer-sec').value, 10);
         this.aiDifficulty = document.getElementById('create-ai-diff').value;
+        const twistCb = document.getElementById('create-is-twist');
+        this.isTwist = twistCb ? twistCb.checked : false;
 
         this.showToast(`正在向伺服器登記房間【${this.roomCode}】...`, '⏳');
 
@@ -1767,7 +1932,8 @@
               deckCount: this.deck.length,
               startTurnIndex: this.startTurnIndex,
               turnIndex: this.turnIndex,
-              currentSeconds: this.currentSeconds
+              currentSeconds: this.currentSeconds,
+              isTwist: this.isTwist
             });
           }
         });
@@ -1823,6 +1989,7 @@
             this.targetPlayerCount = data.roomSettings.targetPlayerCount;
             this.timerSeconds = data.roomSettings.timerSeconds;
             this.aiDifficulty = data.roomSettings.aiDifficulty;
+            if (data.roomSettings.isTwist !== undefined) this.isTwist = data.roomSettings.isTwist;
             this.myPlayerId = data.myId;
             if (data.players) {
               this.players = data.players.map(p => ({
@@ -1856,6 +2023,7 @@
             this.targetPlayerCount = data.roomSettings.targetPlayerCount;
             this.timerSeconds = data.roomSettings.timerSeconds;
             this.aiDifficulty = data.roomSettings.aiDifficulty;
+            if (data.roomSettings.isTwist !== undefined) this.isTwist = data.roomSettings.isTwist;
             if (data.players) {
               this.players = data.players.map(p => ({
                 ...p,
@@ -1867,6 +2035,7 @@
 
           case 'GAME_START':
             this.inGame = true;
+            if (data.isTwist !== undefined) this.isTwist = data.isTwist;
             this.tableMelds = data.tableMelds || [];
             this.myHand = data.myHand || [];
             this.deckCount = data.deckCount !== undefined ? data.deckCount : (data.players && data.players.length >= 5 ? 160 : 106);
@@ -1883,7 +2052,11 @@
             this.sortHand('number');
             this.renderAll();
             this.startClientCountdown();
-            this.showToast('對局開始！祝您遊玩愉快', '🎮');
+            if (this.turnIndex === this.myPlayerId) {
+              this.triggerMyTurnNotification();
+            } else {
+              this.showToast('對局開始！祝您遊玩愉快', '🎮');
+            }
             break;
 
           case 'GAME_STATE_SYNC': {
@@ -1941,8 +2114,7 @@
               this.playedTilesThisTurn = [];
               this.selectedHandIndices.clear();
               this.selectedTableTile = null;
-              this.sound.myTurnChime();
-              this.showToast('輪到您的回合！', '🔔');
+              this.triggerMyTurnNotification();
               this.renderAll();
               return;
             }
@@ -2024,6 +2196,7 @@
             const goModal = document.getElementById('modal-gameover');
             if (goModal) goModal.classList.add('hidden');
             this.inGame = true;
+            if (data.isTwist !== undefined) this.isTwist = data.isTwist;
             this.deckCount = data.deckCount;
             this.startTurnIndex = data.startTurnIndex !== undefined ? data.startTurnIndex : 0;
             this.turnIndex = data.turnIndex;
@@ -2046,7 +2219,9 @@
             };
             this.startClientCountdown();
             this.showToast('房主已開啟全新回合！已為您自動發牌', '🎉');
-            this.sound.myTurnChime();
+            if (this.turnIndex === this.myPlayerId) {
+              this.triggerMyTurnNotification();
+            }
             this.renderAll();
             break;
           }
@@ -2083,6 +2258,11 @@
       updateWaitingRoomUI() {
         document.getElementById('waiting-current-count').textContent = this.players.length;
         document.getElementById('waiting-max-count').textContent = this.targetPlayerCount;
+        const waitModeEl = document.getElementById('waiting-game-mode');
+        if (waitModeEl) {
+          waitModeEl.textContent = this.isTwist ? '🎭 變臉版 (112張)' : '經典標準版 (106張)';
+          waitModeEl.className = 'px-2 py-0.5 rounded-md text-[11px] font-extrabold ' + (this.isTwist ? 'bg-purple-900/90 text-purple-200 border border-purple-500/60' : 'bg-slate-700 text-slate-200 border border-slate-600');
+        }
 
         const listEl = document.getElementById('waiting-players-list');
         listEl.innerHTML = this.players.map(p => {
@@ -2235,7 +2415,8 @@
               deckCount: this.deck.length,
               startTurnIndex: this.startTurnIndex,
               turnIndex: this.turnIndex,
-              currentSeconds: this.timerSeconds
+              currentSeconds: this.timerSeconds,
+              isTwist: this.isTwist
             });
           }
         });
@@ -2284,7 +2465,6 @@
       generateDeck() {
         const isXP = this.targetPlayerCount >= 5;
         const setMultiplier = isXP ? 3 : 2;
-        const jokerTotal = isXP ? 4 : 2;
         const colors = ['red', 'blue', 'yellow', 'black'];
         const deck = [];
         let idCounter = 1;
@@ -2296,8 +2476,20 @@
             }
           }
         }
-        for (let j = 0; j < jokerTotal; j++) {
-          deck.push({ id: idCounter++, num: 0, color: 'joker', isJoker: true });
+        if (this.isTwist) {
+          // 變臉版 (Rummikub Twist)：8 張特殊百搭牌 (經典、變色、鏡像、雙百搭各 2 張；5~6人模式各 3 張)
+          const countPerType = isXP ? 3 : 2;
+          const types = ['regular', 'color', 'mirror', 'double'];
+          for (const jt of types) {
+            for (let j = 0; j < countPerType; j++) {
+              deck.push({ id: idCounter++, num: 0, color: 'joker', isJoker: true, jokerType: jt });
+            }
+          }
+        } else {
+          const jokerTotal = isXP ? 4 : 2;
+          for (let j = 0; j < jokerTotal; j++) {
+            deck.push({ id: idCounter++, num: 0, color: 'joker', isJoker: true, jokerType: 'regular' });
+          }
         }
 
         for (let i = deck.length - 1; i > 0; i--) {
@@ -2314,42 +2506,107 @@
         if (regulars.length === 0) return tiles;
 
         const colorOrder = { 'red': 1, 'blue': 2, 'yellow': 3, 'black': 4 };
-        const targetNum = regulars[0].num;
-        const allSameNum = regulars.every(t => t.num === targetNum);
 
-        const targetColor = regulars[0].color;
-        const allSameColor = regulars.every(t => t.color === targetColor);
-
-        if (allSameNum && !allSameColor) {
-          const sortedRegs = regulars.slice().sort((a, b) => colorOrder[a.color] - colorOrder[b.color]);
-          return [...sortedRegs, ...jokers];
+        // 1. 鏡像百搭：置中對稱排序
+        const mirrorJoker = jokers.find(t => t.jokerType === 'mirror');
+        if (mirrorJoker && tiles.length % 2 === 1) {
+          const others = tiles.filter(t => t.id !== mirrorJoker.id);
+          const pairs = [];
+          const used = new Set();
+          for (let i = 0; i < others.length; i++) {
+            if (used.has(i)) continue;
+            const t1 = others[i];
+            let matchIdx = -1;
+            for (let j = i + 1; j < others.length; j++) {
+              if (!used.has(j)) {
+                const t2 = others[j];
+                if ((t1.isJoker && t2.isJoker) || (t1.num === t2.num && t1.color === t2.color)) {
+                  matchIdx = j;
+                  break;
+                }
+              }
+            }
+            if (matchIdx !== -1) {
+              used.add(i);
+              used.add(matchIdx);
+              pairs.push([t1, others[matchIdx]]);
+            }
+          }
+          if (pairs.length * 2 === others.length) {
+            pairs.sort((a, b) => (a[0].num || 0) - (b[0].num || 0));
+            const leftHalf = [];
+            const rightHalf = [];
+            for (const p of pairs) {
+              leftHalf.push(p[0]);
+              rightHalf.unshift(p[1]);
+            }
+            return [...leftHalf, mirrorJoker, ...rightHalf];
+          }
         }
 
+        // 2. 變色百搭順組：依數字連續排序，變色百搭置於顏色過渡處
+        const colorJoker = jokers.find(t => t.jokerType === 'color');
+        if (colorJoker && regulars.length > 0) {
+          const sortedRegs = regulars.slice().sort((a, b) => a.num - b.num);
+          const firstColor = sortedRegs[0].color;
+          const before = [];
+          const after = [];
+          let transition = false;
+          for (const t of sortedRegs) {
+            if (!transition) {
+              if (t.color === firstColor) before.push(t);
+              else {
+                transition = true;
+                after.push(t);
+              }
+            } else {
+              after.push(t);
+            }
+          }
+          const otherJokers = jokers.filter(t => t.id !== colorJoker.id);
+          return [...before, colorJoker, ...after, ...otherJokers];
+        }
+
+        // 3. 雙百搭或一般順組 (同顏色)
+        const targetColor = regulars[0].color;
+        const allSameColor = regulars.every(t => t.color === targetColor);
         if (allSameColor) {
           const sortedRegs = regulars.slice().sort((a, b) => a.num - b.num);
           const result = [];
-          const availJokers = [...jokers];
+          const availDoubles = jokers.filter(t => t.jokerType === 'double');
+          const availSingles = jokers.filter(t => t.jokerType !== 'double');
 
           for (let i = 0; i < sortedRegs.length; i++) {
             if (i > 0) {
-              const prevNum = sortedRegs[i - 1].num;
-              const curNum = sortedRegs[i].num;
-              const gap = curNum - prevNum - 1;
-              for (let g = 0; g < gap && availJokers.length > 0; g++) {
-                result.push(availJokers.pop());
+              let gap = sortedRegs[i].num - sortedRegs[i - 1].num - 1;
+              while (gap >= 2 && availDoubles.length > 0) {
+                result.push(availDoubles.pop());
+                gap -= 2;
+              }
+              while (gap >= 1 && availSingles.length > 0) {
+                result.push(availSingles.pop());
+                gap -= 1;
               }
             }
             result.push(sortedRegs[i]);
           }
-
-          while (availJokers.length > 0) {
-            const j = availJokers.pop();
-            const lastTile = result[result.length - 1];
-            const lastNum = (lastTile && !lastTile.isJoker) ? lastTile.num : 13;
+          while (availDoubles.length > 0) result.push(availDoubles.pop());
+          while (availSingles.length > 0) {
+            const j = availSingles.pop();
+            const last = result[result.length - 1];
+            const lastNum = (last && !last.isJoker) ? last.num : 13;
             if (lastNum < 13) result.push(j);
             else result.unshift(j);
           }
           return result;
+        }
+
+        // 4. 群組 (同數字不同顏色)
+        const targetNum = regulars[0].num;
+        const allSameNum = regulars.every(t => t.num === targetNum);
+        if (allSameNum) {
+          const sortedRegs = regulars.slice().sort((a, b) => colorOrder[a.color] - colorOrder[b.color]);
+          return [...sortedRegs, ...jokers];
         }
 
         return tiles.slice().sort((a, b) => {
@@ -2368,53 +2625,178 @@
 
       validateMeld(tiles) {
         if (!tiles || tiles.length < 3) return { valid: false, reason: '牌數少於 3 張' };
+
         const jokers = tiles.filter(t => t.isJoker);
         const regulars = tiles.filter(t => !t.isJoker);
-        if (regulars.length === 0) return { valid: tiles.length <= 4, type: 'group', value: 0 };
 
-        if (tiles.length <= 4) {
-          const targetNum = regulars[0].num;
-          const allSameNum = regulars.every(t => t.num === targetNum);
-          const colorSet = new Set(regulars.map(t => t.color));
-          if (allSameNum && colorSet.size === regulars.length) {
-            return { valid: true, type: 'group', value: targetNum * tiles.length };
+        const mirrorJokers = jokers.filter(t => t.jokerType === 'mirror');
+        const colorJokers = jokers.filter(t => t.jokerType === 'color');
+        const doubleJokers = jokers.filter(t => t.jokerType === 'double');
+        const regularJokers = jokers.filter(t => !t.jokerType || t.jokerType === 'regular');
+
+        // ================= 1. 鏡像組 (Mirror Meld) =================
+        if (mirrorJokers.length === 1 && tiles.length % 2 === 1) {
+          const mid = Math.floor(tiles.length / 2);
+
+          // 1.1 鏡像群組 (Mirror Group)
+          if (regulars.length > 0 && regulars.every(t => t.num === regulars[0].num)) {
+            const targetNum = regulars[0].num;
+            let sym = true;
+            if (tiles[mid].jokerType === 'mirror') {
+              for (let i = 0; i < mid; i++) {
+                const l = tiles[i];
+                const r = tiles[tiles.length - 1 - i];
+                if (l.isJoker || r.isJoker) continue;
+                if (l.color !== r.color || l.num !== r.num) { sym = false; break; }
+              }
+            } else {
+              const colorCounts = {};
+              for (const t of regulars) {
+                colorCounts[t.color] = (colorCounts[t.color] || 0) + 1;
+              }
+              let oddColors = 0;
+              for (const c in colorCounts) {
+                if (colorCounts[c] % 2 !== 0) oddColors++;
+              }
+              if (oddColors > regularJokers.length) sym = false;
+            }
+            if (sym) {
+              // 鏡像百搭價值為 0，其餘牌依面額計分
+              const val = targetNum * (tiles.length - 1);
+              return { valid: true, type: 'group', value: val, isMirror: true };
+            }
+          }
+
+          // 1.2 鏡像順組 (Mirror Run)
+          if (tiles[mid].jokerType === 'mirror') {
+            let isMirrorRun = true;
+            for (let i = 0; i < mid; i++) {
+              const l = tiles[i];
+              const r = tiles[tiles.length - 1 - i];
+              if (l.isJoker || r.isJoker) continue;
+              if (l.color !== r.color || l.num !== r.num) { isMirrorRun = false; break; }
+            }
+            if (isMirrorRun) {
+              const leftRegs = tiles.slice(0, mid).filter(t => !t.isJoker);
+              if (leftRegs.length > 0) {
+                const firstColor = leftRegs[0].color;
+                const sameColor = leftRegs.every(t => t.color === firstColor);
+                if (sameColor) {
+                  const nums = leftRegs.map(t => t.num);
+                  const isInc = nums.every((n, i) => i === 0 || n > nums[i - 1]);
+                  const isDec = nums.every((n, i) => i === 0 || n < nums[i - 1]);
+                  if (isInc || isDec || nums.length <= 1) {
+                    let val = 0;
+                    for (const t of tiles) {
+                      if (!t.isJoker) val += t.num;
+                    }
+                    return { valid: true, type: 'run', value: val, isMirror: true };
+                  }
+                }
+              }
+            }
           }
         }
 
-        if (tiles.length <= 13) {
-          const targetColor = regulars[0].color;
-          const allSameColor = regulars.every(t => t.color === targetColor);
+        if (mirrorJokers.length > 0) {
+          return { valid: false, reason: '鏡像百搭必須置於對稱牌組中心' };
+        }
 
-          if (allSameColor) {
-            const sorted = regulars.slice().sort((a, b) => a.num - b.num);
-            let hasDup = false;
-            for (let i = 0; i < sorted.length - 1; i++) {
-              if (sorted[i].num === sorted[i+1].num) { hasDup = true; break; }
-            }
-            if (!hasDup) {
-              let neededJokers = 0;
-              for (let i = 0; i < sorted.length - 1; i++) {
-                neededJokers += (sorted[i+1].num - sorted[i].num - 1);
+        // ================= 2. 群組 (Group: 同數字、不同顏色) =================
+        if (colorJokers.length === 0 && regulars.length > 0) {
+          const targetNum = regulars[0].num;
+          const allSameNum = regulars.every(t => t.num === targetNum);
+          if (allSameNum) {
+            const regColors = new Set(regulars.map(t => t.color));
+            if (regColors.size === regulars.length) {
+              const doubleCount = doubleJokers.length;
+              const regJokerCount = regularJokers.length;
+              const effectiveCount = regulars.length + regJokerCount + (doubleCount * 2);
+              if (effectiveCount >= 3 && effectiveCount <= 4 && tiles.length >= 3) {
+                return { valid: true, type: 'group', value: targetNum * effectiveCount };
               }
-              if (neededJokers <= jokers.length) {
-                const remainingJokers = jokers.length - neededJokers;
-                const minNum = sorted[0].num;
-                const maxNum = sorted[sorted.length - 1].num;
+            }
+          }
+        }
 
+        // ================= 3. 順組 (Run: 連續數字) =================
+        if (colorJokers.length <= 1) {
+          const effectiveLen = regulars.length + regularJokers.length + colorJokers.length + (doubleJokers.length * 2);
+          if (effectiveLen >= 3 && effectiveLen <= 13) {
+            const regNums = regulars.map(t => t.num);
+            const hasDupNums = (new Set(regNums).size !== regNums.length);
+
+            if (!hasDupNums) {
+              let colorValid = false;
+              if (colorJokers.length === 0) {
+                if (regulars.length === 0 || regulars.every(t => t.color === regulars[0].color)) {
+                  colorValid = true;
+                }
+              } else {
+                const colors = new Set(regulars.map(t => t.color));
+                if (colors.size <= 2) {
+                  colorValid = true;
+                }
+              }
+
+              if (colorValid) {
+                let bestVal = 0;
                 let canFit = false;
-                let calculatedValue = 0;
 
-                for (let front = 0; front <= remainingJokers; front++) {
-                  const back = remainingJokers - front;
-                  const start = minNum - front;
-                  const end = maxNum + back;
-                  if (start >= 1 && end <= 13 && (end - start + 1) === tiles.length) {
-                    canFit = true;
-                    for (let n = start; n <= end; n++) calculatedValue += n;
-                    break;
+                for (let S = 1; S <= 14 - effectiveLen; S++) {
+                  const E = S + effectiveLen - 1;
+                  if (regNums.every(n => n >= S && n <= E)) {
+                    const occupied = new Set(regNums);
+                    const missing = [];
+                    for (let n = S; n <= E; n++) {
+                      if (!occupied.has(n)) missing.push(n);
+                    }
+
+                    function canCover(miss, dLeft, sLeft) {
+                      if (dLeft === 0) return miss.length === sLeft;
+                      for (let i = 0; i < miss.length - 1; i++) {
+                        if (miss[i + 1] === miss[i] + 1) {
+                          const rem = miss.slice(0, i).concat(miss.slice(i + 2));
+                          if (canCover(rem, dLeft - 1, sLeft)) return true;
+                        }
+                      }
+                      return false;
+                    }
+
+                    const numDoubles = doubleJokers.length;
+                    const numSingles = regularJokers.length + colorJokers.length;
+
+                    if (canCover(missing, numDoubles, numSingles)) {
+                      if (colorJokers.length === 1 && regulars.length > 0) {
+                        let transitionOk = false;
+                        for (let K = S; K <= E; K++) {
+                          const leftRegs = regulars.filter(t => t.num < K);
+                          const rightRegs = regulars.filter(t => t.num > K);
+                          const lColors = new Set(leftRegs.map(t => t.color));
+                          const rColors = new Set(rightRegs.map(t => t.color));
+                          if (lColors.size <= 1 && rColors.size <= 1) {
+                            const lc = lColors.size === 1 ? [...lColors][0] : null;
+                            const rc = rColors.size === 1 ? [...rColors][0] : null;
+                            if ((lc && rc && lc !== rc) || (!lc || !rc)) {
+                              transitionOk = true;
+                              break;
+                            }
+                          }
+                        }
+                        if (!transitionOk) continue;
+                      }
+
+                      canFit = true;
+                      let curVal = 0;
+                      for (let n = S; n <= E; n++) curVal += n;
+                      if (curVal > bestVal) bestVal = curVal;
+                    }
                   }
                 }
-                if (canFit) return { valid: true, type: 'run', value: calculatedValue };
+
+                if (canFit) {
+                  return { valid: true, type: 'run', value: bestVal };
+                }
               }
             }
           }
@@ -2482,7 +2864,7 @@
           }, 10000);
         } else if (curPlayer.id === 0) {
           if (this.aiWatchdogTimer) clearTimeout(this.aiWatchdogTimer);
-          this.sound.myTurnChime();
+          this.triggerMyTurnNotification();
         } else {
           if (this.aiWatchdogTimer) clearTimeout(this.aiWatchdogTimer);
         }
@@ -2875,11 +3257,14 @@
       }
 
       splitMeldOnGaps(tiles) {
-        if (!tiles || tiles.length < 4) return [tiles];
+        // 拆分成兩組以上合法牌組至少需要 6 張牌 (例如 3 + 3)
+        if (!tiles || tiles.length < 6) return [tiles];
 
         const jokers = tiles.filter(t => t.isJoker);
+        if (jokers.some(t => t.jokerType === 'mirror' || t.jokerType === 'color')) return [tiles];
+
         const regulars = tiles.filter(t => !t.isJoker);
-        if (regulars.length === 0) return [tiles];
+        if (regulars.length < 6 && jokers.length === 0) return [tiles];
 
         // 僅針對同一種顏色的順組 (Run) 進行自動斷點拆分
         const firstColor = regulars[0].color;
@@ -2912,16 +3297,28 @@
             }
             curChunk.push(sortedRegs[i]);
           } else {
-            // 差距無法填補，形成斷點！在此處自動拆分為獨立牌組
+            // 差距無法填補，形成斷點！
             chunks.push(curChunk);
             curChunk = [sortedRegs[i]];
           }
         }
         chunks.push(curChunk);
 
-        // 若有拆分出多組 (例如 [1,2,3] 與 [5,6,7])，將剩餘百搭填入後回傳
+        // 將剩餘百搭補到最後一個 chunk
+        while (availJokers.length > 0 && chunks.length > 0) {
+          chunks[chunks.length - 1].push(availJokers.pop());
+        }
+
+        // 核心安全檢查：只有當拆分出的「每一組」牌數都 >= 3 張，且每組都是合法牌組時，才允許拆開！
+        // 若任一組小於 3 張 (例如只剩單張 12 或只有 2 張)，絕對不拆散，完整保留原組以便玩家調整或驗證失敗時還原！
         if (chunks.length > 1) {
-          return chunks.map(chunk => this.sortMeldTiles(chunk));
+          const allChunksValid = chunks.every(chunk => {
+            if (!chunk || chunk.length < 3) return false;
+            return this.validateMeld(chunk).valid;
+          });
+          if (allChunksValid) {
+            return chunks.map(chunk => this.sortMeldTiles(chunk));
+          }
         }
         return [tiles];
       }
@@ -2978,10 +3375,14 @@
 
       executeSortHandArray(hand, mode) {
         const colorOrder = { 'red': 1, 'blue': 2, 'yellow': 3, 'black': 4, 'joker': 5 };
+        const jokerTypeOrder = { 'regular': 1, 'color': 2, 'mirror': 3, 'double': 4 };
         if (mode === 'number') {
           hand.sort((a, b) => {
             if (a.isJoker && !b.isJoker) return 1;
             if (!a.isJoker && b.isJoker) return -1;
+            if (a.isJoker && b.isJoker) {
+              return (jokerTypeOrder[a.jokerType || 'regular'] || 1) - (jokerTypeOrder[b.jokerType || 'regular'] || 1);
+            }
             if (a.num !== b.num) return a.num - b.num;
             return colorOrder[a.color] - colorOrder[b.color];
           });
@@ -2989,6 +3390,9 @@
           hand.sort((a, b) => {
             if (a.isJoker && !b.isJoker) return 1;
             if (!a.isJoker && b.isJoker) return -1;
+            if (a.isJoker && b.isJoker) {
+              return (jokerTypeOrder[a.jokerType || 'regular'] || 1) - (jokerTypeOrder[b.jokerType || 'regular'] || 1);
+            }
             if (a.color !== b.color) return colorOrder[a.color] - colorOrder[b.color];
             return a.num - b.num;
           });
@@ -3194,6 +3598,19 @@
         if (this.aiWatchdogTimer) clearTimeout(this.aiWatchdogTimer);
         this.cleanEmptyMelds();
         this.autoSortAllMeldsInternal();
+
+        // 【安全防線：換位前二次防禦，確保桌面 100% 絕對合法】
+        const wholeCheck = this.validateWholeTable();
+        if (!wholeCheck.valid && this.turnSnapshot && this.turnSnapshot.tableMelds) {
+          console.warn('[advanceTurnHost] 換位前偵測到不合法牌組，強制還原為回合快照:', wholeCheck.reason);
+          this.tableMelds = JSON.parse(JSON.stringify(this.turnSnapshot.tableMelds));
+          const prevPlayer = this.players[this.turnIndex];
+          if (prevPlayer) {
+            prevPlayer.hand = JSON.parse(JSON.stringify(this.turnSnapshot.hand));
+            prevPlayer.hasBrokenIce = this.turnSnapshot.playerBrokenIce;
+          }
+        }
+
         clearInterval(this.timerInterval);
         this.turnIndex = (this.turnIndex + 1) % this.players.length;
         this.startTurnHost();
@@ -3363,12 +3780,25 @@
                       for (let t = 0; t < meld.length; t++) {
                         const borrowCandidate = meld[t];
                         const remainingMeld = [...meld.slice(0, t), ...meld.slice(t + 1)];
+                        // 檢查剩餘牌組是否合法，或能否由 splitMeldOnGaps 拆分為合法牌組
+                        let remValid = false;
+                        let finalRemMelds = [];
                         if (this.validateMeld(this.sortMeldTiles(remainingMeld)).valid) {
+                          remValid = true;
+                          finalRemMelds = [this.sortMeldTiles(remainingMeld)];
+                        } else {
+                          const splits = this.splitMeldOnGaps(remainingMeld);
+                          if (splits.length > 1 && splits.every(s => this.validateMeld(s).valid)) {
+                            remValid = true;
+                            finalRemMelds = splits;
+                          }
+                        }
+                        if (remValid) {
                           for (let h1 = 0; h1 < aiPlayer.hand.length; h1++) {
                             for (let h2 = h1 + 1; h2 < aiPlayer.hand.length; h2++) {
                               const testNew = this.sortMeldTiles([borrowCandidate, aiPlayer.hand[h1], aiPlayer.hand[h2]]);
                               if (this.validateMeld(testNew).valid) {
-                                this.tableMelds[m] = this.sortMeldTiles(remainingMeld);
+                                this.tableMelds.splice(m, 1, ...finalRemMelds);
                                 this.tableMelds.push(testNew);
                                 const card1 = aiPlayer.hand[h1];
                                 const card2 = aiPlayer.hand[h2];
@@ -3403,10 +3833,27 @@
               aiPlayer.hand.push(this.deck.pop());
               this.showToast(`${aiPlayer.name} 摸了一張牌`, '📥');
             }
+          } else {
+            // 【AI 出牌全域安全檢驗】：若桌面有任何不合規牌組，強制回滾至回合前快照並摸牌
+            this.autoSortAllMeldsInternal();
+            this.cleanEmptyMelds();
+            const tableCheck = this.validateWholeTable();
+            if (!tableCheck.valid) {
+              console.warn('[AI Turn Recovery] 電腦出牌後桌面不合法，已強制回滾並摸牌:', tableCheck.reason);
+              this.tableMelds = JSON.parse(JSON.stringify(this.turnSnapshot.tableMelds));
+              aiPlayer.hand = JSON.parse(JSON.stringify(this.turnSnapshot.hand));
+              aiPlayer.hasBrokenIce = this.turnSnapshot.playerBrokenIce;
+              if (this.deck.length > 0) {
+                aiPlayer.hand.push(this.deck.pop());
+              }
+            }
           }
         } catch(err) {
           console.error('[AI Turn Error Recovery]', err);
-          if (!playedAny && this.deck.length > 0) {
+          this.tableMelds = JSON.parse(JSON.stringify(this.turnSnapshot.tableMelds));
+          aiPlayer.hand = JSON.parse(JSON.stringify(this.turnSnapshot.hand));
+          aiPlayer.hasBrokenIce = this.turnSnapshot.playerBrokenIce;
+          if (this.deck.length > 0) {
             aiPlayer.hand.push(this.deck.pop());
           }
         } finally {
@@ -3839,7 +4286,8 @@
               deckCount: this.deck.length,
               startTurnIndex: this.startTurnIndex,
               turnIndex: this.turnIndex,
-              currentSeconds: this.timerSeconds
+              currentSeconds: this.timerSeconds,
+              isTwist: this.isTwist
             });
           }
         });
@@ -3877,9 +4325,14 @@
         const rackAv = document.getElementById('my-rack-avatar');
         if (rackAv) rackAv.src = this.myAvatar;
 
-        // 1. 【核心修復：精確同步牌池數量】
+        // 1. 【核心修復：精確同步牌池數量與模式標記】
         const displayDeck = this.isHost ? this.deck.length : (this.deckCount !== undefined ? this.deckCount : 0);
         document.getElementById('deck-count').textContent = displayDeck;
+        const modeTag = document.getElementById('game-mode-tag');
+        if (modeTag) {
+          modeTag.textContent = this.isTwist ? '🎭 變臉版' : '經典版';
+          modeTag.className = 'px-1.5 py-0.2 rounded text-[10px] font-black ' + (this.isTwist ? 'bg-purple-900/90 text-purple-200 border border-purple-500/60' : 'bg-slate-700 text-slate-300 border border-slate-600');
+        }
 
         // 2. 【核心修復：極致顯眼之當前行動指示橫幅】
         const bigBanner = document.getElementById('big-turn-banner');
@@ -3889,15 +4342,17 @@
         const rackEl = document.getElementById('tile-rack-container');
 
         if (isMine) {
-          // 輪到我：璀璨綠色高亮動畫 + 牌架發光
-          bigBanner.className = 'flex-shrink-0 px-3 py-1 flex items-center justify-between text-xs sm:text-sm font-black shadow transition-all duration-300 min-h-[30px] bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white animate-pulse border-y border-emerald-400/60';
+          // 輪到我：分頁標題提示 + 璀璨高亮橫幅 + 牌架呼吸發光
+          document.title = '🔔【輪到您出牌！】拉密 Rummikub';
+          bigBanner.className = 'flex-shrink-0 px-3 py-1 flex items-center justify-between text-xs sm:text-sm font-black shadow-lg transition-all duration-300 min-h-[32px] bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 text-white animate-pulse border-y-2 border-emerald-300/80 ring-2 ring-emerald-400/50';
           bigIcon.textContent = '🎯';
           bigText.textContent = '【輪到您了！】點選手牌出牌，或點「結束回合」';
           rackEl.classList.add('my-turn-active');
           document.getElementById('btn-end-turn').disabled = false;
           document.getElementById('btn-undo').disabled = false;
         } else {
-          // 輪到別人：深藍沉穩提示
+          // 輪到別人：恢復常規標題與深藍沉穩提示
+          document.title = '拉密 Rummikub 線上即時對戰';
           bigBanner.className = 'flex-shrink-0 px-3 py-1 flex items-center justify-between text-xs sm:text-sm font-bold shadow transition-all duration-300 min-h-[30px] bg-slate-800 text-slate-300 border-y border-slate-700/80';
           bigIcon.textContent = (curPlayer.isAI || curPlayer.isAITakeover) ? '🤖' : '⏳';
           bigText.textContent = `等待【${curPlayer.name}】出牌中...`;
@@ -4168,13 +4623,13 @@
 
           const check = this.validateMeld(combinedTiles);
           if (check.valid) {
-            validationEl.className = 'ml-1 px-1.5 py-0.2 rounded-full font-bold bg-emerald-900 text-emerald-200 border border-emerald-500/40 text-[10px]';
+            validationEl.className = 'ml-1 px-2 py-0.5 rounded-full font-bold bg-emerald-900 text-emerald-200 border border-emerald-500/40 text-[11px]';
             validationEl.textContent = `✅ 合法${check.type === 'run' ? '順組' : '群組'} (${check.value || 0}分)`;
-            btnPlay.className = 'px-2.5 py-0.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 text-white rounded text-xs font-black shadow';
+            btnPlay.className = 'px-5 sm:px-7 py-2.5 sm:py-3 min-h-[46px] sm:min-h-[50px] bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 hover:from-emerald-500 hover:to-teal-400 text-white rounded-xl text-sm sm:text-base font-black shadow-lg transform hover:scale-[1.03] active:scale-95 transition flex items-center justify-center gap-1.5 ring-2 ring-emerald-400/40';
           } else {
-            validationEl.className = 'ml-1 px-1.5 py-0.2 rounded-full font-medium bg-slate-700 text-amber-300 border border-slate-600 text-[10px]';
+            validationEl.className = 'ml-1 px-2 py-0.5 rounded-full font-medium bg-slate-700 text-amber-300 border border-slate-600 text-[11px]';
             validationEl.textContent = `⚠️ 可打出成新組或點擊牌組加入`;
-            btnPlay.className = 'px-2 py-0.5 bg-slate-700 text-slate-200 rounded text-xs font-semibold';
+            btnPlay.className = 'px-5 sm:px-7 py-2.5 sm:py-3 min-h-[46px] sm:min-h-[50px] bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl text-sm sm:text-base font-bold shadow transition flex items-center justify-center gap-1.5';
           }
         }
       }
@@ -4183,10 +4638,58 @@
         const dragAttr = dragArgsStr ? `draggable="true" ondragstart="${dragArgsStr}"` : '';
         const touchAttr = `ontouchstart="netGame.handleTouchTileStart(event)" ontouchmove="netGame.handleTouchTileMove(event)" ontouchend="netGame.handleTouchTileEnd(event)" data-tile-id="${tile.id}"`;
         if (tile.isJoker) {
+          const jt = tile.jokerType || 'regular';
+          let svg = '';
+          let label = '';
+          let borderCls = '';
+          if (jt === 'color') {
+            svg = `<svg class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10V2z" fill="#dc2626"/>
+              <path d="M12 2v20c5.52 0 10-4.48 10-10S17.52 2 12 2z" fill="#2563eb"/>
+              <circle cx="7.5" cy="9.5" r="1.3" fill="#ffffff"/>
+              <circle cx="16.5" cy="9.5" r="1.3" fill="#ffffff"/>
+              <path d="M7 14.5c1.2 2 3.2 2.8 5 2.8s3.8-0.8 5-2.8" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+              <path d="M9 4.5l3-2.5 3 2.5" stroke="#fef08a" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>`;
+            label = `<span class="text-[7px] sm:text-[8px] uppercase tracking-tighter text-rose-600 font-black">變色</span>`;
+            borderCls = 'border-rose-400/80';
+          } else if (jt === 'mirror') {
+            svg = `<svg class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10" fill="#0284c7"/>
+              <line x1="12" y1="2" x2="12" y2="22" stroke="#bae6fd" stroke-width="1.5" stroke-dasharray="2 1"/>
+              <circle cx="7.5" cy="9.5" r="1.3" fill="#ffffff"/>
+              <circle cx="16.5" cy="9.5" r="1.3" fill="#ffffff"/>
+              <path d="M6 14.5c1.5 1.5 3.5 1.5 4.5 0" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+              <path d="M13.5 14.5c1 1.5 3 1.5 4.5 0" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+              <circle cx="12" cy="4" r="1.2" fill="#fef08a"/>
+              <circle cx="12" cy="20" r="1.2" fill="#fef08a"/>
+            </svg>`;
+            label = `<span class="text-[7px] sm:text-[8px] uppercase tracking-tighter text-sky-600 font-black">鏡像</span>`;
+            borderCls = 'border-sky-400/80';
+          } else if (jt === 'double') {
+            svg = `<svg class="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" viewBox="0 0 24 24">
+              <circle cx="15" cy="9.5" r="6.5" fill="#f59e0b" stroke="#ffffff" stroke-width="1"/>
+              <circle cx="13.5" cy="8" r="0.9" fill="#78350f"/>
+              <circle cx="17.5" cy="8" r="0.9" fill="#78350f"/>
+              <path d="M13.8 11.2c.6.8 1.8.8 2.4 0" stroke="#78350f" stroke-width="1.1" stroke-linecap="round" fill="none"/>
+              <circle cx="9" cy="14.5" r="7" fill="#10b981" stroke="#ffffff" stroke-width="1.2"/>
+              <circle cx="7" cy="13" r="1" fill="#064e3b"/>
+              <circle cx="11" cy="13" r="1" fill="#064e3b"/>
+              <path d="M7 16.5c1 1.1 3 1.1 4 0" stroke="#064e3b" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+            </svg>`;
+            label = `<span class="text-[7px] sm:text-[8px] uppercase tracking-tighter text-emerald-600 font-black">雙百搭</span>`;
+            borderCls = 'border-emerald-400/80';
+          } else {
+            svg = `<svg class="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-3.5-9c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm7 0c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+            </svg>`;
+            label = `<span class="text-[7px] sm:text-[8px] uppercase tracking-tighter text-purple-600 font-black">百搭</span>`;
+            borderCls = 'border-purple-400/80';
+          }
           return `
-            <div class="rummi-tile ${isSelected ? 'selected' : ''}" onclick="${clickHandlerStr}" ${dragAttr} ${touchAttr}>
-              <span class="text-sm sm:text-lg leading-none">😊</span>
-              <span class="text-[7px] sm:text-[8px] uppercase tracking-tighter text-purple-600 font-black">JOKER</span>
+            <div class="rummi-tile ${borderCls} ${isSelected ? 'selected' : ''}" onclick="${clickHandlerStr}" ${dragAttr} ${touchAttr}>
+              ${svg}
+              ${label}
             </div>
           `;
         }
