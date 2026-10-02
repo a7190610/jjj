@@ -245,17 +245,18 @@
           <div>
             <label class="block text-slate-300 font-bold mb-1">思考秒數:</label>
             <select id="create-timer-sec" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-2 py-1 text-white text-xs">
-              <option value="60" selected>標準 60 秒</option>
+              <option value="0" selected>無限制</option>
+              <option value="60">標準 60 秒</option>
               <option value="90">寬裕 90 秒</option>
               <option value="30">快節奏 30 秒</option>
-              <option value="0">無限制</option>
             </select>
           </div>
           <div>
             <label class="block text-slate-300 font-bold mb-1">電腦強度:</label>
             <select id="create-ai-diff" class="w-full bg-slate-700 border border-slate-600 rounded-lg px-2 py-1 text-white text-xs">
-              <option value="normal" selected>普通</option>
-              <option value="casual">休閒</option>
+              <option value="expert" selected>高手 (智能出牌與拆拼牌)</option>
+              <option value="normal">普通 (標準出牌與追加)</option>
+              <option value="casual">休閒 (僅出基本牌型)</option>
             </select>
           </div>
         </div>
@@ -323,7 +324,7 @@
     <!-- 首頁右下角版本時間戳記 -->
     <div class="fixed bottom-2 right-2 text-[10px] sm:text-xs font-mono font-bold text-slate-400 bg-slate-900/85 px-2.5 py-1 rounded-xl border border-slate-700/80 shadow-lg pointer-events-none select-none z-50 flex items-center gap-1.5 backdrop-blur-sm">
       <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-      <span id="app-version-tag">版本: 2026-10-02 00:30</span>
+      <span id="app-version-tag">版本: 2026-10-02 01:45</span>
     </div>
   </div>
 
@@ -805,8 +806,8 @@
         this.connections = new Map();
 
         this.targetPlayerCount = 4;
-        this.timerSeconds = 60;
-        this.aiDifficulty = 'normal';
+        this.timerSeconds = 0;
+        this.aiDifficulty = 'expert';
 
         this.inGame = false;
         this.players = [];
@@ -1210,7 +1211,21 @@
         return code;
       }
 
-      getPeerConfig() {
+      getPlayerAvatar(p) {
+        if (!p) return this.presetAvatars[0];
+        if (p.avatarIndex !== undefined && p.avatarIndex >= 0 && this.presetAvatars[p.avatarIndex]) {
+          return this.presetAvatars[p.avatarIndex];
+        }
+        if (p.customAvatar && p.customAvatar.length > 0) {
+          return p.customAvatar;
+        }
+        if (p.avatar && p.avatar.length > 0) {
+          return p.avatar;
+        }
+        return this.presetAvatars[0];
+      }
+
+      getPeerConfig(forceRelay = false) {
         return {
           debug: 1,
           pingInterval: 5000,
@@ -1219,8 +1234,6 @@
               { urls: 'stun:stun.l.google.com:19302' },
               { urls: 'stun:stun1.l.google.com:19302' },
               { urls: 'stun:stun2.l.google.com:19302' },
-              { urls: 'stun:stun3.l.google.com:19302' },
-              { urls: 'stun:stun4.l.google.com:19302' },
               { urls: 'stun:stun.cloudflare.com:3478' },
               { urls: 'stun:openrelay.metered.ca:80' },
               {
@@ -1244,7 +1257,7 @@
                 credential: 'openrelayproject'
               }
             ],
-            iceCandidatePoolSize: 10,
+            iceTransportPolicy: forceRelay ? 'relay' : 'all',
             sdpSemantics: 'unified-plan'
           }
         };
@@ -1266,7 +1279,7 @@
           try { this.peer.destroy(); } catch(e) {}
         }
         const hostPeerId = this.getPeerIdForRoom(this.roomCode);
-        this.peer = new Peer(hostPeerId, this.getPeerConfig());
+        this.peer = new Peer(hostPeerId, this.getPeerConfig(false));
 
         // 立即註冊房主監聽器
         this.setupHostListeners();
@@ -1311,59 +1324,88 @@
         this.roomCode = codeInput;
         this.showToast(`正在連線房號 ${this.roomCode}...`, '⏳');
 
-        if (this.peer && !this.peer.destroyed) {
-          try { this.peer.destroy(); } catch(e) {}
-        }
-        this.peer = new Peer(null, this.getPeerConfig());
-
         let connectionAttempts = 0;
         let connectTimeout = null;
+        let forceRelay = false;
+
+        const startPeerAndConnect = (useRelay = false) => {
+          forceRelay = useRelay;
+          if (this.peer && !this.peer.destroyed) {
+            try { this.peer.destroy(); } catch(e) {}
+          }
+          this.peer = new Peer(null, this.getPeerConfig(forceRelay));
+
+          this.peer.on('open', (guestId) => {
+            console.log('[Guest] Peer 註冊成功，本地 ID:', guestId, '中繼模式:', forceRelay);
+            attemptConnectToHost();
+          });
+
+          this.peer.on('disconnected', () => {
+            console.warn('[Guest Peer] 伺服器信令連線暫時中斷，正在自動重連...');
+            if (this.peer && !this.peer.destroyed) {
+              try { this.peer.reconnect(); } catch(e) {}
+            }
+          });
+
+          this.peer.on('error', (err) => {
+            if (connectTimeout) clearTimeout(connectTimeout);
+            console.error('[Guest Peer Error]', err);
+            if (err.type === 'peer-unavailable') {
+              this.showToast(`查無此房間代碼【${this.roomCode}】，請確認房主是否已開設房間！`, '❌');
+            } else {
+              this.showToast(`連線伺服器異常：${err.type || '網路中斷'}`, '❌');
+            }
+          });
+        };
 
         const attemptConnectToHost = () => {
           connectionAttempts++;
           const hostPeerId = this.getPeerIdForRoom(this.roomCode);
-          console.log(`[Guest] 正在連線房主 (第 ${connectionAttempts} 次):`, hostPeerId);
+          console.log(`[Guest] 正在連線房主 (第 ${connectionAttempts} 次，Relay: ${forceRelay}):`, hostPeerId);
 
-          if (connectionAttempts === 1) {
-            this.showToast(`已找到房間【${this.roomCode}】，正在建立 P2P 穿透通道...`, '⏳');
+          if (!forceRelay) {
+            this.showToast(`已找到房間【${this.roomCode}】，正在建立 P2P 連線...`, '⏳');
           } else {
-            this.showToast(`正在重試建立 P2P 穿透通道 (${connectionAttempts}/3)...`, '🔄');
+            this.showToast(`正在切換至雲端中繼模式穿透防火牆與虛擬機...`, '🛡️');
           }
 
           if (this.hostConn) {
             try { this.hostConn.close(); } catch(e) {}
           }
 
+          // 採用標準默認序列化（支援 BinaryPack 自動分片，杜絕手機大封包崩潰）
           this.hostConn = this.peer.connect(hostPeerId, {
-            reliable: true,
-            serialization: 'json'
+            reliable: true
           });
 
           if (connectTimeout) clearTimeout(connectTimeout);
+          // 若 4.5 秒內直連未通（常見於 Windows 防火牆阻擋或虛擬機 NAT），自動切換至強制雲端中繼模式！
           connectTimeout = setTimeout(() => {
             if (!this.hostConn || !this.hostConn.open) {
-              if (connectionAttempts < 3 && !this.inGame) {
-                console.warn('[Guest] P2P 握手未及時回應，自動進行重試...');
+              if (!forceRelay && !this.inGame) {
+                console.warn('[Guest] P2P 直連未回應 (可能受防火牆或虛擬機隔離)，自動切換為雲端中繼模式...');
+                startPeerAndConnect(true);
+              } else if (connectionAttempts < 3 && !this.inGame) {
+                console.warn('[Guest] 雲端中繼重試...');
                 attemptConnectToHost();
               } else if (!this.inGame) {
-                this.showToast('連線逾時！已嘗試 STUN 與 TURN 穿透，請確認房號是否正確並停留在大廳。', '⚠️');
+                this.showToast('連線逾時！已嘗試 STUN 與 TURN 中繼穿透，請確認房主是否在線。', '⚠️');
               }
             }
-          }, 8000);
+          }, forceRelay ? 8000 : 4500);
 
           this.hostConn.on('open', () => {
             clearTimeout(connectTimeout);
-            console.log('[Guest] 與房主 P2P 頻道已開啟！發送 REQ_JOIN');
-            this.showToast('P2P 通道建立成功！正在同步房間資料...', '✨');
+            console.log('[Guest] 與房主連線已開啟！發送 REQ_JOIN');
+            this.showToast('連線成功！正在同步房間資料...', '✨');
 
-            // 確保頭貼不會過大導致 WebRTC DataChannel 溢出
-            const safeAvatar = (this.myAvatar && this.myAvatar.length < 8000) ? this.myAvatar : this.presetAvatars[0];
-
+            let avIdx = this.presetAvatars.indexOf(this.myAvatar);
             this.hostConn.send({
               type: 'REQ_JOIN',
               uid: this.myUserId,
               name: this.myNickname,
-              avatar: safeAvatar
+              avatarIndex: avIdx >= 0 ? avIdx : 0,
+              customAvatar: (avIdx === -1 && this.customAvatar && this.customAvatar.length < 5000) ? this.customAvatar : undefined
             });
             sessionStorage.setItem('rmk_current_room', this.roomCode);
           });
@@ -1381,7 +1423,10 @@
 
           this.hostConn.on('error', (err) => {
             console.error('[Guest Conn Error]', err);
-            if (connectionAttempts < 3 && !this.inGame) {
+            if (!forceRelay && !this.inGame) {
+              clearTimeout(connectTimeout);
+              startPeerAndConnect(true);
+            } else if (connectionAttempts < 3 && !this.inGame) {
               setTimeout(attemptConnectToHost, 1000);
             } else {
               clearTimeout(connectTimeout);
@@ -1390,35 +1435,18 @@
           });
         };
 
-        this.peer.on('open', (guestId) => {
-          console.log('[Guest] Peer 註冊成功，本地 ID:', guestId);
-          attemptConnectToHost();
-        });
-
-        this.peer.on('disconnected', () => {
-          console.warn('[Guest Peer] 伺服器信令連線暫時中斷，正在自動重連...');
-          if (this.peer && !this.peer.destroyed) {
-            try { this.peer.reconnect(); } catch(e) {}
-          }
-        });
-
-        this.peer.on('error', (err) => {
-          if (connectTimeout) clearTimeout(connectTimeout);
-          console.error('[Guest Peer Error]', err);
-          if (err.type === 'peer-unavailable') {
-            this.showToast(`查無此房間代碼【${this.roomCode}】，請確認房主是否已開設房間！`, '❌');
-          } else {
-            this.showToast(`連線伺服器異常：${err.type || '網路中斷'}`, '❌');
-          }
-        });
+        // 預設先嘗試直連；若受阻則 4.5 秒自動無縫切換至雲端中繼穿透
+        startPeerAndConnect(false);
       }
 
       setupHostListeners() {
+        let myAvIdx = this.presetAvatars.indexOf(this.myAvatar);
         this.players = [{
           id: 0,
           uid: this.myUserId,
           name: `${this.myNickname} (房主)`,
           avatar: this.myAvatar,
+          avatarIndex: myAvIdx >= 0 ? myAvIdx : 0,
           isHost: true,
           isAI: false,
           isAITakeover: false,
@@ -1431,20 +1459,25 @@
         this.peer.on('connection', (conn) => {
           console.log('[Host] 收到訪客 Peer 連線請求:', conn.peer);
           
-          const handleConnected = () => {
+          let listenersAttached = false;
+          const attachConnListeners = () => {
+            if (listenersAttached) return;
+            listenersAttached = true;
             conn.on('data', (data) => this.handleHostReceiveData(conn, data));
             conn.on('close', () => this.handleClientDisconnect(conn));
+            conn.on('error', (err) => console.error('[Host DataConn Error]', err));
           };
 
           if (conn.open) {
-            handleConnected();
+            attachConnListeners();
           } else {
-            conn.on('open', handleConnected);
+            conn.on('open', attachConnListeners);
           }
-          // 雙重保險掛載
-          conn.on('data', (data) => this.handleHostReceiveData(conn, data));
-          conn.on('close', () => this.handleClientDisconnect(conn));
-          conn.on('error', (err) => console.error('[Host DataConn Error]', err));
+          // 確保封包不因 open 延遲遺漏
+          conn.on('data', (data) => {
+            if (!listenersAttached) attachConnListeners();
+            this.handleHostReceiveData(conn, data);
+          });
         });
 
         clearInterval(this.heartbeatTimer);
@@ -1515,11 +1548,16 @@
               return;
             }
 
+            const avIdx = (data.avatarIndex !== undefined && data.avatarIndex >= 0) ? data.avatarIndex : ((this.players.length) % this.presetAvatars.length);
+            const playerAvatar = (this.presetAvatars[avIdx]) ? this.presetAvatars[avIdx] : (data.customAvatar || this.presetAvatars[0]);
+
             const newPlayer = {
               id: this.players.length,
               uid: uid,
               name: name,
-              avatar: data.avatar || this.presetAvatars[(this.players.length) % this.presetAvatars.length],
+              avatarIndex: avIdx,
+              customAvatar: data.customAvatar,
+              avatar: playerAvatar,
               isHost: false,
               isAI: false,
               isAITakeover: false,
@@ -1737,19 +1775,29 @@
       }
 
       sanitizePlayersForClient() {
-        return this.players.map(p => ({
-          id: p.id,
-          uid: p.uid,
-          name: p.name,
-          avatar: (p.avatar && p.avatar.length < 8000) ? p.avatar : this.presetAvatars[0],
-          isHost: p.isHost,
-          isAI: p.isAI,
-          isAITakeover: p.isAITakeover,
-          isOnline: p.isOnline,
-          handCount: p.hand.length,
-          hasBrokenIce: p.hasBrokenIce,
-          score: p.score
-        }));
+        return this.players.map(p => {
+          let avIdx = -1;
+          if (p.avatar) {
+            avIdx = this.presetAvatars.indexOf(p.avatar);
+          }
+          if (avIdx === -1 && p.avatarIndex !== undefined) {
+            avIdx = p.avatarIndex;
+          }
+          return {
+            id: p.id,
+            uid: p.uid,
+            name: p.name,
+            avatarIndex: avIdx >= 0 ? avIdx : 0,
+            customAvatar: (avIdx === -1 && p.customAvatar && p.customAvatar.length < 5000) ? p.customAvatar : undefined,
+            isHost: p.isHost,
+            isAI: p.isAI,
+            isAITakeover: p.isAITakeover,
+            isOnline: p.isOnline,
+            handCount: p.hand ? p.hand.length : 0,
+            hasBrokenIce: p.hasBrokenIce,
+            score: p.score
+          };
+        });
       }
 
       handleGuestReceiveData(data) {
@@ -1776,7 +1824,12 @@
             this.timerSeconds = data.roomSettings.timerSeconds;
             this.aiDifficulty = data.roomSettings.aiDifficulty;
             this.myPlayerId = data.myId;
-            this.players = data.players;
+            if (data.players) {
+              this.players = data.players.map(p => ({
+                ...p,
+                avatar: this.getPlayerAvatar(p)
+              }));
+            }
             this.deckCount = data.deckCount !== undefined ? data.deckCount : (this.targetPlayerCount >= 5 ? 160 : 106);
 
             if (data.inGame) {
@@ -1803,7 +1856,12 @@
             this.targetPlayerCount = data.roomSettings.targetPlayerCount;
             this.timerSeconds = data.roomSettings.timerSeconds;
             this.aiDifficulty = data.roomSettings.aiDifficulty;
-            this.players = data.players;
+            if (data.players) {
+              this.players = data.players.map(p => ({
+                ...p,
+                avatar: this.getPlayerAvatar(p)
+              }));
+            }
             this.updateWaitingRoomUI();
             break;
 
@@ -1811,16 +1869,21 @@
             this.inGame = true;
             this.tableMelds = data.tableMelds || [];
             this.myHand = data.myHand || [];
-            this.deckCount = data.deckCount !== undefined ? data.deckCount : (this.players.length >= 5 ? 160 : 106);
+            this.deckCount = data.deckCount !== undefined ? data.deckCount : (data.players && data.players.length >= 5 ? 160 : 106);
             this.startTurnIndex = data.startTurnIndex !== undefined ? data.startTurnIndex : 0;
             this.turnIndex = data.turnIndex;
             this.currentSeconds = data.currentSeconds;
-            this.players = data.players;
+            if (data.players) {
+              this.players = data.players.map(p => ({
+                ...p,
+                avatar: this.getPlayerAvatar(p)
+              }));
+            }
             this.enterGameView();
             this.sortHand('number');
             this.renderAll();
             this.startClientCountdown();
-            this.showToast('對局開始！', '🎮');
+            this.showToast('對局開始！祝您遊玩愉快', '🎮');
             break;
 
           case 'GAME_STATE_SYNC': {
@@ -1835,7 +1898,12 @@
             // 若是我正在出牌且有暫態動作，絕不覆蓋手牌與桌面牌組，防止定時心跳覆蓋！
             if (isCurrentlyMyTurn && hasUnfinishedTurnMoves) {
               this.currentSeconds = data.currentSeconds;
-              this.players = data.players;
+              if (data.players) {
+              this.players = data.players.map(p => ({
+                ...p,
+                avatar: this.getPlayerAvatar(p)
+              }));
+            }
               this.startClientCountdown();
               this.renderTurnInfo();
               return;
@@ -1852,7 +1920,12 @@
             if (data.turnIndex === this.myPlayerId && this.turnIndex !== this.myPlayerId) {
               this.turnIndex = data.turnIndex;
               this.currentSeconds = data.currentSeconds;
-              this.players = data.players;
+              if (data.players) {
+              this.players = data.players.map(p => ({
+                ...p,
+                avatar: this.getPlayerAvatar(p)
+              }));
+            }
               this.startClientCountdown();
               this.tableMelds = data.tableMelds || [];
               this.myHand = data.myHand || [];
@@ -1878,7 +1951,12 @@
             if (data.startTurnIndex !== undefined) this.startTurnIndex = data.startTurnIndex;
             this.turnIndex = data.turnIndex;
             this.currentSeconds = data.currentSeconds;
-            this.players = data.players;
+            if (data.players) {
+              this.players = data.players.map(p => ({
+                ...p,
+                avatar: this.getPlayerAvatar(p)
+              }));
+            }
             this.startClientCountdown();
             // 保持本機最新掛機按鈕設定，防止點選後短時間內被未同步的廣播覆蓋
                         // 【破冰保護】：若本機玩家先前已破冰，同步時維持已破冰狀態
@@ -1950,7 +2028,12 @@
             this.startTurnIndex = data.startTurnIndex !== undefined ? data.startTurnIndex : 0;
             this.turnIndex = data.turnIndex;
             this.currentSeconds = data.currentSeconds;
-            this.players = data.players;
+            if (data.players) {
+              this.players = data.players.map(p => ({
+                ...p,
+                avatar: this.getPlayerAvatar(p)
+              }));
+            }
             this.tableMelds = [];
             this.myHand = data.myHand || [];
             this.playedTilesThisTurn = [];
@@ -2103,11 +2186,13 @@
         const aiNames = ['愛麗絲', '鮑伯', '查理', '大衛', '艾倫'];
 
         for (let i = 0; i < needed; i++) {
+          const aiAvIdx = (i + 3) % this.presetAvatars.length;
           this.players.push({
             id: this.players.length,
             uid: `ai_${i + 1}`,
             name: `電腦 ${aiNames[i] || (i + 1)}`,
-            avatar: this.presetAvatars[(i + 3) % this.presetAvatars.length],
+            avatarIndex: aiAvIdx,
+            avatar: this.presetAvatars[aiAvIdx],
             isHost: false,
             isAI: true,
             isAITakeover: false,
@@ -3128,11 +3213,13 @@
         }
 
         let playedAny = false;
-        // 電腦掛機的強度一律只有簡易 (Casual)，避免玩家靠掛機取勝！
+        // 電腦掛機的強度一律只有休閒 (Casual)，避免玩家靠掛機取勝！
         const isCasual = (aiPlayer.isAITakeover === true) || (this.aiDifficulty === 'casual');
+        const isExpert = (!aiPlayer.isAITakeover && this.aiDifficulty === 'expert');
 
         try {
           if (!aiPlayer.hasBrokenIce) {
+            // 【破冰階段】：尋找手牌合法組合點數 >= 30
             const possibleMelds = this.findHandMelds(aiPlayer.hand);
             const combination = this.findDisjointMeldsOverThreshold(possibleMelds, 30);
             if (combination && combination.length > 0) {
@@ -3152,22 +3239,37 @@
               this.showToast(`${aiPlayer.name} 破冰打出 ${totalVal} 分！`, '☀️');
             }
           } else {
-            // 簡易模式 / 掛機模式：僅打出手牌中的純基本合法牌型 (最多 1 組)，絕不拆動桌面牌，避免靠掛機取勝
-            const handMelds = this.findHandMelds(aiPlayer.hand);
-            if (handMelds.length > 0) {
-              const meldObj = handMelds[0];
-              const sorted = this.sortMeldTiles([...meldObj.tiles]);
-              this.tableMelds.push(sorted);
-              meldObj.tiles.forEach(tile => {
-                const idx = aiPlayer.hand.findIndex(t => Number(t.id) === Number(tile.id));
-                if (idx !== -1) aiPlayer.hand.splice(idx, 1);
-              });
-              playedAny = true;
-              this.sound.tilePlace();
-            }
+            // 【破冰後階段】
+            if (isCasual) {
+              // 休閒模式 / 掛機模式：僅打出手牌中的純基本合法牌型 (最多 1 組)，絕不拆動桌面牌
+              const handMelds = this.findHandMelds(aiPlayer.hand);
+              if (handMelds.length > 0) {
+                const meldObj = handMelds[0];
+                const sorted = this.sortMeldTiles([...meldObj.tiles]);
+                this.tableMelds.push(sorted);
+                meldObj.tiles.forEach(tile => {
+                  const idx = aiPlayer.hand.findIndex(t => Number(t.id) === Number(tile.id));
+                  if (idx !== -1) aiPlayer.hand.splice(idx, 1);
+                });
+                playedAny = true;
+                this.sound.tilePlace();
+              }
+            } else if (!isExpert) {
+              // 普通模式：打出手牌所有基本牌組 + 桌面單張追加
+              let handMelds = this.findHandMelds(aiPlayer.hand);
+              while (handMelds.length > 0) {
+                const meldObj = handMelds[0];
+                const sorted = this.sortMeldTiles([...meldObj.tiles]);
+                this.tableMelds.push(sorted);
+                meldObj.tiles.forEach(tile => {
+                  const idx = aiPlayer.hand.findIndex(t => Number(t.id) === Number(tile.id));
+                  if (idx !== -1) aiPlayer.hand.splice(idx, 1);
+                });
+                playedAny = true;
+                this.sound.tilePlace();
+                handMelds = this.findHandMelds(aiPlayer.hand);
+              }
 
-            // 只有正常 AI Bot 且非掛機時，才執行桌面牌追加組合
-            if (!isCasual) {
               for (let h = aiPlayer.hand.length - 1; h >= 0; h--) {
                 const card = aiPlayer.hand[h];
                 for (let m = 0; m < this.tableMelds.length; m++) {
@@ -3178,6 +3280,113 @@
                     playedAny = true;
                     this.sound.tilePlace();
                     break;
+                  }
+                }
+              }
+            } else {
+              // 【高手模式】：多輪循環貪婪拼牌、拆牌、換百搭、接牌
+              let roundProgress = true;
+              let loopCount = 0;
+              while (roundProgress && loopCount < 8 && aiPlayer.hand.length > 0) {
+                roundProgress = false;
+                loopCount++;
+
+                // 1. 手牌直接出組：盡可能將手牌可組出的合法組合全數打出
+                let handMelds = this.findHandMelds(aiPlayer.hand);
+                while (handMelds.length > 0) {
+                  const meldObj = handMelds[0];
+                  const sorted = this.sortMeldTiles([...meldObj.tiles]);
+                  this.tableMelds.push(sorted);
+                  meldObj.tiles.forEach(tile => {
+                    const idx = aiPlayer.hand.findIndex(t => Number(t.id) === Number(tile.id));
+                    if (idx !== -1) aiPlayer.hand.splice(idx, 1);
+                  });
+                  playedAny = true;
+                  roundProgress = true;
+                  this.sound.tilePlace();
+                  handMelds = this.findHandMelds(aiPlayer.hand);
+                }
+
+                // 2. 貪婪單張追加至桌面牌組（多輪直到不能再追加）
+                let addedTile = true;
+                while (addedTile && aiPlayer.hand.length > 0) {
+                  addedTile = false;
+                  for (let h = aiPlayer.hand.length - 1; h >= 0; h--) {
+                    const card = aiPlayer.hand[h];
+                    for (let m = 0; m < this.tableMelds.length; m++) {
+                      const candidate = this.sortMeldTiles([...this.tableMelds[m], card]);
+                      if (this.validateMeld(candidate).valid) {
+                        this.tableMelds[m] = candidate;
+                        aiPlayer.hand.splice(h, 1);
+                        playedAny = true;
+                        roundProgress = true;
+                        addedTile = true;
+                        this.sound.tilePlace();
+                        break;
+                      }
+                    }
+                    if (addedTile) break;
+                  }
+                }
+
+                // 3. 百搭替換 (Joker Replacement)：檢視桌面牌組是否有百搭，若手牌有對應真牌，則置換出來再利用
+                for (let m = 0; m < this.tableMelds.length; m++) {
+                  const meld = this.tableMelds[m];
+                  const jokerIdx = meld.findIndex(t => t.isJoker);
+                  if (jokerIdx !== -1) {
+                    for (let h = 0; h < aiPlayer.hand.length; h++) {
+                      const card = aiPlayer.hand[h];
+                      const testMeld = [...meld];
+                      testMeld.splice(jokerIdx, 1, card);
+                      const sortedTest = this.sortMeldTiles(testMeld);
+                      if (this.validateMeld(sortedTest).valid) {
+                        const jokerTile = meld[jokerIdx];
+                        this.tableMelds[m] = sortedTest;
+                        aiPlayer.hand.splice(h, 1);
+                        aiPlayer.hand.push(jokerTile);
+                        playedAny = true;
+                        roundProgress = true;
+                        this.sound.tilePlace();
+                        break;
+                      }
+                    }
+                  }
+                }
+
+                // 4. 拆牌重組 (Borrow & Form New Meld)：
+                // 尋找桌面上有 4 張以上的牌組，嘗試借出 1 張，與手牌的 2 張牌組成新的 3 張合法牌組！
+                if (aiPlayer.hand.length >= 2) {
+                  let borrowed = false;
+                  for (let m = 0; m < this.tableMelds.length; m++) {
+                    const meld = this.tableMelds[m];
+                    if (meld.length >= 4) {
+                      for (let t = 0; t < meld.length; t++) {
+                        const borrowCandidate = meld[t];
+                        const remainingMeld = [...meld.slice(0, t), ...meld.slice(t + 1)];
+                        if (this.validateMeld(this.sortMeldTiles(remainingMeld)).valid) {
+                          for (let h1 = 0; h1 < aiPlayer.hand.length; h1++) {
+                            for (let h2 = h1 + 1; h2 < aiPlayer.hand.length; h2++) {
+                              const testNew = this.sortMeldTiles([borrowCandidate, aiPlayer.hand[h1], aiPlayer.hand[h2]]);
+                              if (this.validateMeld(testNew).valid) {
+                                this.tableMelds[m] = this.sortMeldTiles(remainingMeld);
+                                this.tableMelds.push(testNew);
+                                const card1 = aiPlayer.hand[h1];
+                                const card2 = aiPlayer.hand[h2];
+                                aiPlayer.hand = aiPlayer.hand.filter(c => c.id !== card1.id && c.id !== card2.id);
+                                playedAny = true;
+                                roundProgress = true;
+                                borrowed = true;
+                                this.sound.tilePlace();
+                                break;
+                              }
+                            }
+                            if (borrowed) break;
+                          }
+                        }
+                        if (borrowed) break;
+                      }
+                    }
+                    if (borrowed) break;
                   }
                 }
               }
