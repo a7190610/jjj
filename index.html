@@ -65,7 +65,6 @@
         };
 
         const CUSTOMERS = {
-            '0': '德冠',
             '1': '松敬',
             '2': '龍興',
             '5': '榮杕',
@@ -112,7 +111,6 @@
             const [reportRows, setReportRows] = useState(Array.from({ length: 31 }, (_, i) => ({ date: i + 1, g1: '', g2: '', g3: '' })));
             const [detailsData, setDetailsData] = useState({});
             
-            // 🌟 預設目標組別更改為第一組 (g1)
             const [calcContext, setCalcContext] = useState({ date: new Date().getDate(), group: 'g1', customer: '1' });
             
             // 擴充 loadedContext 以支援跨月移動追蹤
@@ -153,11 +151,19 @@
             const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
             // ==========================================
-            // 🌟 加入 GAS Webhook 與背景發送機制
+            // 🌟 處理手動發送 LINE 的狀態
             // ==========================================
             const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyF_em3qc5rMwC3xpYLwR4Ev-naWhyFNiouw2VfkhPjGYfz8IPH87SLXzj00bI8EJhq/exec";
+            
             const prevRowsRef = useRef(null);
             const isInitialLoadRef = useRef(true);
+            
+            // 紀錄點擊狀態 (用於日期按鈕的雙擊確認)
+            const [confirmLineDate, setConfirmLineDate] = useState(null);
+            const [sentLineDate, setSentLineDate] = useState(null);
+            
+            const lastSentMsgRef = useRef('');
+            const lastSentTimeRef = useRef(0);
 
             const sendLineNotification = async (changedRow, allProcessedRows) => {
                 if (!GAS_WEBHOOK_URL) return;
@@ -167,7 +173,6 @@
                 const weekStr = ['日','一','二','三','四','五','六'][dayOfWeek];
                 const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(changedRow.date).padStart(2, '0')}`;
 
-                // 找本週起點與終點 (星期一 ~ 星期日)
                 let currentWeekStart = changedRow.date;
                 while (currentWeekStart > 1 && new Date(year, month - 1, currentWeekStart).getDay() !== 1) {
                     currentWeekStart--;
@@ -177,7 +182,6 @@
                     currentWeekEnd++;
                 }
 
-                // 找上週起點與終點
                 let prevWeekStart = -1, prevWeekEnd = -1;
                 if (currentWeekStart > 1) {
                     prevWeekEnd = currentWeekStart - 1;
@@ -197,7 +201,6 @@
                 const formatNum = (num) => num > 0 ? Number(num.toFixed(2)).toLocaleString() : '-';
                 const formatInput = (val) => (val && val !== '') ? val : '-';
 
-                // 🌟 嚴格遵守無圖示純文字格式
                 let msg = `生產日報表更新\n`;
                 msg += `日期：${dateStr} (${weekStr})\n\n`;
                 msg += `第一組：${formatInput(changedRow.g1)}\n`;
@@ -208,13 +211,19 @@
                 msg += `【上週總計】：${formatNum(prevWeekTotal)}\n`;
                 msg += `【本月總計】：${formatNum(monthTotal)}`;
 
-                // 🚀 防呆核心：利用 localStorage 阻擋同一設備多開分頁造成的重複發送 (10秒內重複內容只發送一次)
                 const lastSentMsg = localStorage.getItem('zy_last_line_msg');
                 const lastSentTime = parseInt(localStorage.getItem('zy_last_line_time') || '0');
-                if (lastSentMsg === msg && (Date.now() - lastSentTime < 10000)) {
+                
+                if (
+                    (lastSentMsgRef.current === msg && (Date.now() - lastSentTimeRef.current < 20000)) ||
+                    (lastSentMsg === msg && (Date.now() - lastSentTime < 20000))
+                ) {
                     console.log("已自動阻擋短時間內的重複 LINE 通知");
                     return;
                 }
+                
+                lastSentMsgRef.current = msg;
+                lastSentTimeRef.current = Date.now();
                 localStorage.setItem('zy_last_line_msg', msg);
                 localStorage.setItem('zy_last_line_time', Date.now().toString());
 
@@ -225,6 +234,37 @@
                     });
                 } catch (e) {
                     console.error("發送通知失敗", e);
+                }
+            };
+
+            // 🌟 點擊總表日期觸發的處理器
+            const handleSendToLine = (e, row, allProcessedRows) => {
+                e.stopPropagation();
+                
+                // 防呆：如果沒有任何資料，不允許發送空報表
+                if (row.dailyTotal <= 0) {
+                    setWarningModal({
+                        isOpen: true,
+                        message: '該日尚無任何產量資料，無法傳送報表給 LINE！',
+                        confirmAction: null
+                    });
+                    return;
+                }
+
+                if (confirmLineDate === row.date) {
+                    // 第二次點擊：確定傳送
+                    sendLineNotification(row, allProcessedRows);
+                    setConfirmLineDate(null);
+                    setSentLineDate(row.date);
+                    // 顯示 3 秒成功狀態
+                    setTimeout(() => setSentLineDate(null), 3000);
+                } else {
+                    // 第一次點擊：進入確認狀態
+                    setConfirmLineDate(row.date);
+                    // 3 秒後自動取消確認狀態
+                    setTimeout(() => {
+                        setConfirmLineDate(prev => prev === row.date ? null : prev);
+                    }, 3000);
                 }
             };
 
@@ -324,7 +364,7 @@
                 return rows;
             }, [computedReport, year, month]);
 
-            // Firebase 初始化 (加入 onSnapshot)
+            // Firebase 初始化
             useEffect(() => {
                 let isMounted = true;
                 const initFirebase = async () => {
@@ -368,7 +408,7 @@
                 return () => { isMounted = false; };
             }, []);
 
-            // 🌟 讀取資料改為 onSnapshot 即時監聽與背景推播
+            // 🌟 讀取資料改為 onSnapshot 即時監聽
             useEffect(() => {
                 if (!user || !firebaseReady || !window.db || !window.onSnapshot) return;
 
@@ -389,26 +429,13 @@
                         if(data.detailsData) newDetailsData = data.detailsData;
                     }
 
-                    // 預先計算好每日總和方便比對
                     const getNum = (val) => parseFloat(val) || 0;
                     const processedNewRows = newDataRows.map(row => ({
                         ...row,
                         dailyTotal: getNum(row.g1) + getNum(row.g2) + getNum(row.g3)
                     }));
 
-                    // 如果不是第一次載入，代表有新資料輸入 (可能是另一個後台，或是本地剛存檔完)，進行比對發送
-                    if (!isInitialLoadRef.current && prevRowsRef.current) {
-                        const changedRow = processedNewRows.find((r, idx) => {
-                            const oldR = prevRowsRef.current[idx];
-                            return r.g1 !== oldR.g1 || r.g2 !== oldR.g2 || r.g3 !== oldR.g3;
-                        });
-
-                        // 若有修改且小計大於 0 才發送通知
-                        if (changedRow && changedRow.dailyTotal > 0) {
-                            sendLineNotification(changedRow, processedNewRows);
-                        }
-                    }
-
+                    // 已移除自動推播機制，改為在總表點擊按鈕手動發送
                     prevRowsRef.current = processedNewRows;
                     isInitialLoadRef.current = false;
 
@@ -423,7 +450,7 @@
                     setSyncStatus('⚠️ 讀取失敗');
                 });
 
-                return () => unsubscribe(); // 離開時取消監聽
+                return () => unsubscribe(); 
             }, [user, firebaseReady, year, month]);
 
             // 智慧日期初始化
@@ -442,7 +469,6 @@
                     if (targetDate > maxDays) targetDate = maxDays;
                     if (targetDate < 1) targetDate = 1;
 
-                    // 🌟 智慧日期初始化同樣改為預設第一組 (g1)
                     setCalcContext(prev => ({ ...prev, date: targetDate, group: 'g1', customer: '1' }));
                     setLoadedContext({ year: checkY, month: checkM, date: targetDate, group: 'g1', customer: '1' });
                     setShippingReportDate(targetDate);
@@ -464,7 +490,6 @@
                 const docId = `report_${year}_${month}`;
                 const docPath = window.doc(window.db, 'users', user.uid, 'app_data', docId);
 
-                // 【強制清洗資料】：防止意外的 undefined 導致 Firebase 拒絕寫入崩潰
                 const cleanReportRows = payloadReportRows.map(r => ({
                     date: r.date || 1,
                     g1: r.g1 || '',
@@ -645,7 +670,7 @@
                         const rows = detailsData[`${d}-${g}`] || [];
                         rows.forEach((r, rIdx) => {
                             if (!r.l) return;
-                            const rCId = r.c ? String(r.c).trim() : '0';
+                            const rCId = r.c ? String(r.c).trim() : ''; 
                             if (cId !== 'all' && rCId !== String(cId)) return; 
                             const q = parseInt(r.q) || 0;
                             if (q <= 0) return;
@@ -655,7 +680,7 @@
                             const origT = String(r.t).trim();
                             
                             inventory.push({
-                                date: d, group: g, rIdx: rIdx, cId: rCId, customerName: CUSTOMERS[rCId] || '未知',
+                                date: d, group: g, rIdx: rIdx, cId: rCId, customerName: CUSTOMERS[rCId] || (rCId ? `未建檔(${rCId})` : '未填寫代碼'),
                                 origL, origW, origT, dimKey: `${origL}*${origW}*${origT}`,
                                 p: parseInt(r.p) || 0, q: q
                             });
@@ -841,10 +866,10 @@
             };
 
             const handleContextChange = (field, value) => {
-                // 🌟 新增跳轉 R5-2 的邏輯
+                // 跳轉 R5-2 邏輯
                 if (field === 'group' && value === 'calc_only') {
-                    window.location.href = 'zy-cbm.html';
-                    return; // 終止後續狀態變更
+                    window.location.href = 'R5-2.html';
+                    return;
                 }
 
                 const newContext = { ...calcContext, [field]: field === 'date' ? parseInt(value) : value };
@@ -928,7 +953,7 @@
                 if (hasMissingCustomer) {
                     setWarningModal({
                         isOpen: true,
-                        message: '有明細資料未輸入客戶代碼！\n這可能會導致無法正確計算該客戶的庫存。\n若未填寫，系統將預設歸類為「0：德冠」。',
+                        message: '有明細資料未輸入客戶代碼！\n這可能會導致無法正確計算該客戶的庫存。\n若未填寫，系統將會預設歸類為「未填寫代碼」。',
                         confirmAction: () => {
                             setWarningModal({ isOpen: false, message: '', confirmAction: null });
                             checkOverwriteAndSync();
@@ -1065,12 +1090,11 @@
                             <div className="flex-[2] flex flex-col">
                                 <label className="text-[10px] text-indigo-300 font-bold mb-0.5 pl-1">目標組別</label>
                                 <select value={calcContext.group} onChange={(e) => handleContextChange('group', e.target.value)} className="bg-white text-indigo-900 font-bold px-1 py-1.5 rounded outline-none shadow-inner w-full text-center text-[11px] sm:text-xs">
-                                    {/* 🌟 選單調整：第一組移到最前面，計算用改為跳轉按鈕 */}
                                     <option value="g1">第一組</option>
                                     <option value="g2">第二組</option>
                                     <option value="g3">第三組</option>
                                     <option value="shipping">出貨用</option>
-                                    <option value="calc_only">計算用</option>
+                                    <option value="calc_only">👉 計算用 (跳轉R5-2)</option>
                                 </select>
                             </div>
                             {calcContext.group === 'shipping' && (
@@ -1144,7 +1168,7 @@
                                                 </th>
                                             </tr>
                                             <tr className="bg-slate-200">
-                                                <th className="w-[15%] border border-slate-300 py-3 font-bold align-middle">日期</th>
+                                                <th className="w-[15%] border border-slate-300 py-3 font-bold align-middle">傳送報表</th>
                                                 <th className="w-[22%] border border-slate-300 py-3 font-bold text-blue-800 bg-white align-middle">第一組</th>
                                                 <th className="w-[22%] border border-slate-300 py-3 font-bold text-orange-800 bg-white align-middle">第二組</th>
                                                 <th className="w-[22%] border border-slate-300 py-3 font-bold text-purple-800 bg-white align-middle">第三組</th>
@@ -1185,9 +1209,24 @@
                                                 const idx = r.originalIndex;
                                                 return (
                                                 <tr key={`day-${r.date}`} className={`${focusedReportRow === idx ? 'bg-emerald-50' : 'even:bg-slate-50/50'} hover:bg-emerald-50/50 transition-colors`} onClick={() => setFocusedReportRow(idx)}>
-                                                    <td className={`border border-slate-300 text-center font-black bg-slate-100/50 text-sm align-middle ${dayInfo.isHoliday ? 'text-red-600' : 'text-slate-700'}`}>
-                                                        {dayInfo.label}
+                                                    {/* 🌟 日期按鈕改造：點擊發送 LINE 功能 */}
+                                                    <td 
+                                                        onClick={(e) => handleSendToLine(e, r, computedReport.processedRows)}
+                                                        className={`border border-slate-300 text-center font-black text-sm align-middle cursor-pointer transition-colors select-none relative
+                                                            ${sentLineDate === r.date ? 'bg-emerald-100 text-emerald-700' : 
+                                                              confirmLineDate === r.date ? 'bg-amber-100 text-amber-700 shadow-inner' : 
+                                                              'bg-slate-100/50 hover:bg-sky-100 ' + (dayInfo.isHoliday ? 'text-red-600' : 'text-slate-700')}
+                                                        `}
+                                                    >
+                                                        {sentLineDate === r.date ? (
+                                                            <span className="text-[11px] tracking-widest">✅ 已傳送</span>
+                                                        ) : confirmLineDate === r.date ? (
+                                                            <span className="text-[11px] tracking-widest animate-pulse">傳送?</span>
+                                                        ) : (
+                                                            dayInfo.label
+                                                        )}
                                                     </td>
+
                                                     {['g1', 'g2', 'g3'].map(g => {
                                                         const hasDetails = detailsData[`${r.date}-${g}`] && detailsData[`${r.date}-${g}`].some(item => item.l);
                                                         return (
@@ -1279,7 +1318,8 @@
                                                 </div>
                                             </td>
                                             <td className="border border-slate-300 bg-indigo-50/20 p-0">
-                                                <input type="text" inputMode="numeric" pattern="[0-9]*" value={row.c} onChange={(e) => handleCalcInputChange(idx, 'c', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-indigo-700" placeholder="代碼" />
+                                                {/* 🌟 客戶代碼強制使用純數字鍵盤 */}
+                                                <input type="number" inputMode="numeric" pattern="[0-9]*" value={row.c} onChange={(e) => handleCalcInputChange(idx, 'c', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-indigo-700" placeholder="代碼" />
                                             </td>
                                             <td className="border border-slate-300 bg-white p-0"><input type="text" inputMode="decimal" value={row.l} onChange={(e) => handleCalcInputChange(idx, 'l', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-slate-800" /></td>
                                             <td className="border border-slate-300 bg-white p-0"><input type="text" inputMode="decimal" value={row.w} onChange={(e) => handleCalcInputChange(idx, 'w', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-slate-800" /></td>
@@ -1466,7 +1506,7 @@
                                                                             <tr key={idx} className="border-b border-slate-50 last:border-0 hover:bg-slate-50 transition-colors">
                                                                                 {invCustomer === 'all' && (
                                                                                     <td className="py-2.5 px-0.5">
-                                                                                        {item.cId && item.cId !== '0' && (
+                                                                                        {item.cId && (
                                                                                             <span className="bg-slate-700 text-white text-[11px] px-1 py-0.5 rounded-sm font-bold truncate block mx-auto w-fit">{item.cId}</span>
                                                                                         )}
                                                                                     </td>
@@ -1514,7 +1554,7 @@
                                                                 <tr key={idx} className="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
                                                                     {invCustomer === 'all' && (
                                                                         <td className="py-3 px-0.5">
-                                                                            {item.cId && item.cId !== '0' && (
+                                                                            {item.cId && (
                                                                                 <span className="bg-slate-700 text-white text-[11px] px-1 py-0.5 rounded-sm font-bold truncate block mx-auto w-fit">{item.cId}</span>
                                                                             )}
                                                                         </td>
