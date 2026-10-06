@@ -31,7 +31,8 @@
         }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col overflow-hidden bg-slate-50">
+<!-- 🌟 修正 1：將 h-screen 改為 h-[100dvh] 適應手機動態網址列 -->
+<body class="h-[100dvh] w-screen flex flex-col overflow-hidden bg-slate-50">
     <div id="root" class="h-full w-full"></div>
 
     <script type="text/babel">
@@ -86,14 +87,13 @@
             '2026-12-25', '2026-12-26', '2026-12-27'
         ];
 
-        // 浮點數精度修復工具
         const fmtNum = (n) => Number(Number(n).toFixed(4));
 
         // ==========================================
         // 3. 主應用程式元件
         // ==========================================
         const App = () => {
-            const [activeTab, setActiveTab] = useState('calculator'); 
+            const [activeTab, setActiveTab] = useState('calculator'); // 預設改為明細表格
             const savedYear = localStorage.getItem('zy_year') ? parseInt(localStorage.getItem('zy_year')) : 2026;
             const savedMonth = localStorage.getItem('zy_month') ? parseInt(localStorage.getItem('zy_month')) : (new Date().getMonth() + 1);
             
@@ -111,7 +111,6 @@
             const [detailsData, setDetailsData] = useState({});
             
             const [calcContext, setCalcContext] = useState({ date: new Date().getDate(), group: 'g1', customer: '1' });
-            
             const [loadedContext, setLoadedContext] = useState({ year: savedYear, month: savedMonth, date: new Date().getDate(), group: 'g1', customer: '1' });
             const [calcRows, setCalcRows] = useState(Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '', u: '', c: '' })));
             
@@ -141,10 +140,11 @@
             const [expandedDates, setExpandedDates] = useState({}); 
             
             const [shippingReportDate, setShippingReportDate] = useState(new Date().getDate());
+
             const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
             // ==========================================
-            // 🌟 GAS Webhook 與手動發送 LINE 狀態
+            // 🌟 處理手動發送 LINE 的狀態
             // ==========================================
             const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyF_em3qc5rMwC3xpYLwR4Ev-naWhyFNiouw2VfkhPjGYfz8IPH87SLXzj00bI8EJhq/exec";
             
@@ -153,6 +153,9 @@
             
             const [confirmLineDate, setConfirmLineDate] = useState(null);
             const [sentLineDate, setSentLineDate] = useState(null);
+            
+            const lastSentMsgRef = useRef('');
+            const lastSentTimeRef = useRef(0);
 
             const sendLineNotification = async (changedRow, allProcessedRows) => {
                 if (!GAS_WEBHOOK_URL) return;
@@ -200,6 +203,22 @@
                 msg += `【上週總計】：${formatNum(prevWeekTotal)}\n`;
                 msg += `【本月總計】：${formatNum(monthTotal)}`;
 
+                const lastSentMsg = localStorage.getItem('zy_last_line_msg');
+                const lastSentTime = parseInt(localStorage.getItem('zy_last_line_time') || '0');
+                
+                if (
+                    (lastSentMsgRef.current === msg && (Date.now() - lastSentTimeRef.current < 20000)) ||
+                    (lastSentMsg === msg && (Date.now() - lastSentTime < 20000))
+                ) {
+                    console.log("已自動阻擋短時間內的重複 LINE 通知");
+                    return;
+                }
+                
+                lastSentMsgRef.current = msg;
+                lastSentTimeRef.current = Date.now();
+                localStorage.setItem('zy_last_line_msg', msg);
+                localStorage.setItem('zy_last_line_time', Date.now().toString());
+
                 try {
                     await fetch(GAS_WEBHOOK_URL, {
                         method: 'POST',
@@ -242,7 +261,7 @@
                     const index = inputs.indexOf(e.target);
                     if (index > -1 && index < inputs.length - 1) {
                         inputs[index + 1].focus();
-                        inputs[index + 1].select(); 
+                        inputs[index + 1].select();
                     } else if (index === inputs.length - 1) {
                         e.target.blur(); 
                     }
@@ -325,6 +344,7 @@
                 return rows;
             }, [computedReport, year, month]);
 
+            // Firebase 初始化
             useEffect(() => {
                 let isMounted = true;
                 const initFirebase = async () => {
@@ -332,7 +352,7 @@
                         const loadModule = (url) => new Function(`return import("${url}")`)();
                         const { initializeApp } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js');
                         const { getAuth, signInWithEmailAndPassword, onAuthStateChanged } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
-                        const { getFirestore, doc, setDoc, onSnapshot } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+                        const { getFirestore, doc, setDoc, getDoc, onSnapshot } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
                         
                         const app = initializeApp(USER_FIREBASE_CONFIG);
                         const auth = getAuth(app);
@@ -368,6 +388,7 @@
                 return () => { isMounted = false; };
             }, []);
 
+            // 讀取資料 (onSnapshot 即時監聽)
             useEffect(() => {
                 if (!user || !firebaseReady || !window.db || !window.onSnapshot) return;
 
@@ -394,7 +415,6 @@
                         dailyTotal: getNum(row.g1) + getNum(row.g2) + getNum(row.g3)
                     }));
 
-                    // 移除了先前的自動發送機制，改為點擊日期按鈕手動發送
                     prevRowsRef.current = processedNewRows;
                     isInitialLoadRef.current = false;
 
@@ -1070,7 +1090,7 @@
                     {/* ========================================================= */}
                     {/* 視圖 1：生產日報表 (原報表總覽) */}
                     {/* ========================================================= */}
-                    <div className={`flex-col h-full overflow-hidden w-full ${activeTab === 'report' ? 'flex' : 'hidden'}`}>
+                    <div className={`flex-col flex-1 overflow-hidden w-full ${activeTab === 'report' ? 'flex' : 'hidden'}`}>
                         {!isHeaderOpen ? (
                             <div onClick={() => setIsHeaderOpen(true)} className="bg-emerald-600 px-4 py-2 flex justify-between items-center text-emerald-100 text-xs cursor-pointer shadow-sm hover:bg-emerald-700 transition-colors z-30 flex-shrink-0 w-full">
                                 <span className="font-bold tracking-widest flex-1 text-center">🔽 點擊展開標題欄位</span>
@@ -1163,7 +1183,6 @@
                                                 const idx = r.originalIndex;
                                                 return (
                                                 <tr key={`day-${r.date}`} className={`${focusedReportRow === idx ? 'bg-emerald-50' : 'even:bg-slate-50/50'} hover:bg-emerald-50/50 transition-colors`} onClick={() => setFocusedReportRow(idx)}>
-                                                    {/* 🌟 日期按鈕：手動雙擊發送 LINE 功能 */}
                                                     <td 
                                                         onClick={(e) => handleSendToLine(e, r, computedReport.processedRows)}
                                                         className={`border border-slate-300 text-center font-black text-sm align-middle cursor-pointer transition-colors select-none relative
@@ -1221,7 +1240,7 @@
                     {/* ========================================================= */}
                     {/* 視圖 3：材積計算機 (明細表格) */}
                     {/* ========================================================= */}
-                    <div className={`flex-col h-full overflow-hidden w-full ${activeTab === 'calculator' ? 'flex' : 'hidden'}`}>
+                    <div className={`flex-col flex-1 overflow-hidden w-full ${activeTab === 'calculator' ? 'flex' : 'hidden'}`}>
                         <ContextSelector 
                             title="目標設定區" 
                             icon={<CalculatorIcon />} 
@@ -1366,7 +1385,7 @@
                     {/* ========================================================= */}
                     {/* 視圖 4：庫存管理 (原出貨統計) */}
                     {/* ========================================================= */}
-                    <div className={`flex-col h-full overflow-hidden w-full ${activeTab === 'inventory' ? 'flex' : 'hidden'}`}>
+                    <div className={`flex-col flex-1 overflow-hidden w-full ${activeTab === 'inventory' ? 'flex' : 'hidden'}`}>
                         {!isHeaderOpen ? (
                             <div onClick={() => setIsHeaderOpen(true)} className="bg-amber-600 px-4 py-2 flex justify-center items-center text-amber-100 text-xs cursor-pointer shadow-sm hover:bg-amber-700 transition-colors z-30 flex-shrink-0 w-full">
                                 <span className="font-bold tracking-widest text-center w-full">🔽 點擊展開標題欄位</span>
@@ -1534,7 +1553,7 @@
                     {/* ========================================================= */}
                     {/* 視圖 5：出貨日報表 */}
                     {/* ========================================================= */}
-                    <div className={`flex-col h-full overflow-hidden w-full ${activeTab === 'shipping_report' ? 'flex' : 'hidden'}`}>
+                    <div className={`flex-col flex-1 overflow-hidden w-full ${activeTab === 'shipping_report' ? 'flex' : 'hidden'}`}>
                         {!isHeaderOpen ? (
                             <div onClick={() => setIsHeaderOpen(true)} className="bg-sky-600 px-4 py-2 flex justify-center items-center text-sky-100 text-xs cursor-pointer shadow-sm hover:bg-sky-700 transition-colors z-30 flex-shrink-0 w-full">
                                 <span className="font-bold tracking-widest text-center w-full">🔽 點擊展開標題欄位</span>
