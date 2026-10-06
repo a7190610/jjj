@@ -93,14 +93,13 @@
         // 3. 主應用程式元件
         // ==========================================
         const App = () => {
-            const [activeTab, setActiveTab] = useState('calculator'); // 預設改為明細表格
+            const [activeTab, setActiveTab] = useState('calculator'); 
             const savedYear = localStorage.getItem('zy_year') ? parseInt(localStorage.getItem('zy_year')) : 2026;
             const savedMonth = localStorage.getItem('zy_month') ? parseInt(localStorage.getItem('zy_month')) : (new Date().getMonth() + 1);
             
             const [year, setYear] = useState(savedYear); 
             const [month, setMonth] = useState(savedMonth);
 
-            // 自動計算可選年份 (最少包含 2026 到今年)
             const availableYears = useMemo(() => {
                 const currentSystemYear = new Date().getFullYear();
                 const yearsArray = Array.from({ length: Math.max(1, currentSystemYear - 2026 + 1) }, (_, i) => 2026 + i);
@@ -113,11 +112,9 @@
             
             const [calcContext, setCalcContext] = useState({ date: new Date().getDate(), group: 'g1', customer: '1' });
             
-            // 擴充 loadedContext 以支援跨月移動追蹤
             const [loadedContext, setLoadedContext] = useState({ year: savedYear, month: savedMonth, date: new Date().getDate(), group: 'g1', customer: '1' });
             const [calcRows, setCalcRows] = useState(Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '', u: '', c: '' })));
             
-            // 五大標題欄位是否顯示
             const [isHeaderOpen, setIsHeaderOpen] = useState(true);
             const [isSummaryOpen, setIsSummaryOpen] = useState(true);
 
@@ -137,33 +134,25 @@
             const [overwriteModal, setOverwriteModal] = useState({ isOpen: false, newTotal: 0, existingTotal: '', targetDate: 1, targetGroup: 'g1' });
             const [warningModal, setWarningModal] = useState({ isOpen: false, message: '', confirmAction: null });
             
-            // 防呆跳窗統一整合
             const [moveModal, setMoveModal] = useState({ isOpen: false, fromYear: null, fromMonth: null, fromDate: null, fromGroup: null, fromCustomer: null, toYear: null, toMonth: null, toDate: null, toGroup: null, toCustomer: null, pendingAction: null });
 
-            // 庫存管理專屬狀態
             const [invCustomer, setInvCustomer] = useState('all'); 
             const [invSort, setInvSort] = useState('date');
             const [expandedDates, setExpandedDates] = useState({}); 
             
-            // 出貨日報表專屬狀態
             const [shippingReportDate, setShippingReportDate] = useState(new Date().getDate());
-
             const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
             // ==========================================
-            // 🌟 處理手動發送 LINE 的狀態
+            // 🌟 GAS Webhook 與手動發送 LINE 狀態
             // ==========================================
             const GAS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbyF_em3qc5rMwC3xpYLwR4Ev-naWhyFNiouw2VfkhPjGYfz8IPH87SLXzj00bI8EJhq/exec";
             
             const prevRowsRef = useRef(null);
             const isInitialLoadRef = useRef(true);
             
-            // 紀錄點擊狀態 (用於日期按鈕的雙擊確認)
             const [confirmLineDate, setConfirmLineDate] = useState(null);
             const [sentLineDate, setSentLineDate] = useState(null);
-            
-            const lastSentMsgRef = useRef('');
-            const lastSentTimeRef = useRef(0);
 
             const sendLineNotification = async (changedRow, allProcessedRows) => {
                 if (!GAS_WEBHOOK_URL) return;
@@ -211,22 +200,6 @@
                 msg += `【上週總計】：${formatNum(prevWeekTotal)}\n`;
                 msg += `【本月總計】：${formatNum(monthTotal)}`;
 
-                const lastSentMsg = localStorage.getItem('zy_last_line_msg');
-                const lastSentTime = parseInt(localStorage.getItem('zy_last_line_time') || '0');
-                
-                if (
-                    (lastSentMsgRef.current === msg && (Date.now() - lastSentTimeRef.current < 20000)) ||
-                    (lastSentMsg === msg && (Date.now() - lastSentTime < 20000))
-                ) {
-                    console.log("已自動阻擋短時間內的重複 LINE 通知");
-                    return;
-                }
-                
-                lastSentMsgRef.current = msg;
-                lastSentTimeRef.current = Date.now();
-                localStorage.setItem('zy_last_line_msg', msg);
-                localStorage.setItem('zy_last_line_time', Date.now().toString());
-
                 try {
                     await fetch(GAS_WEBHOOK_URL, {
                         method: 'POST',
@@ -237,11 +210,9 @@
                 }
             };
 
-            // 🌟 點擊總表日期觸發的處理器
             const handleSendToLine = (e, row, allProcessedRows) => {
                 e.stopPropagation();
                 
-                // 防呆：如果沒有任何資料，不允許發送空報表
                 if (row.dailyTotal <= 0) {
                     setWarningModal({
                         isOpen: true,
@@ -252,25 +223,18 @@
                 }
 
                 if (confirmLineDate === row.date) {
-                    // 第二次點擊：確定傳送
                     sendLineNotification(row, allProcessedRows);
                     setConfirmLineDate(null);
                     setSentLineDate(row.date);
-                    // 顯示 3 秒成功狀態
                     setTimeout(() => setSentLineDate(null), 3000);
                 } else {
-                    // 第一次點擊：進入確認狀態
                     setConfirmLineDate(row.date);
-                    // 3 秒後自動取消確認狀態
                     setTimeout(() => {
                         setConfirmLineDate(prev => prev === row.date ? null : prev);
                     }, 3000);
                 }
             };
 
-            // ==========================================
-            // Enter 自動跳到下一個輸入框功能
-            // ==========================================
             const handleEnterToNext = (e, className) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -278,14 +242,13 @@
                     const index = inputs.indexOf(e.target);
                     if (index > -1 && index < inputs.length - 1) {
                         inputs[index + 1].focus();
-                        inputs[index + 1].select(); // 自動全選文字，方便覆蓋
+                        inputs[index + 1].select(); 
                     } else if (index === inputs.length - 1) {
                         e.target.blur(); 
                     }
                 }
             };
 
-            // 鍵盤與輸入焦點偵測
             useEffect(() => {
                 const handleFocusIn = (e) => {
                     if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) setIsKeyboardOpen(true);
@@ -303,7 +266,6 @@
                 };
             }, []);
 
-            // 同步年份與月份
             useEffect(() => {
                 localStorage.setItem('zy_year', year.toString());
                 localStorage.setItem('zy_month', month.toString());
@@ -320,7 +282,6 @@
                 }
             }, [year, month, isLoadingData]);
 
-            // 報表計算邏輯
             const getDayInfo = (dateNum) => {
                 const dateObj = new Date(year, month - 1, dateNum);
                 const dayOfWeek = dateObj.getDay();
@@ -364,7 +325,6 @@
                 return rows;
             }, [computedReport, year, month]);
 
-            // Firebase 初始化
             useEffect(() => {
                 let isMounted = true;
                 const initFirebase = async () => {
@@ -372,7 +332,7 @@
                         const loadModule = (url) => new Function(`return import("${url}")`)();
                         const { initializeApp } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js');
                         const { getAuth, signInWithEmailAndPassword, onAuthStateChanged } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
-                        const { getFirestore, doc, setDoc, getDoc, onSnapshot } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+                        const { getFirestore, doc, setDoc, onSnapshot } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
                         
                         const app = initializeApp(USER_FIREBASE_CONFIG);
                         const auth = getAuth(app);
@@ -408,7 +368,6 @@
                 return () => { isMounted = false; };
             }, []);
 
-            // 🌟 讀取資料改為 onSnapshot 即時監聽
             useEffect(() => {
                 if (!user || !firebaseReady || !window.db || !window.onSnapshot) return;
 
@@ -435,7 +394,7 @@
                         dailyTotal: getNum(row.g1) + getNum(row.g2) + getNum(row.g3)
                     }));
 
-                    // 已移除自動推播機制，改為在總表點擊按鈕手動發送
+                    // 移除了先前的自動發送機制，改為點擊日期按鈕手動發送
                     prevRowsRef.current = processedNewRows;
                     isInitialLoadRef.current = false;
 
@@ -453,7 +412,6 @@
                 return () => unsubscribe(); 
             }, [user, firebaseReady, year, month]);
 
-            // 智慧日期初始化
             useEffect(() => {
                 if (!isLoadingData && !hasInitializedDate && reportRows.length > 0) {
                     const today = new Date();
@@ -481,9 +439,6 @@
                 // eslint-disable-next-line react-hooks/exhaustive-deps
             }, [isLoadingData, hasInitializedDate]);
 
-            // ==========================================
-            // 🚨 全新【核心防呆存檔器】(確保 100% 寫入 Firebase)
-            // ==========================================
             const performFirebaseSave = async (payloadReportRows, payloadDetailsData) => {
                 if (!user || !window.db) throw new Error("無使用者登入或資料庫尚未連線");
                 
@@ -866,7 +821,6 @@
             };
 
             const handleContextChange = (field, value) => {
-                // 跳轉 R5-2 邏輯
                 if (field === 'group' && value === 'calc_only') {
                     window.location.href = 'R5-2.html';
                     return;
@@ -1094,14 +1048,14 @@
                                     <option value="g2">第二組</option>
                                     <option value="g3">第三組</option>
                                     <option value="shipping">出貨用</option>
-                                    <option value="calc_only">👉 計算用 (跳轉R5-2)</option>
+                                    <option value="calc_only">計算用</option>
                                 </select>
                             </div>
                             {calcContext.group === 'shipping' && (
                                 <div className="flex-[1.5] flex flex-col animate-fade-in">
                                     <label className="text-[10px] text-amber-300 font-bold mb-0.5 pl-1">出貨客戶</label>
                                     <select value={calcContext.customer} onChange={(e) => handleContextChange('customer', e.target.value)} className="bg-amber-100 text-amber-900 font-bold px-1 py-1.5 rounded outline-none shadow-inner w-full text-center text-[11px] sm:text-xs">
-                                        {Object.entries(CUSTOMERS).filter(([id]) => id !== 'all').map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+                                        {Object.entries(CUSTOMERS).map(([id, name]) => <option key={id} value={id}>{name}</option>)}
                                     </select>
                                 </div>
                             )}
@@ -1209,7 +1163,7 @@
                                                 const idx = r.originalIndex;
                                                 return (
                                                 <tr key={`day-${r.date}`} className={`${focusedReportRow === idx ? 'bg-emerald-50' : 'even:bg-slate-50/50'} hover:bg-emerald-50/50 transition-colors`} onClick={() => setFocusedReportRow(idx)}>
-                                                    {/* 🌟 日期按鈕改造：點擊發送 LINE 功能 */}
+                                                    {/* 🌟 日期按鈕：手動雙擊發送 LINE 功能 */}
                                                     <td 
                                                         onClick={(e) => handleSendToLine(e, r, computedReport.processedRows)}
                                                         className={`border border-slate-300 text-center font-black text-sm align-middle cursor-pointer transition-colors select-none relative
@@ -1318,7 +1272,6 @@
                                                 </div>
                                             </td>
                                             <td className="border border-slate-300 bg-indigo-50/20 p-0">
-                                                {/* 🌟 客戶代碼強制使用純數字鍵盤 */}
                                                 <input type="number" inputMode="numeric" pattern="[0-9]*" value={row.c} onChange={(e) => handleCalcInputChange(idx, 'c', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-indigo-700" placeholder="代碼" />
                                             </td>
                                             <td className="border border-slate-300 bg-white p-0"><input type="text" inputMode="decimal" value={row.l} onChange={(e) => handleCalcInputChange(idx, 'l', e.target.value)} onFocus={() => setFocusedCalcRow(idx)} onKeyDown={(e) => handleEnterToNext(e, 'calc-input')} className="calc-input text-slate-800" /></td>
