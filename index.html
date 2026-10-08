@@ -31,7 +31,6 @@
         }
     </style>
 </head>
-<!-- 🌟 修正 1：將 h-screen 改為 h-[100dvh] 適應手機動態網址列 -->
 <body class="h-[100dvh] w-screen flex flex-col overflow-hidden bg-slate-50">
     <div id="root" class="h-full w-full"></div>
 
@@ -93,25 +92,43 @@
         // 3. 主應用程式元件
         // ==========================================
         const App = () => {
-            const [activeTab, setActiveTab] = useState('calculator'); // 預設改為明細表格
-            const savedYear = localStorage.getItem('zy_year') ? parseInt(localStorage.getItem('zy_year')) : 2026;
-            const savedMonth = localStorage.getItem('zy_month') ? parseInt(localStorage.getItem('zy_month')) : (new Date().getMonth() + 1);
-            
-            const [year, setYear] = useState(savedYear); 
-            const [month, setMonth] = useState(savedMonth);
+            const [activeTab, setActiveTab] = useState('calculator'); 
+
+            // 🌟 自動計算「前一個工作日」作為系統最初啟動日
+            const initialDateInfo = useMemo(() => {
+                const today = new Date();
+                let temp = new Date(today);
+                temp.setDate(temp.getDate() - 1); // 預設往前回推一天
+                
+                // 若遇到六日或假日，繼續往前推直到是工作日為止
+                while (true) {
+                    const dow = temp.getDay();
+                    const dStr = `${temp.getFullYear()}-${String(temp.getMonth() + 1).padStart(2, '0')}-${String(temp.getDate()).padStart(2, '0')}`;
+                    if (dow !== 0 && dow !== 6 && !holidays2026.includes(dStr)) {
+                        break;
+                    }
+                    temp.setDate(temp.getDate() - 1);
+                }
+                return { year: temp.getFullYear(), month: temp.getMonth() + 1, date: temp.getDate() };
+            }, []);
+
+            // 將預設日期全面改為前一個工作日
+            const [year, setYear] = useState(initialDateInfo.year); 
+            const [month, setMonth] = useState(initialDateInfo.month);
 
             const availableYears = useMemo(() => {
                 const currentSystemYear = new Date().getFullYear();
                 const yearsArray = Array.from({ length: Math.max(1, currentSystemYear - 2026 + 1) }, (_, i) => 2026 + i);
-                if (!yearsArray.includes(savedYear)) yearsArray.push(savedYear);
+                if (!yearsArray.includes(initialDateInfo.year)) yearsArray.push(initialDateInfo.year);
                 return yearsArray.sort((a, b) => a - b);
-            }, [savedYear]);
+            }, [initialDateInfo.year]);
             
             const [reportRows, setReportRows] = useState(Array.from({ length: 31 }, (_, i) => ({ date: i + 1, g1: '', g2: '', g3: '' })));
             const [detailsData, setDetailsData] = useState({});
             
-            const [calcContext, setCalcContext] = useState({ date: new Date().getDate(), group: 'g1', customer: '1' });
-            const [loadedContext, setLoadedContext] = useState({ year: savedYear, month: savedMonth, date: new Date().getDate(), group: 'g1', customer: '1' });
+            // 預設切換為第一組
+            const [calcContext, setCalcContext] = useState({ date: initialDateInfo.date, group: 'g1', customer: '1' });
+            const [loadedContext, setLoadedContext] = useState({ year: initialDateInfo.year, month: initialDateInfo.month, date: initialDateInfo.date, group: 'g1', customer: '1' });
             const [calcRows, setCalcRows] = useState(Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '', u: '', c: '' })));
             
             const [isHeaderOpen, setIsHeaderOpen] = useState(true);
@@ -122,8 +139,6 @@
             const [isLoadingData, setIsLoadingData] = useState(true);
             const [syncStatus, setSyncStatus] = useState('💾 手動儲存');
             
-            const [hasInitializedDate, setHasInitializedDate] = useState(false);
-
             const [focusedReportRow, setFocusedReportRow] = useState(null);
             const [focusedCalcRow, setFocusedCalcRow] = useState(null);
             const [confirmClearCalc, setConfirmClearCalc] = useState(false);
@@ -139,7 +154,7 @@
             const [invSort, setInvSort] = useState('date');
             const [expandedDates, setExpandedDates] = useState({}); 
             
-            const [shippingReportDate, setShippingReportDate] = useState(new Date().getDate());
+            const [shippingReportDate, setShippingReportDate] = useState(initialDateInfo.date);
 
             const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
 
@@ -254,6 +269,43 @@
                 }
             };
 
+            const handlePaste = (e, startRowIdx, startColField) => {
+                const pasteData = e.clipboardData.getData('text');
+                
+                if (!pasteData.includes('\t') && !pasteData.includes('\n')) return;
+                
+                e.preventDefault(); 
+                
+                const lines = pasteData.split(/\r?\n/).filter(line => line.trim() !== '');
+                const fields = ['g1', 'g2', 'g3'];
+                const startColIdx = fields.indexOf(startColField);
+                
+                let newRows = [...reportRows];
+                let hasChanges = false;
+
+                lines.forEach((line, i) => {
+                    const targetRowIdx = startRowIdx + i;
+                    if (targetRowIdx >= newRows.length) return; 
+
+                    const cols = line.split('\t');
+                    cols.forEach((colVal, j) => {
+                        const targetColIdx = startColIdx + j;
+                        if (targetColIdx < fields.length) {
+                            const val = colVal.trim();
+                            if (/^\d*\.?\d*$/.test(val)) {
+                                newRows[targetRowIdx] = { ...newRows[targetRowIdx], [fields[targetColIdx]]: val };
+                                hasChanges = true;
+                            }
+                        }
+                    });
+                });
+
+                if (hasChanges) {
+                    setReportRows(newRows);
+                    setSyncStatus('⚠️ 資料已修改，請點擊儲存');
+                }
+            };
+
             const handleEnterToNext = (e, className) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -286,9 +338,6 @@
             }, []);
 
             useEffect(() => {
-                localStorage.setItem('zy_year', year.toString());
-                localStorage.setItem('zy_month', month.toString());
-                
                 const daysInMonth = new Date(year, month, 0).getDate();
                 setCalcContext(prev => prev.date > daysInMonth ? { ...prev, date: daysInMonth } : prev);
                 setShippingReportDate(prev => prev > daysInMonth ? daysInMonth : prev);
@@ -352,7 +401,7 @@
                         const loadModule = (url) => new Function(`return import("${url}")`)();
                         const { initializeApp } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js');
                         const { getAuth, signInWithEmailAndPassword, onAuthStateChanged } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js');
-                        const { getFirestore, doc, setDoc, getDoc, onSnapshot } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
+                        const { getFirestore, doc, setDoc, onSnapshot } = await loadModule('https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js');
                         
                         const app = initializeApp(USER_FIREBASE_CONFIG);
                         const auth = getAuth(app);
@@ -415,6 +464,12 @@
                         dailyTotal: getNum(row.g1) + getNum(row.g2) + getNum(row.g3)
                     }));
 
+                    // 確保初次載入或跨月切換時，明細表格自動取得最新資料
+                    if (isInitialLoadRef.current) {
+                        const currentKey = `${calcContext.date}-${calcContext.group}`;
+                        setCalcRows(newDetailsData[currentKey] || Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '', u: '', c: '' })));
+                    }
+
                     prevRowsRef.current = processedNewRows;
                     isInitialLoadRef.current = false;
 
@@ -430,34 +485,7 @@
                 });
 
                 return () => unsubscribe(); 
-            }, [user, firebaseReady, year, month]);
-
-            useEffect(() => {
-                if (!isLoadingData && !hasInitializedDate && reportRows.length > 0) {
-                    const today = new Date();
-                    const checkY = year;
-                    const checkM = month;
-                    let targetDate = today.getDate(); 
-                    
-                    if (checkY !== today.getFullYear() || checkM !== (today.getMonth() + 1)) {
-                        targetDate = 1; 
-                    }
-                    
-                    const maxDays = new Date(checkY, checkM, 0).getDate();
-                    if (targetDate > maxDays) targetDate = maxDays;
-                    if (targetDate < 1) targetDate = 1;
-
-                    setCalcContext(prev => ({ ...prev, date: targetDate, group: 'g1', customer: '1' }));
-                    setLoadedContext({ year: checkY, month: checkM, date: targetDate, group: 'g1', customer: '1' });
-                    setShippingReportDate(targetDate);
-                    
-                    const key = `${targetDate}-g1`;
-                    setCalcRows(detailsData[key] || Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '', u: '', c: '' })));
-                    
-                    setHasInitializedDate(true);
-                }
-                // eslint-disable-next-line react-hooks/exhaustive-deps
-            }, [isLoadingData, hasInitializedDate]);
+            }, [user, firebaseReady, year, month, calcContext.date, calcContext.group]);
 
             const performFirebaseSave = async (payloadReportRows, payloadDetailsData) => {
                 if (!user || !window.db) throw new Error("無使用者登入或資料庫尚未連線");
@@ -989,11 +1017,39 @@
                     return newRow;
                 });
 
+                // ==========================================
+                // 🌟 自動尋找下一個未輸入的組別並切換
+                // ==========================================
+                let nextGroup = calcContext.group;
+                if (calcContext.group === 'g1' || calcContext.group === 'g2' || calcContext.group === 'g3') {
+                    const sequence = ['g1', 'g2', 'g3'];
+                    const currentIndex = sequence.indexOf(calcContext.group);
+                    nextGroup = sequence[(currentIndex + 1) % 3]; // 預設先指向下一個
+                    const targetRow = newReportRows[calcContext.date - 1]; 
+
+                    // 最多找兩次，確認下一個目標組別是不是已經有資料
+                    for (let i = 1; i <= 2; i++) {
+                        const candidateGroup = sequence[(currentIndex + i) % 3];
+                        const val = targetRow[candidateGroup];
+                        // 如果該組別為空或 0，代表還沒輸入，就停留在這個組別！
+                        if (!val || parseFloat(val) === 0) {
+                            nextGroup = candidateGroup;
+                            break;
+                        }
+                    }
+                }
+
+                const nextContext = { ...calcContext, group: nextGroup };
+
                 setDetailsData(newDetailsData);
                 setReportRows(newReportRows);
-                setLoadedContext({ year, month, ...calcContext });
+                setCalcContext(nextContext);
+                setLoadedContext({ year, month, ...nextContext });
                 setOverwriteModal({ isOpen: false });
-                setActiveTab('report');
+
+                // 🌟 自動清空/載入下一個組別的資料，且停留在明細畫面
+                const nextKey = `${calcContext.date}-${nextGroup}`;
+                setCalcRows(newDetailsData[nextKey] || Array.from({ length: ROW_COUNT }, () => ({ l: '', w: '', t: '', p: '', q: '', u: '', c: '' })));
 
                 setSyncStatus('🔄 同步儲存中...');
                 try {
@@ -1219,6 +1275,7 @@
                                                                         onChange={(e) => handleReportChange(idx, g, e.target.value)} 
                                                                         onFocus={() => setFocusedReportRow(idx)} 
                                                                         onKeyDown={(e) => handleEnterToNext(e, 'report-input')}
+                                                                        onPaste={(e) => handlePaste(e, idx, g)} 
                                                                         className={`report-input ${g==='g1'?'text-blue-800':g==='g2'?'text-orange-800':'text-purple-800'}`} 
                                                                     />
                                                                 )}
@@ -1372,7 +1429,7 @@
                                                 </button>
                                                 <button onClick={handleSyncReportClick} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded-xl shadow-md transition-all active:scale-[0.98] flex flex-col items-center justify-center leading-tight">
                                                     <span className="flex items-center gap-1 font-bold text-[11px] sm:text-xs"><TableIcon /> 同步總表</span>
-                                                    <span className="text-[9px] font-medium tracking-wide text-emerald-200 mt-0.5">(背景同步雲端)</span>
+                                                    <span className="text-[9px] font-medium tracking-wide text-emerald-200 mt-0.5">(並切換至下一組)</span>
                                                 </button>
                                             </div>
                                         )
